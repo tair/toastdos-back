@@ -42,6 +42,7 @@ npm-debug.log
 .idea/dictionaries
 .idea/vcs.xml
 .idea/jsLibraryMappings.xml
+.idea/*
 
 # Sensitive or high-churn files:
 .idea/dataSources.ids
@@ -148,4 +149,7 @@ out
 
 # Keys
 *.pem
+
+# Orcid info
+resources/orcid_user_info.json
 

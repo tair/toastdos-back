@@ -20,12 +20,14 @@
     "jsonwebtoken": "^7.1.9",
     "knex": "^0.11.10",
     "morgan": "~1.7.0",
+    "request": "^2.75.0",
+    "request-promise": "^4.1.1",
     "serve-favicon": "~2.3.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",
     "istanbul": "^0.4.5",
-    "jsdoc": "^3.4.1",
+    "jsdoc": "^3.4.2",
     "mocha": "^3.0.2",
     "sqlite3": "^3.1.4"
   }

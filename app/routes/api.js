@@ -1,15 +1,22 @@
-"use strict"
+"use strict";
+
+const {enableCORS} = require('../middleware/utils');
 
 const express = require('express');
 let router = express.Router();
 
 const authenticationController = require('../controllers/authentication');
 
+
+// enable cors
+router.use(enableCORS);
+
 router.use('/user', require('./user'));
 router.use('/car', require('./car'));
 router.use('/role', require('./role'));
+router.use('/login', require('./login'));
 
-router.post('/login', authenticationController.login);
+//router.post('/login', authenticationController.login);
 
 // Generate 404s
 router.use((req, res, next) => {
