@@ -1,6 +1,6 @@
 "use strict";
 
-const request   = require('request-promise');
+const request   = require('request');
 const jwt       = require('jsonwebtoken');
 const fs        = require('fs');
 
@@ -16,19 +16,37 @@ const ORCID_BASE_URL = 'https://orcid.org/';
  * @param  {Function} next - pass to next route handler
  */
 function login(req, res, next) {
+	if (!req.body.code) {
+		return res.status(400).json({
+			error: 'Missing field: code'
+		});
+	}
+
 	let authCode = req.body.code;
 
 	// First we complete the OAuth process started on the frontend
-	request.post({
-		url: ORCID_BASE_URL + 'oauth/token',
-		form: {
-			client_id: orcidInfo.client_id,
-			client_secret: orcidInfo.client_secret,
-			grant_type: 'authorization_code',
-			code: authCode
-		}
+	new Promise((resolve, reject) => {
+		request.post({
+			url: ORCID_BASE_URL + 'oauth/token',
+			form: {
+				client_id: orcidInfo.client_id,
+				client_secret: orcidInfo.client_secret,
+				grant_type: 'authorization_code',
+				code: authCode
+			}
+		},
+		(error, response, body) => {
+			error ? reject(error) : resolve(body);
+		});
 	}).then(userTokenResJSON => {
 		let userTokenRes = JSON.parse(userTokenResJSON);
+
+		if (!userTokenRes.orcid) {
+			return res.status(500).json({
+				error: 'OrcidError'
+			});
+		}
+
 		let orcidId = userTokenRes.orcid;
 
 		// Try to find the user associated with the orcid_id
@@ -57,10 +75,9 @@ function login(req, res, next) {
 			}
 		});
 	}).catch(err => {
-
 		// Default error handling
 		console.log(err);
-		return res.status(500).json({err: "An unknown error has occured"});
+		return res.status(500).json({err: "UnknownError"});
 	});
 }
 
