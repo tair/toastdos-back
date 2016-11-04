@@ -48,25 +48,25 @@ function login(req, res, next) {
 		}
 
 		let orcidId = userTokenRes.orcid;
+		let userName = userTokenRes.name;
 
 		// Try to find the user associated with the orcid_id
 		return User.where('orcid_id', orcidId).fetch().then(user => {
 
 			// Return that user if they exist
 			if (user) {
-				let userJwt = signedToken({user_id: user.id});
+				let userJwt = makeUserToken(user.attributes);
 				return res.status(200).json({
 					jwt: userJwt
 				});
 			}
 			else {
 				// Make the user if they don't exist
-				let userName = userTokenRes.name;
 				return User.forge({
 					name: userName,
 					orcid_id: orcidId
 				}).save().then(newUser => {
-					let userJwt = signedToken({user_id: newUser.id});
+					let userJwt = makeUserToken(newUser.attributes);
 					return res.status(201).json({
 						jwt: userJwt
 					});
@@ -84,6 +84,14 @@ function login(req, res, next) {
 function signedToken(contents) {
 	var privateKey = fs.readFileSync('./resources/privkey.pem');
 	return jwt.sign(contents, privateKey);
+}
+
+function makeUserToken(user) {
+	return signedToken({
+		user_id: user.id,
+		user_name: user.name,
+		user_orcid_id: user.orcid_id
+	});
 }
 
 module.exports = {
