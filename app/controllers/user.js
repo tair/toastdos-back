@@ -1,125 +1,13 @@
-"use strict"
+"use strict";
+
 /**
  * @module controllers/user
  */
 
 const User 		= require("../models/user");
-const Password 	= require("../models/password");
-const Email 	= require("../models/email");
 
 const authentication 	= require('../lib/authentication');
 const bookshelf 		= require('../lib/bookshelf');
-
-/**
- * Controller to create a new user
- * @param  {Express.request}   req  - the request object
- * @param  {Express.Response}   res  - the response object
- * @param  {Function} next - pass to next route handler
- */
-function registerNewUser(req, res, next) {
-
-	let user_data = {};
-	// validate request
-	if(!req.body.hasOwnProperty("username")) {
-		return res.status(400)
-			.json({
-				error: "MissingField",
-				message: "username field is missing"
-			});
-	}
-
-	if(!req.body.hasOwnProperty("password")) {
-		return res.status(400)
-			.json({
-				error: "MissingField",
-				message: "password field is missing"
-			});
-	}
-
-	if(!req.body.hasOwnProperty("email")) {
-		return res.status(400)
-			.json({
-				error: "MissingField",
-				message: "email field is missing"
-			});
-	}
-
-	user_data.username 		= req.body.username.toLowerCase();
-	user_data.first_name 	= req.body.first_name;
-	user_data.last_name 	= req.body.first_name;
-
-	bookshelf.transaction(t => {
-		// check user exists
-		let userExistsPromise = User.where('username', user_data.username)
-		.count('id', {transacting: t})
-		.tap(count => {
-			if(count != 0) {
-				throw {
-					error: "UsernameExists",
-					message: "A user with that username already exists."
-				}
-			}
-			return
-		});
-		// check email exists
-		let emailExistsPromise = Email.where('address', req.body.email)
-		.count('id', {transacting: t})
-		.tap(count => {
-			if(count != 0) {
-				throw {
-					error: "EmailExists",
-					message: "That email is already taken."
-				}
-			}
-			return
-		});
-		
-		return Promise.all([userExistsPromise, emailExistsPromise])
-		.then(() => {
-			return User.forge(user_data)
-			.save(null, {transacting: t})
-			.tap(model => {
-				return new Promise((resolve, reject) => {
-					authentication.hashPassword(req.body.password, (err, hash) => {
-						if(err) {
-							return reject(err);
-						}
-						return resolve(hash);
-					});
-				}).then(hash => {
-					return Password.forge({
-						password_hash: hash
-					}).save({user_id: model.id}, {transacting: t});
-				}).then(passModel => {
-					return Email.forge({
-						address: req.body.email,
-						verified: false
-					}).save({user_id: model.id}, {transacting: t});
-				});
-			});
-		});
-	}).then(user => {
-		return res.json({
-			id: user.id,
-			username: user.username
-		});
-	}).catch(err => {
-		// username exists
-    	if(err.error === "UsernameExists") {
-			return res.status(400).json(err);
-    	}
-		// email exists
-    	if(err.error === "EmailExists") {
-			return res.status(400).json(err);
-    	}
-		// Unknown error
-		console.error(err);
-		return res.status(500)
-			.json({
-				error: "UnknownError"
-			});
-	});
-}
 
 /**
  * Get all Users in the database
@@ -209,7 +97,7 @@ function deleteUserById(req, res, next) {
  * @param  {Function} 			next - pass to next handler
  */
 function setRoles(req, res, next) {
-	let target_user = User.forge({id: req.params.id})
+	let target_user = User.forge({id: req.params.id});
 	target_user.fetch({
 		withRelated: ["roles"]
 	})
@@ -240,8 +128,7 @@ function setRoles(req, res, next) {
 
 module.exports = {
 	getUsers,
-	registerNewUser,
 	getUserById,
 	deleteUserById,
 	setRoles
-}
+};

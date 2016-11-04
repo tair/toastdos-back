@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 const userController = require('../controllers/user');
 const authenticationMiddleware = require('../middleware/authentication');
@@ -12,25 +12,26 @@ router.get(
 	authenticationMiddleware.validateAuthentication,	// isAuthenticated middleware
 	userController.getUsers		// the controller
 );
+
 // GET a specific user
 router.get(
 	'/:id',
 	authenticationMiddleware.validateAuthentication,	// isAuthenticated middleware
 	userController.getUserById
 );
-// CREATE a new user
-router.post('/', userController.registerNewUser);
+
 // DELETE a user
 router.delete(
 	'/:id',
 	authenticationMiddleware.validateAuthentication,	// isAuthenticated middleware
 	userController.deleteUserById
 );
-// 
+
+// PATCH a user with added and removed roles
 router.patch(
 	'/:id/roles',
 	authenticationMiddleware.validateAuthentication,
 	userController.setRoles
-)
+);
 
 module.exports = router;
