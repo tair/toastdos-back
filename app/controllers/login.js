@@ -61,10 +61,9 @@ function login(req, res, next) {
 			}
 			else {
 				// Make the user if they don't exist
-				let userNames = userTokenRes.name.split(' ');
+				let userName = userTokenRes.name;
 				return User.forge({
-					first_name: userNames[0],
-					last_name: userNames[1],
+					name: userName,
 					orcid_id: orcidId
 				}).save().then(newUser => {
 					let userJwt = signedToken({user_id: newUser.id});
