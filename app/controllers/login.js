@@ -80,12 +80,20 @@ function login(req, res, next) {
 	});
 }
 
-// Return a jwt signed with our private key
+/**
+ * Creates a JSON web token signed with our private key
+ * @param contents
+ * @returns {*}
+ */
 function signedToken(contents) {
 	var privateKey = fs.readFileSync('./resources/privkey.pem');
 	return jwt.sign(contents, privateKey);
 }
 
+/**
+ * Makes a JSON web token containing a user's information
+ * @param user
+ */
 function makeUserToken(user) {
 	return signedToken({
 		user_id: user.id,
