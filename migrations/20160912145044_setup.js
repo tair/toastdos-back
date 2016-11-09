@@ -24,6 +24,21 @@ exports.up = function(knex, Promise) {
 		knex.schema.createTable('user_role', table => {
 			table.integer('user_id').references('user.id').notNullable();
 			table.integer('role_id').references('role.id').notNullable();
+		}),
+		knex.schema.createTable('keyword', table => {
+			table.increments('id');
+			table.integer('keyword_type_id').references('keyword_type.id').notNullable();
+			table.string('name');
+			table.string('external_id');
+		}),
+		knex.schema.createTable('synonym', table => {
+			table.increments('id');
+			table.integer('keyword_id').references('keyword.id').notNullable();
+			table.string('name');
+		}),
+		knex.schema.createTable('keyword_type', table => {
+			table.increments('id');
+			table.string('name');
 		})
 
 	]);
@@ -34,6 +49,9 @@ exports.down = function(knex, Promise) {
 		knex.schema.dropTable('user'),
 		knex.schema.dropTable('car'),
 		knex.schema.dropTable('role'),
-		knex.schema.dropTable('user_role')
+		knex.schema.dropTable('user_role'),
+		knex.schema.dropTable('keyword'),
+		knex.schema.dropTable('synonym'),
+		knex.schema.dropTable('keyword_type')
 	]);
 };
