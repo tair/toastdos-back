@@ -29,7 +29,9 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.integer('keyword_type_id').references('keyword_type.id').notNullable();
 			table.string('name');
-			table.string('external_id');
+			table.string('external_id').unique();
+
+			table.index('external_id');
 		}),
 		knex.schema.createTable('synonym', table => {
 			table.increments('id');

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "bcrypt": "^0.8.7",
+    "bionode-obo": "git+https://github.com/bionode/bionode-obo.git#b62927d6c2f164ea37921db9f9dca7f9cb519fa6",
     "body-parser": "~1.15.1",
     "bookshelf": "^0.10.2",
     "cookie-parser": "~1.4.3",
