@@ -40,7 +40,7 @@ exports.up = function(knex, Promise) {
 		}),
 		knex.schema.createTable('keyword_type', table => {
 			table.increments('id');
-			table.string('name');
+			table.string('name').unique();
 		})
 
 	]);
