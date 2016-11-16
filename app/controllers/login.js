@@ -5,7 +5,7 @@ const jwt       = require('jsonwebtoken');
 const fs        = require('fs');
 
 const User      = require('../models/user');
-const orcidInfo = require('../../resources/orcid_user_info.json');
+const orcidInfo = require('../../resources/orcid_app_info.json');
 
 const ORCID_BASE_URL = 'https://orcid.org/';
 
