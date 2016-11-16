@@ -151,5 +151,5 @@ out
 *.pem
 
 # Orcid info
-resources/orcid_user_info.json
+resources/orcid_app_info.json
 
