@@ -1,5 +1,12 @@
-"use strict"
-// Use production config in production mode, development config otherwise
-module.exports = (process.env.NODE_ENV === "production") ?
-	require("./production") :
-	require("./development");
+"use strict";
+
+// Switch our configuration based on environment
+if (process.env.NODE_ENV === 'production') {
+	module.exports = require('./production');
+}
+else if (process.env.NODE_ENV === 'test') {
+	module.exports = require('./test');
+}
+else {
+	module.exports = require('./development');
+}
