@@ -18,26 +18,16 @@ const KeywordType = require('../models/keyword_type');
 const Synonym     = require('../models/synonym');
 
 
+/** EXECUTE SCRIPT */
+parseOboFileIntoDb('../../../eco.obo');
+
 /** Our custom WritableStream lets us control the rate we read the obo file at. */
 class DBStream extends stream.Writable {
 	_write(chunk, enc, next) {
 		let term = JSON.parse(chunk);
-		processTerm(term).then(res => {
-			next();
-		});
+		processTerm(term).then(() => next());
 	}
 }
-
-
-/** Adds each term in the obo file into the DB */
-// The GO obo file we're using has 45783 terms
-// TODO pass this file name in and fully qualify it
-fs.createReadStream(path.join(__dirname, '../../../go.obo'))
-	.pipe(obo.parse(processHeader))
-	.pipe(new DBStream())
-	.on('error', e => console.error(e))
-	.on('finish', () => Bookshelf.knex.destroy());
-
 
 /* Cache all KeywordTypes to speed up adding Keywords.
  *
@@ -48,6 +38,29 @@ fs.createReadStream(path.join(__dirname, '../../../go.obo'))
 let keywordTypeCache = {};
 
 /**
+ * Adds each term in the obo file into the DB.
+ *
+ * @param filename - name of .obo file to read in
+ * @returns {Promise.<TResult>}
+ */
+function parseOboFileIntoDb(filename) {
+	return loadKeywordTypeCache()
+		.then(() => new Promise((resolve, reject) => {
+			fs.createReadStream(path.join(__dirname, filename))
+				.pipe(obo.parse(processHeader))
+				.pipe(new DBStream())
+				.on('error', e => {
+					console.error(e);
+					reject();
+				})
+				.on('finish', () => {
+					Bookshelf.knex.destroy();
+					resolve();
+				});
+		}));
+}
+
+/**
  * Processes a single obo "term", adding any new Keywords,
  * KeywordTypes, or Synonyms to the Database.
  *
@@ -56,45 +69,51 @@ let keywordTypeCache = {};
  */
 function processTerm(term) {
 	process.stdout.write('.'); // Number of periods printed corresponds to number of records processed.
-	return addKeywordWithType(term)
-		.then(addedKeyword => addSynonyms(term.synonym, addedKeyword.get('id')));
+	return addKeywordType(term.namespace)
+		.then(keywordType => addKeyword(term.name, term.id, keywordType.get('id')))
+		.then(keyword => addSynonyms(term.synonym, keyword.get('id')));
 }
 
 /**
- * Adds the Keyword portion of the term. Attempts to find the KeywordType
- * in the cache, and adds it as a new type if not found.
- *
- * @param term - JSON object of ontology term from obo parser
- * @returns {Promise.<Keyword>}
+ * Load pre-existing KeywordTypes into the cache
+ * @returns {*|Promise.<TResult>}
  */
-function addKeywordWithType(term) {
-	// KeywordType Cache hit
-	if (keywordTypeCache[term.namespace]) {
-		let keywordType = keywordTypeCache[term.namespace];
-		return addKeyword(term.name, term.id, keywordType.get('id'));
+function loadKeywordTypeCache() {
+	return KeywordType.fetchAll().then(keywordTypes => {
+		return new Promise(resolve => {
+			keywordTypes.forEach(keywordType => {
+				keywordTypeCache[keywordType.get('name')] = keywordType;
+			});
+			resolve();
+		});
+	});
+}
+
+/**
+ * Adds a new KeywordType. If the KeywordType already exists,
+ * returns the cached version in a promise.
+ *
+ * @param name - Plain text name of KeywordType
+ * @returns {Promise.<KeywordType>}
+ */
+function addKeywordType(name) {
+	if (keywordTypeCache[name]) {
+		return Promise.resolve(keywordTypeCache[name]);
 	} else {
-		// Add the keyword to the cache if we haven't seen it yet
-		return addKeywordType(term.namespace).then(addedKeywordType => {
-			keywordTypeCache[term.namespace] = addedKeywordType;
-			return addKeyword(term.name, term.id, addedKeywordType.get('id'));
+		return new Promise(resolve => {
+			KeywordType.forge({name: name})
+				.save()
+				.then(keywordType => {
+					keywordTypeCache[keywordType.get('name')] = keywordType;
+					resolve(keywordType);
+				});
 		});
 	}
 }
 
 /**
- * Adds a new KeywordType.
- *
- * @param name - Plain text name
- * @returns {Promise.<KeywordType>}
- */
-function addKeywordType(name) {
-	return KeywordType
-		.forge({name: name})
-		.save();
-}
-
-/**
- * Adds a new Keyword.
+ * Adds a new Keyword, or returns an existing keyword
+ * with a matching externalId.
  *
  * @param name - Plain text name
  * @param externalId - ID from external DB
@@ -102,13 +121,17 @@ function addKeywordType(name) {
  * @returns {Promise.<Keyword>}
  */
 function addKeyword(name, externalId, keywordTypeId) {
-	return Keyword
-		.forge({
-			name: name,
-			external_id: externalId,
-			keyword_type_id: keywordTypeId
-		})
-		.save();
+	return Keyword.where({external_id: externalId}).fetch().then(keyword => {
+		if (keyword) {
+			return Promise.resolve(keyword);
+		} else {
+			return Keyword.forge({
+				name: name,
+				external_id: externalId,
+				keyword_type_id: keywordTypeId
+			}).save();
+		}
+	});
 }
 
 /**
@@ -142,12 +165,17 @@ function addSynonyms(synonymField, keywordId) {
  * @returns {Promise.<Synonym>}
  */
 function addSynonym(synonymString, keywordId) {
-	return Synonym
-		.forge({
-			name: synonymString.split('"')[1],
-			keyword_id: keywordId
-		})
-		.save();
+	let name = synonymString.split('"')[1];
+	return Synonym.where({name: name}).fetch().then(synonym => {
+		if (synonym) {
+			return Promise.resolve(synonym);
+		} else {
+			return Synonym.forge({
+				name: name,
+				keyword_id: keywordId
+			}).save();
+		}
+	});
 }
 
 /**
