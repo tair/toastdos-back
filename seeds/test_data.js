@@ -4,9 +4,9 @@ const testdata = require('./test_data.json');
 
 exports.seed = function(knex, Promise) {
 	return Promise.all([
-		knex('keyword_type').truncate(),
+		knex('synonym').truncate(),
 		knex('keyword').truncate(),
-		knex('synonym').truncate()
+		knex('keyword_type').truncate()
 	]).then(() => {
 		return Promise.all([
 			].concat(

@@ -11,11 +11,14 @@ const testdata = require('../seeds/test_data.json');
 
 describe('Models', function() {
 
+	// Make sure the database is up to date
 	before(function(done) {
-		// Give us fresh test data in a sqlite memory database for each test
-		knex.migrate.latest()
-			.then(() => knex.seed.run())
-			.then(() => done());
+		knex.migrate.latest().then(() => done());
+	});
+
+	// Give us fresh test data in a sqlite memory database for each test
+	beforeEach(function(done) {
+		knex.seed.run().then(() => done());
 	});
 
 	describe('Keyword', function() {
