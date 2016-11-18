@@ -37,6 +37,8 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.integer('keyword_id').references('keyword.id').notNullable();
 			table.string('name');
+
+			table.index('keyword_id');
 		}),
 		knex.schema.createTable('keyword_type', table => {
 			table.increments('id');

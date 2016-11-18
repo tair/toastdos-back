@@ -166,7 +166,7 @@ function addSynonyms(synonymField, keywordId) {
  */
 function addSynonym(synonymString, keywordId) {
 	let name = synonymString.split('"')[1];
-	return Synonym.where({name: name}).fetch().then(synonym => {
+	return Synonym.where({keyword_id: keywordId, name: name}).fetch().then(synonym => {
 		if (synonym) {
 			return Promise.resolve(synonym);
 		} else {
