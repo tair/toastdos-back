@@ -18,9 +18,6 @@ const KeywordType = require('../models/keyword_type');
 const Synonym     = require('../models/synonym');
 
 
-/** EXECUTE SCRIPT */
-parseOboFileIntoDb('../../../eco.obo');
-
 /** Our custom WritableStream lets us control the rate we read the obo file at. */
 class DBStream extends stream.Writable {
 	_write(chunk, enc, next) {
@@ -40,13 +37,13 @@ let keywordTypeCache = {};
 /**
  * Adds each term in the obo file into the DB.
  *
- * @param filename - name of .obo file to read in
+ * @param filepath - path of the .obo file to read in
  * @returns {Promise.<TResult>}
  */
-function parseOboFileIntoDb(filename) {
+function parseOboFileIntoDb(filepath) {
 	return loadKeywordTypeCache()
 		.then(() => new Promise((resolve, reject) => {
-			fs.createReadStream(path.join(__dirname, filename))
+			fs.createReadStream(path.join(filepath))
 				.pipe(obo.parse(processHeader))
 				.pipe(new DBStream())
 				.on('error', e => {
@@ -58,6 +55,18 @@ function parseOboFileIntoDb(filename) {
 					resolve();
 				});
 		}));
+}
+
+/**
+ * Obo headers can specify a default KeywordType for when individual
+ * terms do not specify their own KeywordType. This stores that
+ * default KeywordType.
+ *
+ * @param headerData - JSON string of header data
+ */
+function processHeader(headerData) {
+
+
 }
 
 /**
@@ -178,10 +187,4 @@ function addSynonym(synonymString, keywordId) {
 	});
 }
 
-/**
- * We don't currently do anything with the obo header info,
- * but if we ever needed to, this is where we'd do it.
- *
- * @param headerData - JSON string of header data
- */
-function processHeader(headerData) { }
+module.exports.parseOboFileIntoDb = parseOboFileIntoDb;

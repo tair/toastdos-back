@@ -1,0 +1,34 @@
+format-version: 1.2
+default-namespace: default_keyword_type
+
+[Term]
+id: GO:0000001
+name: test keyword 1
+namespace: basic_keyword_type
+def: "This is the general case for what a term will look like" [GOC:mah]
+synonym: "a synonym" RELATED []
+synonym: "another synonym" RELATED [GOC:mah]
+is_a: GO:0004520 ! term not in this file
+is_a: GO:0048311 ! another term not in this file
+
+[Term]
+id: GO:0000002
+name: test keyword 2
+def: "This term has no namespace, so the default namespace should be used" [GOC:mcc, PMID:10873824, PMID:11389764]
+synonym: "Name conflict synonym" EXACT []
+
+[Term]
+id: GO:0000003
+name: test keyword 3
+namespace: overide_keyword_type
+def: "This term's namespace should override the default namespace" [GOC:mcc]
+synonym: "yet another synonym" EXACT []
+is_a: GO:0048308 ! term not in this file
+
+[Term]
+id: GO:0000004
+name: test keyword 4
+namespace: basic_keyword_type
+def: "This term's synonym has the same name at term 2's synonym, but it should be treated like a new synonym" [GOC:mcc]
+synonym: "Name conflict synonym" EXACT []
+is_a: GO:0048308 ! term not in this file
