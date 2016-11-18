@@ -4,12 +4,18 @@ const testdata = require('./test_data.json');
 
 exports.seed = function(knex, Promise) {
 	return Promise.all([
-		].concat(
-			testdata.keyword_types.map(keywordType => knex('keyword_type').insert(keywordType))
-		).concat(
-			testdata.keywords.map(keyword => knex('keyword').insert(keyword))
-		).concat(
-			testdata.synonyms.map(synonym => knex('synonym').insert(synonym))
-		)
-	);
+		knex('keyword_type').truncate(),
+		knex('keyword').truncate(),
+		knex('synonym').truncate()
+	]).then(() => {
+		return Promise.all([
+			].concat(
+				testdata.keyword_types.map(keywordType => knex('keyword_type').insert(keywordType))
+			).concat(
+				testdata.keywords.map(keyword => knex('keyword').insert(keyword))
+			).concat(
+				testdata.synonyms.map(synonym => knex('synonym').insert(synonym))
+			)
+		);
+	});
 };

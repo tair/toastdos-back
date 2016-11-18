@@ -9,7 +9,7 @@ let Keyword = bookshelf.model('Keyword', {
 	keywordType: function() {
 		return this.belongsTo('KeywordType', 'keyword_type_id');
 	},
-	syononyms: function() {
+	synonyms: function() {
 		return this.hasMany('Synonym', 'keyword_id');
 	}
 });
