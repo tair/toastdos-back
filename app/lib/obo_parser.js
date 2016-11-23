@@ -72,7 +72,17 @@ class OboParser extends stream.Transform {
 					else {
 						// Save the current line's key-value to the term
 						let parts = line.match(KEY_VALUE);
-						this.currentTerm[parts[1]] = parts[2];
+						let key = parts[1];
+						let newValue = parts[2];
+
+						// If the key already exists, convert to an array
+						if (this.currentTerm[key]) {
+							let curValue = this.currentTerm[key];
+							this.currentTerm[key] = [curValue, newValue];
+						}
+						else {
+							this.currentTerm[key] = newValue;
+						}
 					}
 					break;
 

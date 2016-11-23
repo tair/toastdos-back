@@ -20,7 +20,7 @@ class TestString extends stream.Readable {
 	}
 }
 
-describe.only('OBO Parser', function() {
+describe('OBO Parser', function() {
 
 	it('Parses header separately', function(done) {
 		const obo = '' +
@@ -68,8 +68,8 @@ describe.only('OBO Parser', function() {
 			'[Term]\n' +
 			'id: GO:0000002\n' +
 			'name: test keyword 2\n' +
-			'synonym: "Some random synonym"\n' +
-			'thing: some thing to split up the synonym fields\n' +
+			'synonym: "Some random synonym" EXACT []\n' +
+		'thing: some thing to split up the synonym fields\n' +
 			'synonym: "Another random synonym"\n';
 
 		const expected = {
@@ -77,8 +77,8 @@ describe.only('OBO Parser', function() {
 			name: 'test keyword 2',
 			thing: 'some thing to split up the synonym fields',
 			synonym: [
-				'Some random synonym',
-				'Another random synonym'
+				'"Some random synonym" EXACT []',
+				'"Another random synonym"'
 			]
 		};
 
