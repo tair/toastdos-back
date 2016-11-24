@@ -37,7 +37,7 @@ class OboParser extends stream.Transform {
 					else {
 						// Pass parsed header into the callback
 						if (this.headerParser) {
-							this.headerParser(this.currentTerm);
+							this.headerParser(JSON.stringify(this.currentTerm));
 						}
 						this.currentTerm = {};
 
@@ -68,7 +68,7 @@ class OboParser extends stream.Transform {
 					}
 					else if (line.length === 0) {
 						// Finish the current term when we see a newline
-						this.push(this.currentTerm);
+						this.push(JSON.stringify(this.currentTerm));
 						this.currentTerm = {};
 					}
 					else {

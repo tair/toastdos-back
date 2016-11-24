@@ -36,7 +36,7 @@ describe('OBO Parser', function() {
 		};
 
 		function testParser(header) {
-			chai.expect(header).to.deep.equal(expected);
+			chai.expect(JSON.parse(header)).to.deep.equal(expected);
 			done();
 		}
 
@@ -60,7 +60,7 @@ describe('OBO Parser', function() {
 		new TestString(obo)
 			.pipe(new OboParser())
 			.on('end', () => done())
-			.on('data', data => chai.expect(data).to.deep.equal(expected));
+			.on('data', data => chai.expect(JSON.parse(data)).to.deep.equal(expected));
 	});
 
 	it('Multiple values for a field are parsed into an array', function(done) {
@@ -87,7 +87,7 @@ describe('OBO Parser', function() {
 		new TestString(obo)
 			.pipe(new OboParser())
 			.on('end', () => done())
-			.on('data', data => chai.expect(data).to.deep.equal(expected));
+			.on('data', data => chai.expect(JSON.parse(data)).to.deep.equal(expected));
 	});
 
 	it('Non-Term values are ignored entirely', function(done) {
@@ -107,7 +107,7 @@ describe('OBO Parser', function() {
 		new TestString(obo)
 			.pipe(new OboParser())
 			.on('end', () => done())
-			.on('data', data => chai.expect(data).to.deep.equal(expected));
+			.on('data', data => chai.expect(JSON.parse(data)).to.deep.equal(expected));
 	});
 
 });
