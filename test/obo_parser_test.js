@@ -70,7 +70,8 @@ describe('OBO Parser', function() {
 			'name: test keyword 2\n' +
 			'synonym: "Some random synonym" EXACT []\n' +
 			'thing: some thing to split up the synonym fields\n' +
-			'synonym: "Another random synonym"\n';
+			'synonym: "Another random synonym"\n' +
+			'synonym: "A third synonym"\n';
 
 		const expected = {
 			id: 'GO:0000002',
@@ -78,7 +79,8 @@ describe('OBO Parser', function() {
 			thing: 'some thing to split up the synonym fields',
 			synonym: [
 				'"Some random synonym" EXACT []',
-				'"Another random synonym"'
+				'"Another random synonym"',
+				'"A third synonym"'
 			]
 		};
 
