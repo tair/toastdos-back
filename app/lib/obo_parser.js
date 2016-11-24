@@ -60,9 +60,11 @@ class OboParser extends stream.Transform {
 
 				case State.PARSING:
 					let blockStart2 = line.match(BLOCK_START);
-					if (blockStart2 && blockStart2[1] !== 'Term') {
+					if (blockStart2) {
 						// If this block isn't a term, ignore everything until the Next term
-						this.state = State.IGNORE;
+						if (blockStart2[1] !== 'Term') {
+							this.state = State.IGNORE;
+						}
 					}
 					else if (line.length === 0) {
 						// Finish the current term when we see a newline
