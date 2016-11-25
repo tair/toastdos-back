@@ -8,6 +8,7 @@ namespace: basic_keyword_type
 def: "This is the general case for what a term will look like" [GOC:mah]
 synonym: "a synonym" RELATED []
 synonym: "another synonym" RELATED [GOC:mah]
+synonym: "yet another synonym" RELATED [GOC:mah]
 is_a: GO:0004520 ! term not in this file
 is_a: GO:0048311 ! another term not in this file
 
@@ -24,6 +25,11 @@ namespace: overide_keyword_type
 def: "This term's namespace should override the default namespace" [GOC:mcc]
 synonym: "yet another synonym" EXACT []
 is_a: GO:0048308 ! term not in this file
+
+[NotATerm]
+id: NT:0000001
+name: should not appear
+def: "I am not a term, and thus I should be ignored entirely during parsing"
 
 [Term]
 id: GO:0000004
