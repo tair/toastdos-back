@@ -110,4 +110,21 @@ describe('OBO Parser', function() {
 			.on('data', data => chai.expect(JSON.parse(data)).to.deep.equal(expected));
 	});
 
+	it('Hyphenated keys are parsed correctly', function(done) {
+		const obo = '' +
+			'[Term]\n' +
+			'hyphenated-key: hyphenated-value\n' +
+			'another_key: another_value\n';
+
+		const expected = {
+			'hyphenated-key': 'hyphenated-value',
+			another_key: 'another_value'
+		};
+
+		new TestString(obo)
+			.pipe(new OboParser())
+			.on('end', () => done())
+			.on('data', data => chai.expect(JSON.parse(data)).to.deep.equal(expected));
+	});
+
 });

@@ -3,7 +3,7 @@
 const stream = require('stream');
 
 const BLOCK_START = /^\[(.+)]$/;
-const KEY_VALUE   = /(\w+): (.*)/;
+const KEY_VALUE   = /([\w-]+): (.*)/;
 
 const State = Object.freeze({
 	HEADER: 'Header',
