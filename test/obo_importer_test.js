@@ -9,7 +9,7 @@ const KeywordType = require('../app/models/keyword_type');
 const Keyword     = require('../app/models/keyword');
 const Synonym     = require('../app/models/synonym');
 
-describe.only('OBO Data Importer', function() {
+describe('OBO Data Importer', function() {
 
 	before('Run the data import script on a test file to populate the database', function() {
 		return knex.migrate.latest()
@@ -70,6 +70,12 @@ describe.only('OBO Data Importer', function() {
 		return Synonym.where({name: 'Name conflict synonym'})
 			.fetchAll()
 			.then(synonyms => chai.expect(synonyms).to.have.lengthOf(2));
+	});
+
+	it('Blank KeywordTypes are not added', function() {
+		return KeywordType.where({name: null})
+			.fetchAll()
+			.then(synonyms => chai.expect(synonyms).to.have.lengthOf(0));
 	});
 
 });

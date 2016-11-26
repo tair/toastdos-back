@@ -23,6 +23,7 @@ class DataImporter extends stream.Writable {
 
 	constructor(options) {
 		super(options);
+		this.defaultKeywordTypeName;
 		this.keywordTypeCache = {};
 	}
 
@@ -47,10 +48,12 @@ class DataImporter extends stream.Writable {
 	}
 
 	/**
-	 * Process the obo header
+	 * Process the obo header. Some terms omit the 'namespace' field,
+	 * in which case the term's namespace comes from the default in the header.
 	 */
 	processHeader(headerJson) {
 		let header = JSON.parse(headerJson);
+		this.defaultKeywordTypeName = header['default-namespace'];
 	}
 
 	/**
@@ -62,7 +65,16 @@ class DataImporter extends stream.Writable {
 	 */
 	_write(chunk, enc, next) {
 		let term = JSON.parse(chunk.toString());
-		this._addKeywordType(term.namespace)
+
+		// Use default KeywordType if no KeywordType is specified
+		let keywordTypePromise;
+		if (term.namespace) {
+			keywordTypePromise = this._addKeywordType(term.namespace);
+		} else {
+			keywordTypePromise = this._addKeywordType(this.defaultKeywordTypeName);
+		}
+
+		keywordTypePromise
 			.then(keywordType => this._addKeyword(term.name, term.id, keywordType.get('id')))
 			.then(keyword => this._addSynonyms(term.synonym, keyword.get('id')))
 			.then(() => next());
@@ -172,7 +184,11 @@ class DataImporter extends stream.Writable {
 function loadOboIntoDB(filepath) {
 	return new Promise((resolve, reject) => {
 		let dataImporter = new DataImporter();
-		let oboParser = new OboParser(dataImporter.processHeader);
+
+		// Sets 'this' in the header callback to the DataImporter instead of the OboParser
+		let boundHeaderParser = dataImporter.processHeader.bind(dataImporter);
+
+		let oboParser = new OboParser(boundHeaderParser);
 
 		dataImporter.loadKeywordTypeCache().then(() => {
 			fs.createReadStream(filepath)
