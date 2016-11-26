@@ -24,6 +24,8 @@ class OboParser extends stream.Transform {
 	}
 
 	_transform(chunk, encoding, next) {
+		let line = chunk.toString();
+
 		chunk.toString().split('\n').forEach(line => {
 
 			switch (this.state) {
@@ -101,11 +103,11 @@ class OboParser extends stream.Transform {
 					}
 					break;
 			}
+
 		});
 
 		next();
 	}
 }
-
 
 module.exports.OboParser = OboParser;

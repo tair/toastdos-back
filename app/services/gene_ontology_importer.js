@@ -7,9 +7,10 @@
  * NOTE: Only currently handles initial import. Don't try to update (yet).
  */
 
-const stream    = require('stream');
-const fs        = require('fs');
-const OboParser = require('../lib/obo_parser').OboParser;
+const stream     = require('stream');
+const fs         = require('fs');
+const OboParser  = require('../lib/obo_parser').OboParser;
+const LineStream = require('byline').LineStream;
 
 const Keyword     = require('../models/keyword');
 const KeywordType = require('../models/keyword_type');
@@ -189,9 +190,11 @@ function loadOboIntoDB(filepath) {
 		let boundHeaderParser = dataImporter.processHeader.bind(dataImporter);
 
 		let oboParser = new OboParser(boundHeaderParser);
+		let lineStream = new LineStream({keepEmptyLines: true});
 
 		dataImporter.loadKeywordTypeCache().then(() => {
 			fs.createReadStream(filepath)
+				.pipe(lineStream)
 				.pipe(oboParser)
 				.pipe(dataImporter)
 				.on('finish', () => resolve())
