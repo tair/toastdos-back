@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 const auth = require('../lib/authentication');
 
@@ -7,6 +7,11 @@ const auth = require('../lib/authentication');
  * is properly authenticated/logged in
  */
 function validateAuthentication(req, res, next) {
+	// Sidestep the need for authentication for automated tests
+	if (process.env.NODE_ENV === 'test') {
+		return next();
+	}
+
 	let authHeader = req.get("Authorization");
 	if(!authHeader) {
 		return res.status(401).send({

@@ -47,5 +47,14 @@
       "name" : "T 002 S 001",
       "keyword_id" : 2
     }
+  ],
+
+  "users" : [
+    {
+      "id" : 1,
+      "name" : "Test User 1",
+      "orcid_id" : "0000-0000-0000-0001",
+      "email_address" : "testuser@test.com"
+    }
   ]
 }
