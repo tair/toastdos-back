@@ -20,6 +20,13 @@ router.get(
 	userController.getUserById
 );
 
+// Set (or update) a specific user's email
+router.put(
+	'/:id',
+	authenticationMiddleware.validateAuthentication,
+	userController.updateUserById
+);
+
 // DELETE a user
 router.delete(
 	'/:id',

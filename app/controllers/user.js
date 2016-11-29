@@ -4,10 +4,11 @@
  * @module controllers/user
  */
 
-const User 		= require("../models/user");
+const _              = require('lodash');
+const authentication = require('../lib/authentication');
+const bookshelf      = require('../lib/bookshelf');
 
-const authentication 	= require('../lib/authentication');
-const bookshelf 		= require('../lib/bookshelf');
+const User = require('../models/user');
 
 /**
  * Get all Users in the database
@@ -56,6 +57,44 @@ function getUserById(req, res, next) {
 				.json({
 					error: "UnknownError"
 				});
+		});
+}
+
+/**
+ * Update a specific user.
+ * Undefined fields are not modified.
+ * Defined but null fields are unset on the user.
+ * @param  {Express.Request}   	req  - the request object
+ * @param  {Express.Reponse}   	res  - the response object
+ * @param  {Function} 			next - pass to next handler
+ */
+function updateUserById(req, res, next) {
+	let mutableFields = ['email_address'];
+
+	// Validate we're only trying to update mutable fields
+	let extraFields = Object.keys(_.omit(req.body, mutableFields));
+	if (extraFields.length) {
+		return res.status(400)
+			.json({
+				error: 'BadRequest',
+				message: 'User fields cannot be updated: ' + extraFields
+			});
+	}
+
+	// Update the user with the provided fields
+	let update = _.assign({id: req.params.id}, req.body);
+	User.forge(update)
+		.on('created', () => {
+			return res.status(404)
+				.json({
+					error: 'NotFound',
+					message: 'No User exists for ID ' + req.params.id
+				});
+		})
+		.save()
+		.then(updatedUser => {
+			return res.status(200)
+				.json(updatedUser);
 		});
 }
 
@@ -129,6 +168,7 @@ function setRoles(req, res, next) {
 module.exports = {
 	getUsers,
 	getUserById,
+	updateUserById,
 	deleteUserById,
 	setRoles
 };
