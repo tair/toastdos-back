@@ -1,0 +1,51 @@
+{
+  "keyword_types" : [
+    {
+      "id" : 1,
+      "name" : "Keyword 1"
+    },
+    {
+      "id" : 2,
+      "name" : "Keyword 2"
+    }
+  ],
+
+  "keywords" : [
+    {
+      "id" : 1,
+      "name" : "Test Term 001",
+      "external_id" : "T001",
+      "keyword_type_id" : 1
+    },
+    {
+      "id" : 2,
+      "name" : "Test Term 002",
+      "external_id" : "T002",
+      "keyword_type_id" : 1
+    },
+    {
+      "id" : 3,
+      "name" : "Test Term 003",
+      "external_id" : "T003",
+      "keyword_type_id" : 2
+    }
+  ],
+
+  "synonyms" : [
+    {
+      "id" : 1,
+      "name" : "T 001 S 001",
+      "keyword_id" : 1
+    },
+    {
+      "id" : 2,
+      "name" : "T 001 S 002",
+      "keyword_id" : 1
+    },
+    {
+      "id" : 3,
+      "name" : "T 002 S 001",
+      "keyword_id" : 2
+    }
+  ]
+}
