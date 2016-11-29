@@ -54,7 +54,28 @@ describe('User Controller', function() {
 				});
 		});
 
-		it('Trying to update a non-existent User returns an error');
+		it('Trying to update a non-existent User returns an error', function(done) {
+			let fakeId = 999;
+			chai.request(server)
+				.put('/api/user/' + fakeId)
+				.send({email_address: 'fake.email@email.com'})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(404);
+					chai.expect(res.body.message).to.contain('ID ' + fakeId);
+					done();
+				});
+		});
+
+		it('Emails are validated', function(done) {
+			chai.request(server)
+				.put('/api/user/1')
+				.send({email_address: 'malformed.email'})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.body.message).to.contain('Malformed email');
+					done();
+				});
+		});
 
 	});
 
