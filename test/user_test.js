@@ -18,9 +18,26 @@ describe('User Controller', function() {
 
 	describe('GET /api/user/:id', function() {
 
-		it('Properly gets existing user by ID');
+		it('Properly gets existing user by ID', function(done) {
+			let testUser = testdata.users[0];
 
-		it('Trying to get a non-existing user responds with an error');
+			chai.request(server)
+				.get('/api/user/' + testUser.id)
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					chai.expect(res.body).to.contain(testUser);
+					done();
+				});
+		});
+
+		it('Trying to get a non-existing user responds with an error', function(done) {
+			chai.request(server)
+				.get('/api/user/999')
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(404);
+					done();
+				});
+		});
 
 	});
 
