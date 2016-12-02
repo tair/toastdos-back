@@ -16,6 +16,14 @@ describe('User Controller', function() {
 	// Populate sqlite memory DB with fresh test data
 	beforeEach(function() { return knex.seed.run() });
 
+	describe('GET /api/user/:id', function() {
+
+		it('Properly gets existing user by ID');
+
+		it('Trying to get a non-existing user responds with an error');
+
+	});
+
 	describe('PUT /api/user/:id', function() {
 
 		it('User is updated correctly', function(done) {
@@ -36,7 +44,7 @@ describe('User Controller', function() {
 				});
 		});
 
-		it('Trying to update disallowed fields returns an error', function(done) {
+		it('Trying to update disallowed fields responds with an error', function(done) {
 			let testUser = testdata.users[0];
 			let invalidUpdateRequest = {
 				invalid: 'field',
@@ -53,7 +61,7 @@ describe('User Controller', function() {
 				});
 		});
 
-		it('Trying to update a non-existent User returns an error', function(done) {
+		it('Trying to update a non-existent User responds with an error', function(done) {
 			let fakeId = 999;
 			chai.request(server)
 				.put('/api/user/' + fakeId)
@@ -65,7 +73,7 @@ describe('User Controller', function() {
 				});
 		});
 
-		it('Emails are validated', function(done) {
+		it('Supplying an invalid emails responds with an error', function(done) {
 			chai.request(server)
 				.put('/api/user/1')
 				.send({email_address: 'malformed.email'})
