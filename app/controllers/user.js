@@ -10,6 +10,9 @@ const bookshelf      = require('../lib/bookshelf');
 
 const User = require('../models/user');
 
+// Shamelessly ripped off from http://stackoverflow.com/a/11630569
+const TERRIFYING_EMAIL_VALIDATING_REGEX = /(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
+
 /**
  * Get all Users in the database
  * @param  {Express.Request}   req  - the request object
@@ -78,6 +81,15 @@ function updateUserById(req, res, next) {
 			.json({
 				error: 'BadRequest',
 				message: 'User fields cannot be updated: ' + extraFields
+			});
+	}
+
+	// Validate email address
+	if (req.body.email_address && !req.body.email_address.match(TERRIFYING_EMAIL_VALIDATING_REGEX)) {
+		return res.status(400)
+			.json({
+				error: 'BadRequest',
+				message: 'Malformed email ' + req.body.email_address
 			});
 	}
 
