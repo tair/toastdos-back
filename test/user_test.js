@@ -1,6 +1,5 @@
 "use strict";
 
-const _    = require('lodash');
 const chai = require('chai');
 chai.use(require('chai-http'));
 
