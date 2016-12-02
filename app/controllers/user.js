@@ -94,19 +94,19 @@ function updateUserById(req, res, next) {
 	}
 
 	// Update the user with the provided fields
-	let update = _.assign({id: req.params.id}, req.body);
+	let update = Object.assign({id: req.params.id}, req.body);
 	User.forge(update)
-		.on('created', () => {
+		.save(null, {method: 'update'})
+		.then(updatedUser => {
+			return res.status(200)
+				.json(updatedUser);
+		})
+		.catch(() => {
 			return res.status(404)
 				.json({
 					error: 'NotFound',
 					message: 'No User exists for ID ' + req.params.id
 				});
-		})
-		.save()
-		.then(updatedUser => {
-			return res.status(200)
-				.json(updatedUser);
 		});
 }
 
