@@ -12,20 +12,21 @@ function validateAuthentication(req, res, next) {
 		return next();
 	}
 
-	let authHeader = req.get("Authorization");
+	// Validate an authorization header was provided
+	let authHeader = req.get('Authorization');
 	if(!authHeader) {
 		return res.status(401).send({
-			error: "Unauthorized",
-			message: "You are not authenticated."
+			error: 'Unauthorized',
+			message: 'No authorization header provided.'
 		})
 	}
 
+	// Validate that authorization header contains a token
 	let authMatch = authHeader.match(/Bearer\ (.*)$/);
-
 	if(!authMatch) {
 		return res.status(401).send({
-			error: "Unauthorized",
-			message: "You are not authenticated."
+			error: 'Unauthorized',
+			message: 'No authorization token provided in header.'
 		});
 	}
 
@@ -33,22 +34,16 @@ function validateAuthentication(req, res, next) {
 		if(err) {
 			if(err.name === 'TokenExpiredError') {
 				return res.status(401).json({
-					error: "TokenExpired",
-					message: "jwt expired"
+					error: 'TokenExpired',
+					message: 'jwt expired'
 				});
-			}
-
-			if(err.name === 'JsonWebTokenError') {
+			} else {
+				// JsonWebTokenError
 				return res.status(401).json({
-					error: "NoToken",
-					message: "jwt must be provided"
+					error: 'JsonWebTokenError',
+					message: 'jwt malformed'
 				});
 			}
-			console.log(err);
-			return res.status(401).json({
-				error: "Unauthorized",
-				message: "You are not authenticated."
-			});
 		}
 
 
@@ -59,13 +54,14 @@ function validateAuthentication(req, res, next) {
 }
 
 /**
- * Middleware that attaches a user object to the request
+ * Middleware that ensures User in the auth token
+ * matches the User whose info we're retrieving.
  */
-function attachUser(req, res, next) {
+function validateUser(req, res, next) {
 	// todo implement
 }
 
 
 module.exports = {
 	validateAuthentication
-}
+};
