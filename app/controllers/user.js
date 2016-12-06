@@ -101,12 +101,19 @@ function updateUserById(req, res, next) {
 			return res.status(200)
 				.json(updatedUser);
 		})
-		.catch(() => {
-			return res.status(404)
-				.json({
-					error: 'NotFound',
-					message: 'No User exists for ID ' + req.params.id
-				});
+		.catch(err => {
+			if (err.toString().includes('No Rows Updated')) {
+				return res.status(404)
+					.json({
+						error: 'NotFound',
+						message: 'No User exists for ID ' + req.params.id
+					});
+			} else {
+				return res.status(500)
+					.json({
+						error: 'UnknownError'
+					});
+			}
 		});
 }
 
