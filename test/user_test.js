@@ -4,17 +4,32 @@ const chai = require('chai');
 chai.use(require('chai-http'));
 
 const server = require('../app');
-const knex   = require('../app/lib/bookshelf').knex;
+const auth   = require('../app/lib/authentication');
+const knex    = require('../app/lib/bookshelf').knex;
 
 const testdata = require('../seeds/test_data.json');
 
 describe('User Controller', function() {
 
-	// Make sure the database is up to date
-	before(function() { return knex.migrate.latest() });
+	let testToken = '';
 
-	// Populate sqlite memory DB with fresh test data
-	beforeEach(function() { return knex.seed.run() });
+	before('Generate test JWT', function(done) {
+		let authenticatedUser = testdata.users[0];
+		auth.signToken({user_id: authenticatedUser.id}, (err, token) => {
+			chai.expect(err).to.be.null;
+			testToken = token;
+			done();
+		});
+	});
+
+	before('Setup SQLite memory database', function() {
+		return knex.migrate.latest();
+	});
+
+	beforeEach('Populate SQLite memory DB with fresh test data', function() {
+		return knex.seed.run();
+	});
+
 
 	describe('GET /api/user/:id', function() {
 
@@ -23,6 +38,7 @@ describe('User Controller', function() {
 
 			chai.request(server)
 				.get('/api/user/' + testUser.id)
+				.set({Authorization: 'Bearer ' + testToken})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.contain(testUser);
@@ -33,11 +49,14 @@ describe('User Controller', function() {
 		it('Trying to get a non-existing user responds with an error', function(done) {
 			chai.request(server)
 				.get('/api/user/999')
+				.set({Authorization: 'Bearer ' + testToken})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(404);
 					done();
 				});
 		});
+
+		it('Cannot get user without valid authentication');
 
 	});
 
@@ -52,6 +71,7 @@ describe('User Controller', function() {
 			chai.request(server)
 				.put('/api/user/' + testUser.id)
 				.send({email_address: expectedEmail})
+				.set({Authorization: 'Bearer ' + testToken})
 				.end((err, res) => {
 					if (err) throw res.body;
 
@@ -71,6 +91,7 @@ describe('User Controller', function() {
 			chai.request(server)
 				.put('/api/user/' + testUser.id)
 				.send(invalidUpdateRequest)
+				.set({Authorization: 'Bearer ' + testToken})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
 					chai.expect(res.body.message).to.contain(Object.keys(invalidUpdateRequest).toString());
@@ -83,6 +104,7 @@ describe('User Controller', function() {
 			chai.request(server)
 				.put('/api/user/' + fakeId)
 				.send({email_address: 'fake.email@email.com'})
+				.set({Authorization: 'Bearer ' + testToken})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(404);
 					chai.expect(res.body.message).to.contain('ID ' + fakeId);
@@ -94,12 +116,15 @@ describe('User Controller', function() {
 			chai.request(server)
 				.put('/api/user/1')
 				.send({email_address: 'malformed.email'})
+				.set({Authorization: 'Bearer ' + testToken})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
 					chai.expect(res.body.message).to.contain('Malformed email');
 					done();
 				});
 		});
+
+		it('Cannot update user without valid authentication')
 
 	});
 
