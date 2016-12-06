@@ -12,7 +12,8 @@ let publicCert = '';
 
 // Use a basic JWT secret while testing
 if (process.env.NODE_ENV === 'test') {
-	privateCert = publicCert = 'testsecret';
+	const testConfig = require('../../config/test');
+	privateCert = publicCert = testConfig.testsecret;
 } else {
 	const fs = require('fs');
 	privateCert = fs.readFileSync(JWT_PRIVATE_CERT_FILE);
