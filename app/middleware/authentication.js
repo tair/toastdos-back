@@ -2,6 +2,8 @@
 
 const auth = require('../lib/authentication');
 
+const TOKEN_MATCHER = /Bearer (.*)$/;
+
 /**
  * Verify that a token is valid, thus proving that this user
  * is properly authenticated/logged in
@@ -18,7 +20,7 @@ function validateAuthentication(req, res, next) {
 	}
 
 	// Validate that authorization header contains a token
-	let authMatch = authHeader.match(/Bearer\ (.*)$/);
+	let authMatch = authHeader.match(TOKEN_MATCHER);
 	if(!authMatch) {
 		return res.status(401).send({
 			error: 'Unauthorized',
@@ -54,8 +56,21 @@ function validateAuthentication(req, res, next) {
  * matches the User whose info we're retrieving.
  */
 function validateUser(req, res, next) {
-	// todo implement
-	next();
+	let authHeader = req.get('Authorization');
+	let authMatch = authHeader.match(TOKEN_MATCHER);
+
+	// Assume the token itself has been validated
+	auth.verifyToken(authMatch[1], (err, tokenBody) => {
+		if (req.params.id && tokenBody.user_id && req.params.id == tokenBody.user_id) {
+			next();
+		}
+		else {
+			return res.status(401).json({
+				error: 'Unauthorized',
+				message: 'Unauthorized to view requested user'
+			});
+		}
+	});
 }
 
 

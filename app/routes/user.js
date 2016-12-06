@@ -16,7 +16,8 @@ router.get(
 // GET a specific user
 router.get(
 	'/:id',
-	authenticationMiddleware.validateAuthentication,	// isAuthenticated middleware
+	authenticationMiddleware.validateAuthentication,
+	authenticationMiddleware.validateUser,
 	userController.getUserById
 );
 
@@ -24,6 +25,7 @@ router.get(
 router.put(
 	'/:id',
 	authenticationMiddleware.validateAuthentication,
+	authenticationMiddleware.validateUser,
 	userController.updateUserById
 );
 
