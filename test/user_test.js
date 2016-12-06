@@ -59,7 +59,16 @@ describe('User Controller', function() {
 			});
 		});
 
-		it('Cannot get user without valid authentication');
+		it('Cannot get user without valid authentication', function(done) {
+			let testUser = testdata.users[0];
+			chai.request(server)
+				.get('/api/user/' + testUser.id)
+				.set({Authorization: 'Bearer invalidtoken'})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(401);
+					done();
+				});
+		});
 
 	});
 
@@ -129,7 +138,17 @@ describe('User Controller', function() {
 				});
 		});
 
-		it('Cannot update user without valid authentication')
+		it('Cannot update user without valid authentication', function() {
+			let testUser = testdata.users[0];
+			chai.request(server)
+				.put('/api/user/' + testUser.id)
+				.set({Authorization: 'Bearer invalidtoken'})
+				.send({email_address: 'new.email@test.com'})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(401);
+					done();
+				});
+		});
 
 	});
 
