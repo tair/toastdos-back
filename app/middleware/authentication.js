@@ -7,10 +7,6 @@ const auth = require('../lib/authentication');
  * is properly authenticated/logged in
  */
 function validateAuthentication(req, res, next) {
-	// Sidestep the need for authentication for automated tests
-	if (process.env.NODE_ENV === 'test') {
-		return next();
-	}
 
 	// Validate an authorization header was provided
 	let authHeader = req.get('Authorization');
@@ -59,9 +55,11 @@ function validateAuthentication(req, res, next) {
  */
 function validateUser(req, res, next) {
 	// todo implement
+	next();
 }
 
 
 module.exports = {
-	validateAuthentication
+	validateAuthentication,
+	validateUser
 };
