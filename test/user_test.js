@@ -47,13 +47,16 @@ describe('User Controller', function() {
 		});
 
 		it('Trying to get a non-existing user responds with an error', function(done) {
-			chai.request(server)
-				.get('/api/user/999')
-				.set({Authorization: 'Bearer ' + testToken})
-				.end((err, res) => {
-					chai.expect(res.status).to.equal(404);
-					done();
-				});
+			let fakeId = 999;
+			auth.signToken({user_id: fakeId}, (tokenerr, token) => {
+				chai.request(server)
+					.get('/api/user/' + fakeId)
+					.set({Authorization: 'Bearer ' + token})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(404);
+						done();
+					});
+			});
 		});
 
 		it('Cannot get user without valid authentication');
@@ -101,15 +104,17 @@ describe('User Controller', function() {
 
 		it('Trying to update a non-existent User responds with an error', function(done) {
 			let fakeId = 999;
-			chai.request(server)
-				.put('/api/user/' + fakeId)
-				.send({email_address: 'fake.email@email.com'})
-				.set({Authorization: 'Bearer ' + testToken})
-				.end((err, res) => {
-					chai.expect(res.status).to.equal(404);
-					chai.expect(res.body.message).to.contain('ID ' + fakeId);
-					done();
-				});
+			auth.signToken({user_id: fakeId}, (tokenerr, token) => {
+				chai.request(server)
+					.put('/api/user/' + fakeId)
+					.send({email_address: 'fake.email@email.com'})
+					.set({Authorization: 'Bearer ' + token})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(404);
+						chai.expect(res.body.message).to.contain('ID ' + fakeId);
+						done();
+					});
+			});
 		});
 
 		it('Supplying an invalid emails responds with an error', function(done) {
