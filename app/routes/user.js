@@ -16,8 +16,17 @@ router.get(
 // GET a specific user
 router.get(
 	'/:id',
-	authenticationMiddleware.validateAuthentication,	// isAuthenticated middleware
+	authenticationMiddleware.validateAuthentication,
+	authenticationMiddleware.validateUser,
 	userController.getUserById
+);
+
+// Set (or update) a specific user's email
+router.put(
+	'/:id',
+	authenticationMiddleware.validateAuthentication,
+	authenticationMiddleware.validateUser,
+	userController.updateUserById
 );
 
 // DELETE a user

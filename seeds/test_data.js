@@ -6,7 +6,8 @@ exports.seed = function(knex, Promise) {
 	return Promise.all([
 		knex('synonym').truncate(),
 		knex('keyword').truncate(),
-		knex('keyword_type').truncate()
+		knex('keyword_type').truncate(),
+		knex('user').truncate()
 	]).then(() => {
 		return Promise.all([
 			].concat(
@@ -15,6 +16,8 @@ exports.seed = function(knex, Promise) {
 				testdata.keywords.map(keyword => knex('keyword').insert(keyword))
 			).concat(
 				testdata.synonyms.map(synonym => knex('synonym').insert(synonym))
+			).concat(
+				testdata.users.map(user => knex('user').insert(user))
 			)
 		);
 	});

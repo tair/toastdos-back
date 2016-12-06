@@ -4,10 +4,14 @@
  * @module controllers/user
  */
 
-const User 		= require("../models/user");
+const _              = require('lodash');
+const authentication = require('../lib/authentication');
+const bookshelf      = require('../lib/bookshelf');
 
-const authentication 	= require('../lib/authentication');
-const bookshelf 		= require('../lib/bookshelf');
+const User = require('../models/user');
+
+// Shamelessly ripped off from http://stackoverflow.com/a/11630569
+const TERRIFYING_EMAIL_VALIDATING_REGEX = /(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
 
 /**
  * Get all Users in the database
@@ -56,6 +60,60 @@ function getUserById(req, res, next) {
 				.json({
 					error: "UnknownError"
 				});
+		});
+}
+
+/**
+ * Update a specific user.
+ * Undefined fields are not modified.
+ * Defined but null fields are unset on the user.
+ * @param  {Express.Request}   	req  - the request object
+ * @param  {Express.Reponse}   	res  - the response object
+ * @param  {Function} 			next - pass to next handler
+ */
+function updateUserById(req, res, next) {
+	let mutableFields = ['email_address'];
+
+	// Validate we're only trying to update mutable fields
+	let extraFields = Object.keys(_.omit(req.body, mutableFields));
+	if (extraFields.length) {
+		return res.status(400)
+			.json({
+				error: 'BadRequest',
+				message: 'User fields cannot be updated: ' + extraFields
+			});
+	}
+
+	// Validate email address
+	if (req.body.email_address && !req.body.email_address.match(TERRIFYING_EMAIL_VALIDATING_REGEX)) {
+		return res.status(400)
+			.json({
+				error: 'BadRequest',
+				message: 'Malformed email ' + req.body.email_address
+			});
+	}
+
+	// Update the user with the provided fields
+	let update = Object.assign({id: req.params.id}, req.body);
+	User.forge(update)
+		.save(null, {method: 'update'})
+		.then(updatedUser => {
+			return res.status(200)
+				.json(updatedUser);
+		})
+		.catch(err => {
+			if (err.toString().includes('No Rows Updated')) {
+				return res.status(404)
+					.json({
+						error: 'NotFound',
+						message: 'No User exists for ID ' + req.params.id
+					});
+			} else {
+				return res.status(500)
+					.json({
+						error: 'UnknownError'
+					});
+			}
 		});
 }
 
@@ -129,6 +187,7 @@ function setRoles(req, res, next) {
 module.exports = {
 	getUsers,
 	getUserById,
+	updateUserById,
 	deleteUserById,
 	setRoles
 };

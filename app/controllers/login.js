@@ -1,11 +1,10 @@
 "use strict";
 
 const request   = require('request');
-const jwt       = require('jsonwebtoken');
-const fs        = require('fs');
 
 const User      = require('../models/user');
 const orcidInfo = require('../../resources/orcid_app_info.json');
+const auth      = require('../lib/authentication');
 
 const ORCID_BASE_URL = 'https://orcid.org/';
 
@@ -55,9 +54,11 @@ function login(req, res, next) {
 
 			// Return that user if they exist
 			if (user) {
-				let userJwt = makeUserToken(user.attributes);
-				return res.status(200).json({
-					jwt: userJwt
+				auth.signToken({user_id: user.attributes.id}, (err, userJwt) => {
+
+					return res.status(200).json({
+						jwt: userJwt
+					});
 				});
 			}
 			else {
@@ -66,9 +67,10 @@ function login(req, res, next) {
 					name: userName,
 					orcid_id: orcidId
 				}).save().then(newUser => {
-					let userJwt = makeUserToken(newUser.attributes);
-					return res.status(201).json({
-						jwt: userJwt
+					auth.signToken({user_id: newUser.attributes.id}, (err, userJwt) => {
+						return res.status(201).json({
+							jwt: userJwt
+						});
 					});
 				});
 			}
@@ -77,28 +79,6 @@ function login(req, res, next) {
 		// Default error handling
 		console.log(err);
 		return res.status(500).json({err: "UnknownError"});
-	});
-}
-
-/**
- * Creates a JSON web token signed with our private key
- * @param contents
- * @returns {*}
- */
-function signedToken(contents) {
-	var privateKey = fs.readFileSync('./resources/privkey.pem');
-	return jwt.sign(contents, privateKey);
-}
-
-/**
- * Makes a JSON web token containing a user's information
- * @param user
- */
-function makeUserToken(user) {
-	return signedToken({
-		user_id: user.id,
-		user_name: user.name,
-		user_orcid_id: user.orcid_id
 	});
 }
 

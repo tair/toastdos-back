@@ -1,26 +1,30 @@
-"use strict"
+"use strict";
 
 const auth = require('../lib/authentication');
+
+const TOKEN_MATCHER = /Bearer (.*)$/;
 
 /**
  * Verify that a token is valid, thus proving that this user
  * is properly authenticated/logged in
  */
 function validateAuthentication(req, res, next) {
-	let authHeader = req.get("Authorization");
+
+	// Validate an authorization header was provided
+	let authHeader = req.get('Authorization');
 	if(!authHeader) {
 		return res.status(401).send({
-			error: "Unauthorized",
-			message: "You are not authenticated."
+			error: 'Unauthorized',
+			message: 'No authorization header provided.'
 		})
 	}
 
-	let authMatch = authHeader.match(/Bearer\ (.*)$/);
-
+	// Validate that authorization header contains a token
+	let authMatch = authHeader.match(TOKEN_MATCHER);
 	if(!authMatch) {
 		return res.status(401).send({
-			error: "Unauthorized",
-			message: "You are not authenticated."
+			error: 'Unauthorized',
+			message: 'No authorization token provided in header.'
 		});
 	}
 
@@ -28,22 +32,16 @@ function validateAuthentication(req, res, next) {
 		if(err) {
 			if(err.name === 'TokenExpiredError') {
 				return res.status(401).json({
-					error: "TokenExpired",
-					message: "jwt expired"
+					error: 'TokenExpired',
+					message: 'jwt expired'
 				});
-			}
-
-			if(err.name === 'JsonWebTokenError') {
+			} else {
+				// JsonWebTokenError
 				return res.status(401).json({
-					error: "NoToken",
-					message: "jwt must be provided"
+					error: 'JsonWebTokenError',
+					message: 'jwt malformed'
 				});
 			}
-			console.log(err);
-			return res.status(401).json({
-				error: "Unauthorized",
-				message: "You are not authenticated."
-			});
 		}
 
 
@@ -54,13 +52,29 @@ function validateAuthentication(req, res, next) {
 }
 
 /**
- * Middleware that attaches a user object to the request
+ * Middleware that ensures User in the auth token
+ * matches the User whose info we're retrieving.
  */
-function attachUser(req, res, next) {
-	// todo implement
+function validateUser(req, res, next) {
+	let authHeader = req.get('Authorization');
+	let authMatch = authHeader.match(TOKEN_MATCHER);
+
+	// Assume the token itself has been validated
+	auth.verifyToken(authMatch[1], (err, tokenBody) => {
+		if (req.params.id && tokenBody.user_id && req.params.id == tokenBody.user_id) {
+			next();
+		}
+		else {
+			return res.status(401).json({
+				error: 'Unauthorized',
+				message: 'Unauthorized to view requested user'
+			});
+		}
+	});
 }
 
 
 module.exports = {
-	validateAuthentication
-}
+	validateAuthentication,
+	validateUser
+};
