@@ -9,15 +9,18 @@ const KeywordType = require('../models/keyword_type');
  * @param  {Function} next - pass to next route handler
  */
 function getKeywordTypes(req, res, next) {
-    return KeywordType.fetchAll()
-    .then(keywordtype => {
-        return res.status(200).send(keywordtype);
-    }).catch(err => {
-        console.error(err);
-        return res.status(500)
-        .json({
-            error: "UnknownError"
-        });
+    return KeywordType
+	    .fetchAll()
+	    .then(keywordtypes => {
+		    return res.status(200)
+			    .json(keywordtypes);
+	    })
+	    .catch(err => {
+		    console.log(err);
+            return res.status(500)
+	            .json({
+                    error: 'UnknownError'
+                });
     });
 }
 

@@ -18,20 +18,19 @@ describe('KeywordType Controller', function() {
     beforeEach('Populate SQLite memory DB with fresh test data', function() {
         return knex.seed.run();
     });
-    describe('GET /api/keywordtypes/', function(){
+
+    describe('GET /api/keywordtype/', function() {
 
         it('Successfully retrieves KeywordType by id in the database', function(done) {
             let testKeywordTypes = testdata.keyword_types;
-            
             chai.request(server)
-                .get('/api/keywordtypes/' + testKeywordTypes)
+                .get('/api/keywordtype/')
                 .end((err, res) => {
                     chai.expect(res.status).to.equal(200);
-                    chai.expect(res.body).to.contain(testKeywordTypes);
+                    chai.expect(res.body).to.deep.equal(testKeywordTypes);
                     done();
                 });
         });
     });  
-    
 
 });
