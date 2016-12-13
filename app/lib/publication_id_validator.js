@@ -16,15 +16,13 @@ const DOI_VALIDATOR = /^(10\.\d{4,9}\/.+)$/;
  */
 const PUBMED_VALIDATOR = /^(\d+)$/;
 
-const DOI_BASE_URL = 'http://doi.org/api/handles/';
-const PUBMED_BASE_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=';
 
 function doiUrl(doi) {
-	return `${DOI_BASE_URL}${doi}`;
+	return `http://doi.org/api/handles/${doi}`;
 }
 
 function pubmedUrl(pmid) {
-	return `${PUBMED_BASE_URL}${pmid}`;
+	return `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${pmid}`;
 }
 
 
