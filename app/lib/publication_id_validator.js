@@ -28,12 +28,14 @@ function pubmedUrl(pmid) {
 }
 
 
-function isDOI(text) {
-	return !!DOI_VALIDATOR(text);
+function isDOI(val) {
+	let text = '' + val;
+	return !!text.match(DOI_VALIDATOR);
 }
 
-function isPubmedId(text) {
-	return !!PUBMED_VALIDATOR(text);
+function isPubmedId(val) {
+	let text = '' + val;
+	return !!text.match(PUBMED_VALIDATOR);
 }
 
 
