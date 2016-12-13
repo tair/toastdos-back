@@ -1,0 +1,188 @@
+format-version: 1.2
+date: 27:10:2015 18:58
+saved-by: steipe
+auto-generated-by: OBO-Edit 2.3.1
+default-namespace: default_namespace
+
+[Term]
+id: ID:0000000
+name: structural role
+def: "A role relating to establishing the physical existence or the integrity of a system." []
+creation_date: 2015-10-25T22:04:05Z
+
+[NewTermType]
+id: ID:0000055
+name: Test
+
+[Term]
+id: ID:0000001
+name: functional role
+def: "A role that relates to the realization of the purpose of the system, i.e. those aspects of its behaviour that are maintained under purifying selection." []
+created_by: steipe
+creation_date: 2015-10-25T22:07:16Z
+
+[Term]
+id: ID:0000002
+name: create
+def: "Roles that contribute to the physical realization of a system." []
+is_a: ID:0000000 ! structural role
+created_by: steipe
+creation_date: 2015-10-25T22:15:58Z
+
+[Term]
+id: ID:0000003
+name: maintain
+def: "Roles that contribute to the structural integrity of a system's components. This would include repair of damage, and replacement of components. Distinguish between replacement e.g. of cofactors, and replenishing of substrates and similar: the latter is a functional role." []
+is_a: ID:0000000 ! structural role
+created_by: steipe
+creation_date: 2015-10-25T22:16:54Z
+
+[Term]
+id: ID:0000004
+name: destroy
+def: "Roles that contribute to the disestablishment of a system." []
+is_a: ID:0000000 ! structural role
+created_by: steipe
+creation_date: 2015-10-25T22:18:12Z
+
+[Term]
+id: ID:0000005
+name: synthesize component
+def: "Roles that create a component from metabolic building blocks." []
+relationship: ID:0000006 ID:0000002 ! create
+created_by: steipe
+creation_date: 2015-10-25T22:32:20Z
+
+[Term]
+id: ID:0000007
+name: assemble components
+def: "Roles that place system components into their functional spatial relationship." []
+relationship: ID:0000006 ID:0000002 ! create
+created_by: steipe
+creation_date: 2015-10-25T22:39:39Z
+
+[Term]
+id: ID:0000008
+name: localize component
+def: "Roles that place system components into their correct location or compartment." []
+relationship: ID:0000006 ID:0000002 ! create
+created_by: steipe
+creation_date: 2015-10-25T22:41:23Z
+
+[Term]
+id: ID:0000009
+name: modify component
+def: "Roles that physically modify individual components of a system. Examples include signal-peptide or pro-domain cleavage, myristoilation, or covalent and non-covalent addition of prosthetic groups. However phosphorylation would typically be a part of system regulation: a functional role; and ubiquitination would be a part of system destruction." []
+relationship: ID:0000006 ID:0000002 ! create
+created_by: steipe
+creation_date: 2015-10-25T22:47:44Z
+
+[Term]
+id: ID:0000010
+name: tag component for localization
+def: "Roles that specifically tag components of a particular system, so that these components  can become engaged by generic transport and localization systems." []
+relationship: ID:0000006 ID:0000008 ! localize component
+created_by: steipe
+creation_date: 2015-10-27T10:44:00Z
+
+[Term]
+id: ID:0000011
+name: translocate component
+def: "Roles that physically displace a system component from one location into another." []
+relationship: ID:0000006 ID:0000008 ! localize component
+created_by: steipe
+creation_date: 2015-10-27T10:46:33Z
+
+[Term]
+id: ID:0000012
+name: tether component
+def: "Roles that keep a system component in a specific location, either by physically constraining or confining the component, or relocating displaced components." []
+relationship: ID:0000006 ID:0000008 ! localize component
+created_by: steipe
+creation_date: 2015-10-27T10:57:21Z
+
+[Term]
+id: ID:0000013
+name: tag component for destruction
+def: "Roles that specifically tag components of a particular system, so that these components  can become engaged by generic disassembly and decomposition systems." []
+relationship: ID:0000006 ID:0000004 ! destroy
+created_by: steipe
+creation_date: 2015-10-27T11:03:27Z
+
+[Term]
+id: ID:0000014
+name: disassemble components
+def: "Roles that remove system components from their functional spatial relationship." []
+relationship: ID:0000006 ID:0000004 ! destroy
+created_by: steipe
+creation_date: 2015-10-27T11:06:03Z
+
+[Term]
+id: ID:0000015
+name: decompose component
+def: "Roles that reduce a component to its metabolic building blocks." []
+relationship: ID:0000006 ID:0000004 ! destroy
+created_by: steipe
+creation_date: 2015-10-27T11:07:20Z
+
+[Term]
+id: ID:0000016
+name: input
+is_a: ID:0000001 ! functional role
+created_by: steipe
+creation_date: 2015-10-27T11:13:42Z
+
+[Term]
+id: ID:0000017
+name: transmit
+is_a: ID:0000001 ! functional role
+created_by: steipe
+creation_date: 2015-10-27T11:13:42Z
+
+[Term]
+id: ID:0000018
+name: transform
+is_a: ID:0000001 ! functional role
+created_by: steipe
+creation_date: 2015-10-27T11:13:42Z
+
+[Term]
+id: ID:0000019
+name: set
+is_a: ID:0000001 ! functional role
+created_by: steipe
+creation_date: 2015-10-27T11:13:42Z
+
+[Term]
+id: ID:0000020
+name: regulate
+is_a: ID:0000001 ! functional role
+created_by: steipe
+creation_date: 2015-10-27T11:13:42Z
+
+[Term]
+id: ID:0000021
+name: output
+is_a: ID:0000001 ! functional role
+created_by: steipe
+creation_date: 2015-10-27T11:13:42Z
+
+[Term]
+id: ID:0000022
+name: integrate signals
+def: "Roles that combine signals to a common signal." []
+is_a: ID:0000016 ! input
+created_by: steipe
+creation_date: 2015-10-27T18:57:08Z
+
+[Typedef]
+id: ID:0000006
+name: Part_of
+def: "Child term is a part of the parent term." []
+created_by: steipe
+creation_date: 2015-10-25T22:37:02Z
+
+
+[Term]
+id: ID:0000009
+name: Test
