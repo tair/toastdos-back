@@ -4,10 +4,11 @@ const chai = require('chai');
 chai.use(require('chai-subset'));
 const knex = require('../app/lib/bookshelf').knex;
 
-const KeywordType = require('../app/models/keyword_type');
-const Keyword     = require('../app/models/keyword');
-const Synonym     = require('../app/models/synonym');
-const Publication = require('../app/models/publication');
+const KeywordType      = require('../app/models/keyword_type');
+const Keyword          = require('../app/models/keyword');
+const Synonym          = require('../app/models/synonym');
+const Publication      = require('../app/models/publication');
+const AnnotationStatus = require('../app/models/annotation_status');
 
 const testdata = require('../seeds/test_data.json');
 
@@ -111,6 +112,25 @@ describe('Models', function() {
 
 	});
 
+	describe('Annotation Status', function() {
 
+		it('Get Annotations with this status', function(done) {
+			let testStatus = testdata.annotation_statuses[0];
+			let expectedAnnotations = [
+				testdata.annotations[0],
+				testdata.annotations[2]
+			];
+
+			AnnotationStatus.where({id: testStatus.id})
+				.fetch({withRelated: 'annotations'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
+					done();
+				});
+		});
+
+	});
 
 });

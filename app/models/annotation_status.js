@@ -7,7 +7,7 @@ require('./annotation');
 let AnnotationStatus = bookshelf.model('AnnotationStatus', {
 	tableName: 'annotation_status',
 	annotations: function() {
-		return this.belongsToMany('Annotation', 'status_id');
+		return this.hasMany('Annotation', 'status_id');
 	}
 });
 
