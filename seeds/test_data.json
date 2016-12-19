@@ -55,6 +55,75 @@
       "name" : "Test User 1",
       "orcid_id" : "0000-0000-0000-0001",
       "email_address" : "testuser@test.com"
+    },
+    {
+      "id" : 2,
+      "name" : "Test User 2",
+      "orcid_id" : "0000-0000-0000-0002",
+      "email_address" : "testuser2@test.com"
+    }
+  ],
+
+  "publications" : [
+    {
+      "id" : 1,
+      "doi": "10.1594/GFZ.GEOFON.gfz2009kciu"
+    },
+    {
+      "id" : 2,
+      "pubmed_id" : 999999
+    }
+  ],
+
+  "annotation_statuses" : [
+    {
+      "id" : 1,
+      "name" : "test status"
+    },
+    {
+      "id" : 2,
+      "name" : "test status 2"
+    }
+  ],
+
+  "annotations" : [
+    {
+      "id" : 1,
+      "publication_id" : 1,
+      "status_id" : 1,
+      "submitter_id" : 1,
+      "locus_id" : "fake locus id"
+    },
+    {
+      "id" : 2,
+      "publication_id" : 1,
+      "status_id" : 2,
+      "submitter_id" : 1,
+      "locus_id" : "fake locus id"
+    },
+    {
+      "id" : 3,
+      "publication_id" : 2,
+      "status_id" : 1,
+      "submitter_id" : 2,
+      "locus_id" : "fake locus id 2"
+    }
+  ],
+
+  "gene_term_annotations" : [
+    {
+      "id" : 1,
+      "annotation_id" : 1,
+      "method_id" : 1,
+      "keyword_id" : 2,
+      "evidence_id" : "fake locus id"
+    },
+    {
+      "id" : 2,
+      "annotation_id" : 2,
+      "method_id" : 1,
+      "keyword_id" : 2
     }
   ]
+
 }

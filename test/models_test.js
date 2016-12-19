@@ -1,11 +1,13 @@
 "use strict";
 
 const chai = require('chai');
+chai.use(require('chai-subset'));
 const knex = require('../app/lib/bookshelf').knex;
 
 const KeywordType = require('../app/models/keyword_type');
 const Keyword     = require('../app/models/keyword');
 const Synonym     = require('../app/models/synonym');
+const Publication = require('../app/models/publication');
 
 const testdata = require('../seeds/test_data.json');
 
@@ -87,5 +89,28 @@ describe('Models', function() {
 				});
 		});
 	});
+
+	describe('Publication', function() {
+
+		it('Get Annotations associated with Publication', function(done) {
+			let testPublication = testdata.publications[0];
+			let expectedAnnotations = [
+				testdata.annotations[0],
+				testdata.annotations[1]
+			];
+
+			Publication.where({id: testPublication.id})
+				.fetch({withRelated: 'referencedBy'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.referencedBy).to.containSubset(expectedAnnotations);
+					done();
+				});
+		});
+
+	});
+
+
 
 });
