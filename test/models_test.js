@@ -4,12 +4,15 @@ const chai = require('chai');
 chai.use(require('chai-subset'));
 const knex = require('../app/lib/bookshelf').knex;
 
-const KeywordType      = require('../app/models/keyword_type');
-const Keyword          = require('../app/models/keyword');
-const Synonym          = require('../app/models/synonym');
-const Publication      = require('../app/models/publication');
-const AnnotationStatus = require('../app/models/annotation_status');
-const Annotation       = require('../app/models/annotation');
+const KeywordType        = require('../app/models/keyword_type');
+const Keyword            = require('../app/models/keyword');
+const Synonym            = require('../app/models/synonym');
+const Publication        = require('../app/models/publication');
+const AnnotationStatus   = require('../app/models/annotation_status');
+const Annotation         = require('../app/models/annotation');
+const GeneTermAnnotation = require('../app/models/gene_term_annotation');
+const GeneGeneAnnotation = require('../app/models/gene_gene_annotation');
+const CommentAnnotation  = require('../app/models/comment_annotation');
 
 const testdata = require('../seeds/test_data.json');
 
@@ -222,6 +225,100 @@ describe('Models', function() {
 
 	});
 
+	describe('Gene to Term Annotation', function() {
+
+		it('Method Keyword for Annotation can be retrieved', function(done) {
+			let testAnnotation = testdata.gene_term_annotations[0];
+			let expectedKeyword = testdata.keywords[0];
+
+			GeneTermAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'method'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.method).to.deep.equal(expectedKeyword);
+					done();
+				});
+		});
+
+		it('Subject Keyword for Annotation can be retrieved', function(done) {
+			let testAnnotation = testdata.gene_term_annotations[0];
+			let expectedKeyword = testdata.keywords[1];
+
+			GeneTermAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'keyword'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.keyword).to.deep.equal(expectedKeyword);
+					done();
+				});
+		});
+
+		it('Parent Annotation information can be retrieved', function(done) {
+			let testAnnotation = testdata.gene_term_annotations[0];
+			let expectedParent = testdata.annotations[0];
+
+			GeneTermAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'parentData'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.parentData).to.contain(expectedParent);
+					done();
+				});
+		});
 
 	});
+
+	describe('Gene to Gene Annotation', function() {
+
+		it('Method Keyword for Annotation can be retrieved', function(done) {
+			let testAnnotation = testdata.gene_gene_annotations[0];
+			let expectedKeyword = testdata.keywords[0];
+
+			GeneGeneAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'method'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.method).to.deep.equal(expectedKeyword);
+					done();
+				});
+		});
+
+		it('Parent Annotation information can be retrieved', function(done) {
+			let testAnnotation = testdata.gene_gene_annotations[0];
+			let expectedParent = testdata.annotations[2];
+
+			GeneGeneAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'parentData'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.parentData).to.contain(expectedParent);
+					done();
+				});
+		});
+
+	});
+
+	describe('Comment Annotation', function() {
+
+		it('Parent Annotation information can be retrieved', function(done) {
+			let testAnnotation = testdata.comment_annotations[0];
+			let expectedParent = testdata.annotations[4];
+
+			CommentAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'parentData'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.parentData).to.contain(expectedParent);
+					done();
+				});
+		});
+
+	});
+
 });

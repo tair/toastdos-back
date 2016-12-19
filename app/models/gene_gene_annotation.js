@@ -8,10 +8,10 @@ require('./annotation');
 let GeneGeneAnnotation = bookshelf.model('GeneGeneAnnotation', {
 	tableName: 'gene_gene_annotation',
 	method: function() {
-		return this.hasOne('Keyword', 'method_id');
+		return this.belongsTo('Keyword', 'method_id');
 	},
 	parentData: function() {
-		return this.morphOne('Annotation', 'annotation_id');
+		return this.morphOne('Annotation', 'annotation');
 	}
 });
 

@@ -7,7 +7,7 @@ require('./annotation');
 let CommentAnnotation = bookshelf.model('CommentAnnotation', {
 	tableName: 'comment_annotation',
 	parentData: function() {
-		return this.morphOne('Annotation', 'annotation_id');
+		return this.morphOne('Annotation', 'annotation');
 	}
 });
 
