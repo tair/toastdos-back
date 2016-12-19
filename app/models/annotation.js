@@ -22,7 +22,7 @@ let Annotation = bookshelf.model('Annotation', {
 		return this.belongsTo('User', 'submitter_id');
 	},
 	childData: function() {
-		return this.morphTo('annotation_id', 'GeneTermAnnotation', 'GeneGeneAnnotation', 'CommentAnnotation');
+		return this.morphTo('annotation', 'GeneTermAnnotation', 'GeneGeneAnnotation', 'CommentAnnotation');
 	}
 });
 

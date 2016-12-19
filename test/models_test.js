@@ -178,6 +178,50 @@ describe('Models', function() {
 				});
 		});
 
+		it('Gene to Term information can be retrieved', function(done) {
+			let testAnnotation = testdata.annotations[0];
+			let expectedGTAnnotationPart = testdata.gene_term_annotations[0];
+
+			Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'childData'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.childData).to.deep.equal(expectedGTAnnotationPart);
+					done();
+				});
+		});
+
+		it('Gene to Gene information can be retrieved', function(done) {
+			let testAnnotation = testdata.annotations[2];
+			let expectedGGAnnotationPart = testdata.gene_gene_annotations[0];
+
+			Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'childData'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.childData).to.deep.equal(expectedGGAnnotationPart);
+					done();
+				});
+		});
+
+		it('Comment information can be retrieved', function(done) {
+			let testAnnotation = testdata.annotations[4];
+			let expectedCAnnotationPart = testdata.comment_annotations[0];
+
+			Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'childData'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.childData).to.deep.equal(expectedCAnnotationPart);
+					done();
+				});
+		});
+
+	});
+
 
 	});
 });

@@ -16,24 +16,23 @@ exports.up = function(knex, Promise) {
 			table.integer('status_id').references('annotation_status.id').notNullable();
 			table.integer('submitter_id').references('user.id').notNullable();
 			table.integer('locus_id').notNullable(); // TODO possibly add a reference here
+			table.integer('annotation_id').notNullable();
+			table.string('annotation_type').notNullable();
 			table.timestamps();
 		}),
 		knex.schema.createTable('gene_term_annotation', table => {
 			table.increments('id');
-			table.integer('annotation_id').references('annotation.id').notNullable();
 			table.integer('method_id').references('keyword.id').notNullable();
 			table.integer('keyword_id').references('keyword.id').notNullable();
 			table.integer('evidence_id'); // TODO if we ever have a Locus table, this has a reference to it
 		}),
 		knex.schema.createTable('gene_gene_annotation', table => {
 			table.increments('id');
-			table.integer('annotation_id').references('annotation.id').notNullable();
 			table.integer('locus2_id').notNullable(); // TODO see above note about Locus table reference
 			table.integer('method_id').references('keyword.id').notNullable();
 		}),
 		knex.schema.createTable('comment_annotation', table => {
 			table.increments('id');
-			table.integer('annotation_id').references('annotation.id').notNullable();
 			table.string('text').notNullable();
 		})
 	]);
