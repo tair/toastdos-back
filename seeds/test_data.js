@@ -7,6 +7,8 @@ exports.seed = function(knex, Promise) {
 	return Promise.all([
 		knex('synonym').truncate(),
 		knex('gene_term_annotation').truncate(),
+		knex('gene_gene_annotation').truncate(),
+		knex('comment_annotation').truncate(),
 		knex('annotation').truncate(),
 		knex('keyword').truncate(),
 		knex('keyword_type').truncate(),
@@ -31,6 +33,10 @@ exports.seed = function(knex, Promise) {
 				testdata.annotations.map(annotation => knex('annotation').insert(annotation))
 			).concat(
 				testdata.gene_term_annotations.map(gtAnnotation => knex('gene_term_annotation').insert(gtAnnotation))
+			).concat(
+				testdata.gene_gene_annotations.map(ggAnnotation => knex('gene_gene_annotation').insert(ggAnnotation))
+			).concat(
+				testdata.comment_annotations.map(cAnnotation => knex('comment_annotation').insert(cAnnotation))
 			)
 		);
 	});

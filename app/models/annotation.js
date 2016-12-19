@@ -13,13 +13,13 @@ require('./comment_annotation');
 let Annotation = bookshelf.model('Annotation', {
 	tableName: 'annotation',
 	status: function() {
-		return this.hasOne('AnnotationStatus', 'status_id');
+		return this.belongsTo('AnnotationStatus', 'status_id');
 	},
 	publication: function() {
-		return this.hasOne('Publication', 'publication_id');
+		return this.belongsTo('Publication', 'publication_id');
 	},
-	user: function() {
-		return this.hasOne('User', 'submitter_id');
+	submitter: function() {
+		return this.belongsTo('User', 'submitter_id');
 	},
 	childData: function() {
 		return this.morphTo('annotation_id', 'GeneTermAnnotation', 'GeneGeneAnnotation', 'CommentAnnotation');

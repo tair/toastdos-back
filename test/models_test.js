@@ -9,6 +9,7 @@ const Keyword          = require('../app/models/keyword');
 const Synonym          = require('../app/models/synonym');
 const Publication      = require('../app/models/publication');
 const AnnotationStatus = require('../app/models/annotation_status');
+const Annotation       = require('../app/models/annotation');
 
 const testdata = require('../seeds/test_data.json');
 
@@ -133,4 +134,50 @@ describe('Models', function() {
 
 	});
 
+	describe('Annotation Base', function() {
+
+		it('Status for Annotation can be retrieved', function(done) {
+			let testAnnotation = testdata.annotations[0];
+			let expectedStatus = testdata.annotation_statuses[0];
+
+			Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'status'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.status).to.deep.equal(expectedStatus);
+					done();
+				});
+		});
+
+		it('Publication for Annotation can be retrieved', function(done) {
+			let testAnnotation = testdata.annotations[0];
+			let expectedPublication = testdata.publications[0];
+
+			Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'publication'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.publication).to.contain(expectedPublication);
+					done();
+				});
+		});
+
+		it('User who submitted the Annotation can be retrieved', function(done) {
+			let testAnnotation = testdata.annotations[0];
+			let expectedUser = testdata.users[0];
+
+			Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'submitter'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submitter).to.contain(expectedUser);
+					done();
+				});
+		});
+
+
+	});
 });
