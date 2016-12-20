@@ -55,6 +55,130 @@
       "name" : "Test User 1",
       "orcid_id" : "0000-0000-0000-0001",
       "email_address" : "testuser@test.com"
+    },
+    {
+      "id" : 2,
+      "name" : "Test User 2",
+      "orcid_id" : "0000-0000-0000-0002",
+      "email_address" : "testuser2@test.com"
+    }
+  ],
+
+  "publications" : [
+    {
+      "id" : 1,
+      "doi": "10.1594/GFZ.GEOFON.gfz2009kciu"
+    },
+    {
+      "id" : 2,
+      "pubmed_id" : 999999
+    }
+  ],
+
+  "annotation_statuses" : [
+    {
+      "id" : 1,
+      "name" : "test status"
+    },
+    {
+      "id" : 2,
+      "name" : "test status 2"
+    }
+  ],
+
+  "annotations" : [
+    {
+      "id" : 1,
+      "publication_id" : 1,
+      "status_id" : 1,
+      "submitter_id" : 1,
+      "locus_id" : "fake locus id",
+      "annotation_id" : 1,
+      "annotation_type" : "gene_term_annotation"
+    },
+    {
+      "id" : 2,
+      "publication_id" : 1,
+      "status_id" : 2,
+      "submitter_id" : 1,
+      "locus_id" : "fake locus id",
+      "annotation_id" : 2,
+      "annotation_type" : "gene_term_annotation"
+    },
+    {
+      "id" : 3,
+      "publication_id" : 2,
+      "status_id" : 1,
+      "submitter_id" : 2,
+      "locus_id" : "fake locus id 2",
+      "annotation_id" : 1,
+      "annotation_type" : "gene_gene_annotation"
+    },
+    {
+      "id" : 4,
+      "publication_id" : 2,
+      "status_id" : 2,
+      "submitter_id" : 2,
+      "locus_id" : "fake locus id 3",
+      "annotation_id" : 2,
+      "annotation_type" : "gene_gene_annotation"
+    },
+    {
+      "id" : 5,
+      "publication_id" : 2,
+      "status_id" : 2,
+      "submitter_id" : 2,
+      "locus_id" : "fake locus id 3",
+      "annotation_id" : 1,
+      "annotation_type" : "comment_annotation"
+    },
+    {
+      "id" : 6,
+      "publication_id" : 2,
+      "status_id" : 2,
+      "submitter_id" : 2,
+      "locus_id" : "fake locus id 4",
+      "annotation_id" : 2,
+      "annotation_type" : "comment_annotation"
+    }
+  ],
+
+  "gene_term_annotations" : [
+    {
+      "id" : 1,
+      "method_id" : 1,
+      "keyword_id" : 2,
+      "evidence_id" : "fake locus id"
+    },
+    {
+      "id" : 2,
+      "method_id" : 1,
+      "keyword_id" : 2
+    }
+  ],
+
+  "gene_gene_annotations" : [
+    {
+      "id" : 1,
+      "locus2_id" : "fake locus id",
+      "method_id" : 1
+    },
+    {
+      "id" : 2,
+      "locus2_id" : "fake locus id 2",
+      "method_id" : 1
+    }
+  ],
+
+  "comment_annotations" : [
+    {
+      "id" : 1,
+      "text" : "Here's a cool comment about a gene!"
+    },
+    {
+      "id" : 2,
+      "text" : "Here's another cool comment about a totally unrelated gene!"
     }
   ]
+
 }
