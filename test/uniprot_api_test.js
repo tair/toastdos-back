@@ -34,4 +34,23 @@ describe('Uniprot API', function () {
 		});
 	});
 
+	it('Gene queries return a limited list of data', function() {
+		const requestLimit = 10;
+		const genericName = 'butter';
+		return Uniprot.searchGeneByName(genericName).then(result => {
+			chai.expect(result).to.have.length(requestLimit);
+		}).catch(err => {
+			throw err;
+		});
+	});
+
+	it('Gene queries that return no results causes error', function() {
+		const nonMatchingName = 'randomthing';
+		return Uniprot.searchGeneByName(nonMatchingName).then(result => {
+			throw new Error('Did not reject when search returned no values');
+		}).catch(err => {
+			chai.expect(err.toString()).to.contain('Given query matches no genes');
+		});
+	});
+
 });

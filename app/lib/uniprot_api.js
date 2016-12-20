@@ -41,6 +41,29 @@ function getGeneById(id) {
 	});
 }
 
+/**
+ * Returns a list of uniprot genes for a given query, organizing by best match.
+ *
+ * @param name
+ */
+function searchGeneByName(name) {
+	let requestUrl = uniprotUrl(name);
+	return new Promise((resolve, reject) => {
+		request.get(requestUrl, (error, response, bodyJson) => {
+			if (error) {
+				reject(new Error(error));
+			} else if (!bodyJson) {
+				reject(new Error('Given query matches no genes'));
+			} else {
+				let body = JSON.parse(bodyJson);
+				resolve(body);
+			}
+		});
+	});
+}
+
+
 module.exports = {
-	getGeneById
+	getGeneById,
+	searchGeneByName
 };
