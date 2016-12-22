@@ -38,59 +38,36 @@ function createAnnotation(req, res, next) {
 		requiredFields = baseAllowedFields.concat(commentAllowedFields);
 	}
 	else if (!req.body.annotation_type) {
-		return res.status(400)
-			.json({
-				error: 'BadRequest',
-				message: 'No Annotation type specified'
-			});
+		return badRequest(res, 'No Annotation type specified');
 	}
 	else {
-		return res.status(400)
-			.json({
-				error: 'BadRequest',
-				message : 'Unrecognized annotation_type ' + res.body.annotation_type
-			});
+		return badRequest(res, 'Unrecognized annotation_type ' + res.body.annotation_type);
 	}
 
 	let extraFields = Object.keys(_.omit(req.body, requiredFields));
 	if (extraFields.length) {
-		return res.status(400)
-			.json({
-				error: 'BadRequest',
-				message: 'Invalid Annotation fields: ' + extraFields
-			});
+		return badRequest(res, 'Invalid Annotation fields: ' + extraFields);
 	}
+
 
 	// Step 2: Validate / verify the data
 	let validationPromises = [];
 
 	// Publication ID validation
-	if (!publicationValidator.isDOI(req.body.publication_id)
+	if (   !publicationValidator.isDOI(req.body.publication_id)
 		&& !publicationValidator.isPubmedId(req.body.publication_id)) {
-		return res.status(400)
-			.json({
-				error: 'BadRequest',
-				message: 'Given publication ID is not a DOI or Pubmed ID'
-			});
+		return badRequest(res, 'Given publication ID is not a DOI or Pubmed ID');
 	}
 
 	// Verify the given user actually exists
 	if (!req.body.submitter_id) {
-		return res.status(400)
-			.json({
-				error: 'BadRequest',
-				message: 'submitter_id is required'
-			});
+		return badRequest(res, 'submitter_id is required');
 	}
 	validationPromises.push(User.where({id: req.body.submitter_id}));
 
 	// Verify given Annotation status
 	if (!req.body.status_id) {
-		return res.status(400)
-			.json({
-				error: 'BadRequest',
-				message: 'status_id is required'
-			});
+		return badRequest(res, 'status_id is required');
 	}
 	validationPromises.push(AnnotationStatus.where({id: req.body.status_id}));
 
@@ -99,21 +76,13 @@ function createAnnotation(req, res, next) {
 
 		// Validate given method exists
 		if (!req.body.method_id) {
-			return res.status(400)
-				.json({
-					error: 'BadRequest',
-					message: 'method_id is required for gene_term_annotations'
-				});
+			return badRequest(res, 'method_id is required for gene_term_annotations');
 		}
 		validationPromises.push(Keyword.where({id: req.body.method_id}));
 
 		// Validate given keyword exists
 		if (!req.body.keyword_id) {
-			return res.status(400)
-				.json({
-					error: 'BadRequest',
-					message: 'keyword_id id required for gene_term_annotations'
-				});
+			return badRequest(res, 'keyword_id id required for gene_term_annotations');
 		}
 		validationPromises.push(Keyword.where({id: req.body.keyword_id}));
 	}
@@ -123,11 +92,7 @@ function createAnnotation(req, res, next) {
 
 		// Validate given method exists
 		if (!req.body.method_id) {
-			return res.status(400)
-				.json({
-					error: 'BadRequest',
-					message: 'method_id is required for gene_gene_annotations'
-				});
+			return badRequest(res, 'method_id is required for gene_gene_annotations');
 		}
 		validationPromises.push(Keyword.where({id: req.body.method_id}));
 	}
@@ -137,17 +102,13 @@ function createAnnotation(req, res, next) {
 
 		// Verify the comment annotation has some text
 		if (!req.body.text) {
-			return res.status(400)
-				.json({
-					error: 'BadRequest',
-					message: 'text is required for comment_annotations'
-				});
+			return badRequest(res, 'text is required for comment_annotations');
 		}
+
 	}
 
 	// TODO how are we verifying Locus IDs?
 	// TODO If we are, verify locus_id, GeneTerm evidence_id and GeneGene locus2_id
-
 	// TODO evidence_id is required for GeneTermAnnotations under certain circumstances
 
 	Promise.all(validationPromises)
@@ -204,6 +165,13 @@ function createAnnotation(req, res, next) {
 					message: 'Server had an issue adding the annotation'
 				});
 		});
+}
+
+function badRequest(res, message) {
+	return res.status(400).json({
+		error: 'BadRequest',
+		message: message
+	});
 }
 
 module.exports = {
