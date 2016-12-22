@@ -9,6 +9,9 @@ const GeneTermAnnotation = require('../models/gene_term_annotation');
 const GeneGeneAnnotation = require('../models/gene_gene_annotation');
 const CommentAnnotation  = require('../models/comment_annotation');
 const Annotation         = require('../models/annotation');
+const User               = require('../models/user');
+const AnnotationStatus   = require('../models/annotation_status');
+const Keyword            = require('../models/keyword');
 
 /**
  *
@@ -58,7 +61,10 @@ function createAnnotation(req, res, next) {
 			});
 	}
 
-	// Step 2: Validate the data
+	// Step 2: Validate / verify the data
+	let validationPromises = [];
+
+	// Publication ID validation
 	if (!publicationValidator.isDOI(req.body.publication_id)
 		&& !publicationValidator.isPubmedId(req.body.publication_id)) {
 		return res.status(400)
@@ -68,38 +74,115 @@ function createAnnotation(req, res, next) {
 			});
 	}
 
-	// TODO currently we only have DOI/Pubmed ID validation. Come back to this later
+	// Verify the given user actually exists
+	if (!req.body.submitter_id) {
+		return res.status(400)
+			.json({
+				error: 'BadRequest',
+				message: 'submitter_id is required'
+			});
+	}
+	validationPromises.push(User.where({id: req.body.submitter_id}));
+
+	// Verify given Annotation status
+	if (!req.body.status_id) {
+		return res.status(400)
+			.json({
+				error: 'BadRequest',
+				message: 'status_id is required'
+			});
+	}
+	validationPromises.push(AnnotationStatus.where({id: req.body.status_id}));
+
+	// Verify GeneTerm fields
+	if (req.body.annotation_type === 'gene_term_annotation') {
+
+		// Validate given method exists
+		if (!req.body.method_id) {
+			return res.status(400)
+				.json({
+					error: 'BadRequest',
+					message: 'method_id is required for gene_term_annotations'
+				});
+		}
+		validationPromises.push(Keyword.where({id: req.body.method_id}));
+
+		// Validate given keyword exists
+		if (!req.body.keyword_id) {
+			return res.status(400)
+				.json({
+					error: 'BadRequest',
+					message: 'keyword_id id required for gene_term_annotations'
+				});
+		}
+		validationPromises.push(Keyword.where({id: req.body.keyword_id}));
+	}
+
+	// Verify GeneGene fields
+	if (req.body.annotation_type === 'gene_gene_annotation') {
+
+		// Validate given method exists
+		if (!req.body.method_id) {
+			return res.status(400)
+				.json({
+					error: 'BadRequest',
+					message: 'method_id is required for gene_gene_annotations'
+				});
+		}
+		validationPromises.push(Keyword.where({id: req.body.method_id}));
+	}
+
+	// Validate Comment fields
+	if (req.body.annotation_type === 'comment_annotation') {
+
+		// Verify the comment annotation has some text
+		if (!req.body.text) {
+			return res.status(400)
+				.json({
+					error: 'BadRequest',
+					message: 'text is required for comment_annotations'
+				});
+		}
+	}
+
+	// TODO how are we verifying Locus IDs?
+	// TODO If we are, verify locus_id, GeneTerm evidence_id and GeneGene locus2_id
 
 	// TODO evidence_id is required for GeneTermAnnotations under certain circumstances
 
-	// Step 3: Insert the data
+	Promise.all(validationPromises)
+		.then(values => {
+			// TODO check these
 
-	// Identify publication type and add new publication
-	let newPublication;
-	if (publicationValidator.isDOI(req.body.publication_id)) {
-		newPublication = {doi: req.body.publication_id};
-	} else if (publicationValidator.isPubmedId(req.body.publication_id)) {
-		newPublication = {pubmed_id: req.body.publication_id};
-	}
-	let publicationPromise = Publication.forge(newPublication).save();
+			// Step 3: Insert the data
 
-	// Identify sub-Annotation type and add record
-	let subAnnotationPromise;
-	if (req.body.annotation_type === 'gene_term_annotation') {
-		let newSubAnnotation = _.pick(req.body, geneTermAllowedFields);
-		subAnnotationPromise = GeneTermAnnotation.forge(newSubAnnotation).save();
-	}
-	else if (req.body.annotation_type === 'gene_gene_annotation') {
-		let newSubAnnotation = _.pick(req.body, geneGeneAllowedFields);
-		subAnnotationPromise = GeneGeneAnnotation.forge(newSubAnnotation).save();
-	}
-	else if (req.body.annotation_type === 'comment_annotation') {
-		let newSubAnnotation = _.pick(req.body, commentAllowedFields);
-		subAnnotationPromise = CommentAnnotation.forge(newSubAnnotation).save();
-	}
+			// Identify publication type and add new publication
+			let newPublication;
+			if (publicationValidator.isDOI(req.body.publication_id)) {
+				newPublication = {doi: req.body.publication_id};
+			} else if (publicationValidator.isPubmedId(req.body.publication_id)) {
+				newPublication = {pubmed_id: req.body.publication_id};
+			}
+			let publicationPromise = Publication.forge(newPublication).save();
 
-	// With dependencies created, now add the Annotation itself
-	Promise.all([publicationPromise, subAnnotationPromise])
+			// Identify sub-Annotation type and add record
+			let subAnnotationPromise;
+			if (req.body.annotation_type === 'gene_term_annotation') {
+				let newSubAnnotation = _.pick(req.body, geneTermAllowedFields);
+				subAnnotationPromise = GeneTermAnnotation.forge(newSubAnnotation).save();
+			}
+			else if (req.body.annotation_type === 'gene_gene_annotation') {
+				let newSubAnnotation = _.pick(req.body, geneGeneAllowedFields);
+				subAnnotationPromise = GeneGeneAnnotation.forge(newSubAnnotation).save();
+			}
+			else if (req.body.annotation_type === 'comment_annotation') {
+				let newSubAnnotation = _.pick(req.body, commentAllowedFields);
+				subAnnotationPromise = CommentAnnotation.forge(newSubAnnotation).save();
+			}
+
+			// With dependencies created, now add the Annotation itself
+			return Promise.all([publicationPromise, subAnnotationPromise])
+		})
 		.then(addedRows => {
 			let addedPublication = addedRows[0].toJSON();
 			let addedSubAnnotation = addedRows[1].toJSON();
