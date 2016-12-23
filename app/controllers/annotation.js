@@ -13,6 +13,11 @@ const User               = require('../models/user');
 const AnnotationStatus   = require('../models/annotation_status');
 const Keyword            = require('../models/keyword');
 
+const BASE_ALLOWED_FIELDS      = ['publication_id', 'status_id', 'submitter_id', 'locus_id', 'annotation_type'];
+const GENE_TERM_ALLOWED_FIELDS = ['method_id', 'keyword_id', 'evidence_id'];
+const GENE_GENE_ALLOWED_FIELDS = ['locus2_id', 'method_id'];
+const COMMENT_ALLOWED_FIELDS   = ['text'];
+
 /**
  *
  * @param  {Express.request}   req  - the request object
@@ -21,21 +26,20 @@ const Keyword            = require('../models/keyword');
  */
 function createAnnotation(req, res, next) {
 
-	// Step 1: Ensure no extraneous data was attached to the request
-	const baseAllowedFields     = ['publication_id', 'status_id', 'submitter_id', 'locus_id', 'annotation_type'];
-	const geneTermAllowedFields = ['method_id', 'keyword_id', 'evidence_id'];
-	const geneGeneAllowedFields = ['locus2_id', 'method_id'];
-	const commentAllowedFields  = ['text'];
+	let requestValidator;
 
-	let requiredFields;
 	if (req.body.annotation_type === 'gene_term_annotation') {
-		requiredFields = baseAllowedFields.concat(geneTermAllowedFields);
+		const validFields = BASE_ALLOWED_FIELDS.concat(GENE_TERM_ALLOWED_FIELDS);
+		const optionalFields = ['evidence_id'];
+		requestValidator = validateRequest.bind(null, req, validFields, optionalFields);
 	}
 	else if (req.body.annotation_type === 'gene_gene_annotation') {
-		requiredFields = baseAllowedFields.concat(geneGeneAllowedFields);
+		const validFields = BASE_ALLOWED_FIELDS.concat(GENE_GENE_ALLOWED_FIELDS);
+		requestValidator = validateRequest.bind(null, req, validFields);
 	}
 	else if (req.body.annotation_type === 'comment_annotation') {
-		requiredFields = baseAllowedFields.concat(commentAllowedFields);
+		const validFields = BASE_ALLOWED_FIELDS.concat(COMMENT_ALLOWED_FIELDS);
+		requestValidator = validateRequest.bind(null, req, validFields);
 	}
 	else if (!req.body.annotation_type) {
 		return badRequest(res, 'No Annotation type specified');
@@ -44,9 +48,12 @@ function createAnnotation(req, res, next) {
 		return badRequest(res, 'Unrecognized annotation_type ' + res.body.annotation_type);
 	}
 
-	let extraFields = Object.keys(_.omit(req.body, requiredFields));
-	if (extraFields.length) {
-		return badRequest(res, 'Invalid Annotation fields: ' + extraFields);
+
+	// Step 1: Ensure no extraneous data was attached to the request
+	try {
+		requestValidator();
+	} catch(e) {
+		return badRequest(res, e.message);
 	}
 
 
@@ -165,6 +172,28 @@ function createAnnotation(req, res, next) {
 					message: 'Server had an issue adding the annotation'
 				});
 		});
+}
+
+/**
+ * Verifies that all required annotation fields were passed in,
+ * without any extras.
+ *
+ * Throws an error for failed validation
+ */
+function validateRequest(req, validFields, optionalFields) {
+
+	// Look for extra fields
+	let extraFields = Object.keys(_.omit(req.body, validFields));
+	if (extraFields.length) {
+		throw new Error(`Invalid ${req.body.annotation_type} fields: ${extraFields}`);
+	}
+
+	// Make sure we have all required fields
+	const requiredFields = _.difference(validFields, optionalFields);
+	let missingFields = _.difference(requiredFields, Object.keys(req.body));
+	if (missingFields.length) {
+		throw new Error(`Missing ${req.body.annotation_type} fields: ${missingFields}`);
+	}
 }
 
 function badRequest(res, message) {
