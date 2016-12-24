@@ -28,10 +28,11 @@ function createAnnotation(req, res, next) {
 
 	let validateRequest;
 	let verifyReferentialIntegrity;
+	let createSubRecords;
 
 	/* This is a bastardized strategy pattern to change
 	 * how we validate / verify annotation creation requests
-	 * based on annotation type.
+	 * and add annotation records based on annotation type.
 	 */
 	if (req.body.annotation_type === 'gene_term_annotation') {
 		const validFields = BASE_ALLOWED_FIELDS.concat(GENE_TERM_ALLOWED_FIELDS);
@@ -41,18 +42,21 @@ function createAnnotation(req, res, next) {
 
 		validateRequest = requestValidator.bind(null, req, validFields, optionalFields);
 		verifyReferentialIntegrity = geneTermFieldVerifier.bind(null, req);
+		createSubRecords = geneTermRecordCreator.bind(null, req);
 	}
 	else if (req.body.annotation_type === 'gene_gene_annotation') {
 		const validFields = BASE_ALLOWED_FIELDS.concat(GENE_GENE_ALLOWED_FIELDS);
 
 		validateRequest = requestValidator.bind(null, req, validFields);
 		verifyReferentialIntegrity = geneGeneFieldVerifier.bind(null, req);
+		createSubRecords = geneGeneRecordCreator.bind(null, req);
 	}
 	else if (req.body.annotation_type === 'comment_annotation') {
 		const validFields = BASE_ALLOWED_FIELDS.concat(COMMENT_ALLOWED_FIELDS);
 
 		validateRequest = requestValidator.bind(null, req, validFields);
 		verifyReferentialIntegrity = commentFieldVerifier.bind(null, req);
+		createSubRecords = commentRecordCreator.bind(null, req);
 	}
 	else if (!req.body.annotation_type) {
 		return badRequest(res, 'No Annotation type specified');
@@ -69,46 +73,22 @@ function createAnnotation(req, res, next) {
 		return badRequest(res, e.message);
 	}
 
-
 	// Step 2: Verify the data
 	verifyReferentialIntegrity()
 		.then(values => {
 			// TODO check these
 
-			// Step 3: Insert the data
-
-			// Identify publication type and add new publication
-			let newPublication;
-			if (publicationValidator.isDOI(req.body.publication_id)) {
-				newPublication = {doi: req.body.publication_id};
-			} else if (publicationValidator.isPubmedId(req.body.publication_id)) {
-				newPublication = {pubmed_id: req.body.publication_id};
-			}
-			let publicationPromise = Publication.forge(newPublication).save();
-
-			// Identify sub-Annotation type and add record
-			let subAnnotationPromise;
-			if (req.body.annotation_type === 'gene_term_annotation') {
-				let newSubAnnotation = _.pick(req.body, geneTermAllowedFields);
-				subAnnotationPromise = GeneTermAnnotation.forge(newSubAnnotation).save();
-			}
-			else if (req.body.annotation_type === 'gene_gene_annotation') {
-				let newSubAnnotation = _.pick(req.body, geneGeneAllowedFields);
-				subAnnotationPromise = GeneGeneAnnotation.forge(newSubAnnotation).save();
-			}
-			else if (req.body.annotation_type === 'comment_annotation') {
-				let newSubAnnotation = _.pick(req.body, commentAllowedFields);
-				subAnnotationPromise = CommentAnnotation.forge(newSubAnnotation).save();
-			}
-
-			// With dependencies created, now add the Annotation itself
-			return Promise.all([publicationPromise, subAnnotationPromise])
+			// Step 3: Insert the data the main annotation is dependent on
+			return createSubRecords();
 		})
-		.then(addedRows => {
-			let addedPublication = addedRows[0].toJSON();
-			let addedSubAnnotation = addedRows[1].toJSON();
+		.then(addedRecords => {
+			// Step 4: With dependencies created, now add the Annotation itself
 
-			let newAnnotation = _.pick(req.body, baseAllowedFields);
+			let addedPublication = addedRecords[0].toJSON();
+			let addedSubAnnotation = addedRecords[1].toJSON();
+
+			// The request has most of the annotation info already
+			let newAnnotation = _.pick(req.body, BASE_ALLOWED_FIELDS);
 			newAnnotation.publication_id = addedPublication.id; // We're overriding the actual publication ID with a reference
 			newAnnotation.annotation_id = addedSubAnnotation.id;
 
@@ -205,7 +185,7 @@ function geneTermFieldVerifier(req) {
 function geneGeneFieldVerifier(req) {
 	let verificationPromises = genericFieldVerifier(req);
 
-	validationPromises.push(
+	verificationPromises.push(
 		Keyword.where({id: req.body.method_id}).fetch({require: true})
 	);
 
@@ -219,6 +199,71 @@ function commentFieldVerifier(req) {
 	let verificationPromises = genericFieldVerifier(req);
 	return Promise.all(verificationPromises);
 }
+
+
+/**
+ * These functions add the records needed for creating the main Annotation.
+ * Currently that includes only the Publication record and
+ * specialized Annotation type information.
+ *
+ * Returns a Promise.
+ */
+function genericRecordCreator(req) {
+	// Identify publication type and add new publication
+	let publicationPromise;
+	if (publicationValidator.isDOI(req.body.publication_id)) {
+		publicationPromise = Publication.forge({doi: req.body.publication_id}).save();
+	}
+	else if (publicationValidator.isPubmedId(req.body.publication_id)) {
+		publicationPromise = Publication.forge({pubmed_id: req.body.publication_id}).save();
+	}
+
+	return publicationPromise;
+}
+
+function geneTermRecordCreator(req) {
+	let recordCreationPromises = [];
+	recordCreationPromises.push(
+		genericRecordCreator(req)
+	);
+
+	let newSubAnnotation = _.pick(req.body, GENE_TERM_ALLOWED_FIELDS);
+	recordCreationPromises.push(
+		GeneTermAnnotation.forge(newSubAnnotation).save()
+	);
+
+	return Promise.all(recordCreationPromises);
+}
+
+function geneGeneRecordCreator(req) {
+	let recordCreationPromises = [];
+	recordCreationPromises.push(
+		genericRecordCreator(req)
+	);
+
+	let newSubAnnotation = _.pick(req.body, GENE_GENE_ALLOWED_FIELDS);
+	recordCreationPromises.push(
+		GeneGeneAnnotation.forge(newSubAnnotation).save()
+	);
+
+	return Promise.all(recordCreationPromises);
+}
+
+function commentRecordCreator(req) {
+	let recordCreationPromises = [];
+	recordCreationPromises.push(
+		genericRecordCreator(req)
+	);
+
+	let newSubAnnotation = _.pick(req.body, COMMENT_ALLOWED_FIELDS);
+	recordCreationPromises.push(
+		CommentAnnotation.forge(newSubAnnotation).save()
+	);
+
+	return Promise.all(recordCreationPromises);
+}
+
+
 
 
 function badRequest(res, message) {
