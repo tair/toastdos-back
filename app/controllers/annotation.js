@@ -26,20 +26,33 @@ const COMMENT_ALLOWED_FIELDS   = ['text'];
  */
 function createAnnotation(req, res, next) {
 
-	let requestValidator;
+	let validateRequest;
+	let verifyReferentialIntegrity;
 
+	/* This is a bastardized strategy pattern to change
+	 * how we validate / verify annotation creation requests
+	 * based on annotation type.
+	 */
 	if (req.body.annotation_type === 'gene_term_annotation') {
 		const validFields = BASE_ALLOWED_FIELDS.concat(GENE_TERM_ALLOWED_FIELDS);
 		const optionalFields = ['evidence_id'];
-		requestValidator = validateRequest.bind(null, req, validFields, optionalFields);
+
+		// TODO evidence_id is required under certain circumstances
+
+		validateRequest = requestValidator.bind(null, req, validFields, optionalFields);
+		verifyReferentialIntegrity = geneTermFieldVerifier.bind(null, req);
 	}
 	else if (req.body.annotation_type === 'gene_gene_annotation') {
 		const validFields = BASE_ALLOWED_FIELDS.concat(GENE_GENE_ALLOWED_FIELDS);
-		requestValidator = validateRequest.bind(null, req, validFields);
+
+		validateRequest = requestValidator.bind(null, req, validFields);
+		verifyReferentialIntegrity = geneGeneFieldVerifier.bind(null, req);
 	}
 	else if (req.body.annotation_type === 'comment_annotation') {
 		const validFields = BASE_ALLOWED_FIELDS.concat(COMMENT_ALLOWED_FIELDS);
-		requestValidator = validateRequest.bind(null, req, validFields);
+
+		validateRequest = requestValidator.bind(null, req, validFields);
+		verifyReferentialIntegrity = commentFieldVerifier.bind(null, req);
 	}
 	else if (!req.body.annotation_type) {
 		return badRequest(res, 'No Annotation type specified');
@@ -51,74 +64,14 @@ function createAnnotation(req, res, next) {
 
 	// Step 1: Ensure no extraneous data was attached to the request
 	try {
-		requestValidator();
+		validateRequest();
 	} catch(e) {
 		return badRequest(res, e.message);
 	}
 
 
-	// Step 2: Validate / verify the data
-	let validationPromises = [];
-
-	// Publication ID validation
-	if (   !publicationValidator.isDOI(req.body.publication_id)
-		&& !publicationValidator.isPubmedId(req.body.publication_id)) {
-		return badRequest(res, 'Given publication ID is not a DOI or Pubmed ID');
-	}
-
-	// Verify the given user actually exists
-	if (!req.body.submitter_id) {
-		return badRequest(res, 'submitter_id is required');
-	}
-	validationPromises.push(User.where({id: req.body.submitter_id}));
-
-	// Verify given Annotation status
-	if (!req.body.status_id) {
-		return badRequest(res, 'status_id is required');
-	}
-	validationPromises.push(AnnotationStatus.where({id: req.body.status_id}));
-
-	// Verify GeneTerm fields
-	if (req.body.annotation_type === 'gene_term_annotation') {
-
-		// Validate given method exists
-		if (!req.body.method_id) {
-			return badRequest(res, 'method_id is required for gene_term_annotations');
-		}
-		validationPromises.push(Keyword.where({id: req.body.method_id}));
-
-		// Validate given keyword exists
-		if (!req.body.keyword_id) {
-			return badRequest(res, 'keyword_id id required for gene_term_annotations');
-		}
-		validationPromises.push(Keyword.where({id: req.body.keyword_id}));
-	}
-
-	// Verify GeneGene fields
-	if (req.body.annotation_type === 'gene_gene_annotation') {
-
-		// Validate given method exists
-		if (!req.body.method_id) {
-			return badRequest(res, 'method_id is required for gene_gene_annotations');
-		}
-		validationPromises.push(Keyword.where({id: req.body.method_id}));
-	}
-
-	// Validate Comment fields
-	if (req.body.annotation_type === 'comment_annotation') {
-
-		// Verify the comment annotation has some text
-		if (!req.body.text) {
-			return badRequest(res, 'text is required for comment_annotations');
-		}
-
-	}
-
-	// TODO how are we verifying Locus IDs?
-	// TODO If we are, verify locus_id, GeneTerm evidence_id and GeneGene locus2_id
-	// TODO evidence_id is required for GeneTermAnnotations under certain circumstances
-
-	Promise.all(validationPromises)
+	// Step 2: Verify the data
+	verifyReferentialIntegrity()
 		.then(values => {
 			// TODO check these
 
@@ -166,6 +119,9 @@ function createAnnotation(req, res, next) {
 				.json(addedAnnotation);
 		})
 		.catch(err => {
+
+			// TODO figure out what kind of error we got
+
 			res.status(500)
 				.json({
 					error: 'DatabaseError',
@@ -180,7 +136,7 @@ function createAnnotation(req, res, next) {
  *
  * Throws an error for failed validation
  */
-function validateRequest(req, validFields, optionalFields) {
+function requestValidator(req, validFields, optionalFields) {
 
 	// Look for extra fields
 	let extraFields = Object.keys(_.omit(req.body, validFields));
@@ -195,6 +151,75 @@ function validateRequest(req, validFields, optionalFields) {
 		throw new Error(`Missing ${req.body.annotation_type} fields: ${missingFields}`);
 	}
 }
+
+/**
+ * The following functions verify the various IDs specified
+ * for this annotation creation request actually refer to
+ * a real thing.
+ *
+ * All Bookshelf requests have {require: true} set, which will
+ * reject the fetch promise if a record isn't found for the
+ * given ID.
+ *
+ * Any other failed verification failed with a Promise.reject()
+ *
+ * Returns a Promise.
+ */
+function genericFieldVerifier(req) {
+	let verificationPromises = [];
+
+	// Publication ID validation
+	if (   !publicationValidator.isDOI(req.body.publication_id)
+		&& !publicationValidator.isPubmedId(req.body.publication_id)) {
+
+		// This causes the entire Promise.all chain to reject, which we catch downstream and return as a 400.
+		verificationPromises.push(
+			Promise.reject('Given publication ID is not a DOI or Pubmed ID')
+		);
+	}
+
+	verificationPromises.push(User.where({id: req.body.submitter_id}).fetch({require: true}));
+	verificationPromises.push(AnnotationStatus.where({id: req.body.status_id}).fetch({require: true}));
+
+	// TODO how are we verifying Locus IDs?
+	// TODO If we are, verify locus_id Locus.
+
+	return verificationPromises;
+}
+
+function geneTermFieldVerifier(req) {
+	let verificationPromises = genericFieldVerifier(req);
+
+	verificationPromises.push(
+		Keyword.where({id: req.body.method_id}).fetch({require: true})
+	);
+	verificationPromises.push(
+		Keyword.where({id: req.body.keyword_id}).fetch({require: true})
+	);
+
+	// TODO if necessary, validate evidence_id Locus
+
+	return Promise.all(verificationPromises);
+}
+
+function geneGeneFieldVerifier(req) {
+	let verificationPromises = genericFieldVerifier(req);
+
+	validationPromises.push(
+		Keyword.where({id: req.body.method_id}).fetch({require: true})
+	);
+
+	// TODO if necessary, validate locus2_id Locus
+
+	return Promise.all(verificationPromises);
+}
+
+// Comment Annotations have no additional verification
+function commentFieldVerifier(req) {
+	let verificationPromises = genericFieldVerifier(req);
+	return Promise.all(verificationPromises);
+}
+
 
 function badRequest(res, message) {
 	return res.status(400).json({
