@@ -83,7 +83,6 @@ function createAnnotation(req, res, next) {
 		})
 		.then(addedRecords => {
 			// Step 4: With dependencies created, now add the Annotation itself
-
 			let addedPublication = addedRecords[0].toJSON();
 			let addedSubAnnotation = addedRecords[1].toJSON();
 
@@ -141,7 +140,10 @@ function requestValidator(req, validFields, optionalFields) {
  * reject the fetch promise if a record isn't found for the
  * given ID.
  *
- * Any other failed verification failed with a Promise.reject()
+ * Any other failed verification is failed with a Promise.reject()
+ *
+ * While annotations MAY contain new keywords, we expect the client
+ * to have created those new Keywords in a separate request.
  *
  * Returns a Promise.
  */
@@ -158,8 +160,12 @@ function genericFieldVerifier(req) {
 		);
 	}
 
-	verificationPromises.push(User.where({id: req.body.submitter_id}).fetch({require: true}));
-	verificationPromises.push(AnnotationStatus.where({id: req.body.status_id}).fetch({require: true}));
+	verificationPromises.push(
+		User.where({id: req.body.submitter_id}).fetch({require: true})
+	);
+	verificationPromises.push(
+		AnnotationStatus.where({id: req.body.status_id}).fetch({require: true})
+	);
 
 	// TODO how are we verifying Locus IDs?
 	// TODO If we are, verify locus_id Locus.
