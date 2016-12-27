@@ -53,7 +53,7 @@ describe('Annotation Controller', function() {
 				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
-					chai.expect(res.text).to.contain('Unrecognized annotation_type');
+					chai.expect(res.text).to.equal(`Unrecognized annotation_type ${fakeAnnotationType}`);
 					done();
 				});
 		});
