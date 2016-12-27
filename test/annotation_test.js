@@ -148,13 +148,24 @@ describe('Annotation Controller', function() {
 
 			});
 
+
+			it(`Well-formed ${type} request responds with success`, function(done) {
+				chai.request(server)
+					.post('/api/annotation/')
+					.send(testAnnotation)
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						// We only want to test generic Annotation fields
+						let noPubIDAnnotation = _.pick(testAnnotation, Object.keys(testdata.annotations[0]));
+						delete noPubIDAnnotation.publication_id;
+
+						chai.expect(res.status).to.equal(201);
+						chai.expect(res.body).to.contain(noPubIDAnnotation);
+						done();
+					});
+			});
+
 		});
-
-		it('Well-formed GeneTermAnnotation request responds with success');
-
-		it('Well-formed GeneGeneAnnotation request responds with success');
-
-		it('Well-formed CommentAnnotation request responds with success');
 
 	});
 
