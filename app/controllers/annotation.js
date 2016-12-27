@@ -104,11 +104,7 @@ function createAnnotation(req, res, next) {
 				return badRequest(res, err.message);
 			}
 			else {
-				return res.status(500)
-					.json({
-						error: 'DatabaseError',
-						message: 'Server had an issue adding the annotation'
-					});
+				return res.status(500).send('Internal Server Error occurred while adding the annotation');
 			}
 		});
 }
