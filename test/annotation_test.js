@@ -66,15 +66,33 @@ describe('Annotation Controller', function() {
 		Object.keys(testAnnotations).forEach(type => {
 			let testAnnotation = testAnnotations[type];
 
-			// Generate every combination of missing fields to ensure we handle them all
-			objectCombination(testAnnotation).forEach(subObject => {
+			// Generate some combination of missing fields to ensure we handle them all
+			objectCombination(testAnnotation).forEach(annotationSubset => {
 
 				// Ignore combinations without annotation_type. We handle that error in a separate test
-				if (!subObject.annotation_type) {
+				if (!annotationSubset.annotation_type) {
 					return;
 				}
 
-				it(`Missing required ${type} fields responds with error`);
+				it(`Missing required ${type} fields responds with error`, function(done) {
+					let missingFields = _.difference(Object.keys(testAnnotation), Object.keys(annotationSubset));
+
+					// evidence_id is an optional field, so ignore it for this test (This is hacky, I know. Sorry.)
+					let ignoreTerm = missingFields.indexOf('evidence_id');
+					if (ignoreTerm !== -1) {
+						missingFields.splice(ignoreTerm, 1);
+					}
+
+					chai.request(server)
+						.post('/api/annotation/')
+						.send(annotationSubset)
+						.set({Authorization: `Bearer ${testToken}`})
+						.end((err, res) => {
+							chai.expect(res.status).to.equal(400);
+							chai.expect(res.text).to.equal(`Missing ${type} fields: ${missingFields}`);
+							done();
+						});
+				});
 
 			});
 
@@ -115,11 +133,11 @@ function createAnnotationRequestBodies() {
 	delete testGTAnnotation.id;
 	delete testGTAnnotation.annotation_id;
 
-	let testGGAnnotation = Object.assign({}, testdata.annotations[0], testdata.gene_gene_annotations[0]);
+	let testGGAnnotation = Object.assign({}, testdata.annotations[2], testdata.gene_gene_annotations[0]);
 	delete testGGAnnotation.id;
 	delete testGGAnnotation.annotation_id;
 
-	let testCAnnotation = Object.assign({}, testdata.annotations[0], testdata.comment_annotations[0]);
+	let testCAnnotation = Object.assign({}, testdata.annotations[4], testdata.comment_annotations[0]);
 	delete testCAnnotation.id;
 	delete testCAnnotation.annotation_id;
 
@@ -135,10 +153,11 @@ function createAnnotationRequestBodies() {
  * excluding the empty set and the object itself.
  */
 function objectCombination(object) {
+	let factorialLimit = 2;
 	let combinations = [];
 
 	let fields = Object.keys(object);
-	combinatorics.combination(fields, fields.length - 1).forEach(fieldSubset => {
+	combinatorics.combination(fields, factorialLimit).forEach(fieldSubset => {
 		combinations.push(_.pick(object, fieldSubset));
 	});
 
