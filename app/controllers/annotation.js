@@ -59,10 +59,10 @@ function createAnnotation(req, res, next) {
 		createSubRecords = commentRecordCreator.bind(null, req);
 	}
 	else if (!req.body.annotation_type) {
-		return badRequest(res, 'No Annotation type specified');
+		return badRequest(res, 'No annotation_type specified');
 	}
 	else {
-		return badRequest(res, 'Unrecognized annotation_type ' + res.body.annotation_type);
+		return badRequest(res, 'Unrecognized annotation_type ' + req.body.annotation_type);
 	}
 
 
@@ -273,10 +273,7 @@ function commentRecordCreator(req) {
 
 
 function badRequest(res, message) {
-	return res.status(400).json({
-		error: 'BadRequest',
-		message: message
-	});
+	return res.status(400).send(message);
 }
 
 module.exports = {

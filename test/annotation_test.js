@@ -6,11 +6,24 @@ const combinatorics = require('js-combinatorics');
 const _             = require('lodash');
 
 const server = require('../app');
+const auth   = require('../app/lib/authentication');
 const knex   = require('../app/lib/bookshelf').knex;
 
 const testdata = require('../seeds/test_data.json');
 
 describe('Annotation Controller', function() {
+
+	let testToken = '';
+
+	// Make a token so tests can authenticate
+	before('Generate test JWT', function(done) {
+		let authenticatedUser = testdata.users[0];
+		auth.signToken({user_id: authenticatedUser.id}, (err, newToken) => {
+			chai.expect(err).to.be.null;
+			testToken = newToken;
+			done();
+		});
+	});
 
 	before('Setup SQLite memory database', function() {
 		return knex.migrate.latest();
@@ -22,7 +35,28 @@ describe('Annotation Controller', function() {
 
 	describe('POST /api/annotation/', function() {
 
-		it('Providing invalid Annotation type responds with error');
+		it('Authentication is required', function(done) {
+			chai.request(server)
+				.post('/api/annotation/')
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(401);
+					chai.expect(res.text).to.contain('No authorization header provided');
+					done();
+				});
+		});
+
+		it('Providing invalid Annotation type responds with error', function(done) {
+			let fakeAnnotationType = 'fake type';
+			chai.request(server)
+				.post('/api/annotation/')
+				.send({annotation_type: fakeAnnotationType})
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.contain('Unrecognized annotation_type');
+					done();
+				});
+		});
 
 		let testAnnotations = createAnnotationRequestBodies();
 
