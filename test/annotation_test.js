@@ -148,6 +148,38 @@ describe('Annotation Controller', function() {
 
 			});
 
+			it(`Existing ${type} publication record is used if it exists`, function(done) {
+				let expectedPublicationIDs = [
+					testdata.publications[0].id,
+					testdata.publications[1].id
+				];
+
+				chai.request(server)
+					.post('/api/annotation/')
+					.send(testAnnotation)
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(201);
+						chai.expect(res.body.publication_id).to.be.oneOf(expectedPublicationIDs);
+						done();
+					});
+			});
+
+			it(`New ${type} publication record created for new publication`, function(done) {
+				let newPublicationId = testdata.publications.length + 1;
+				let newPublicationIDAnnotation = Object.assign({}, testAnnotation);
+				newPublicationIDAnnotation.publication_id = '12345';
+
+				chai.request(server)
+					.post('/api/annotation/')
+					.send(newPublicationIDAnnotation)
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(201);
+						chai.expect(res.body.publication_id).to.equal(newPublicationId);
+						done();
+					});
+			});
 
 			it(`Well-formed ${type} request responds with success`, function(done) {
 				chai.request(server)
@@ -179,14 +211,17 @@ function createAnnotationRequestBodies() {
 	let testGTAnnotation = Object.assign({}, testdata.annotations[0], testdata.gene_term_annotations[0]);
 	delete testGTAnnotation.id;
 	delete testGTAnnotation.annotation_id;
+	testGTAnnotation.publication_id = testdata.publications[0].doi;
 
 	let testGGAnnotation = Object.assign({}, testdata.annotations[2], testdata.gene_gene_annotations[0]);
 	delete testGGAnnotation.id;
 	delete testGGAnnotation.annotation_id;
+	testGGAnnotation.publication_id = testdata.publications[1].pubmed_id;
 
 	let testCAnnotation = Object.assign({}, testdata.annotations[4], testdata.comment_annotations[0]);
 	delete testCAnnotation.id;
 	delete testCAnnotation.annotation_id;
+	testCAnnotation.publication_id = testdata.publications[1].pubmed_id;
 
 	return {
 		'gene_term_annotation' : testGTAnnotation,

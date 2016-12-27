@@ -239,16 +239,22 @@ function commentFieldVerifier(req) {
  * Returns a Promise.
  */
 function genericRecordCreator(req) {
-	// Identify publication type and add new publication
-	let publicationPromise;
+	// Publication ID is stored in the field corresponding to its type
+	let newPublication = {};
 	if (publicationValidator.isDOI(req.body.publication_id)) {
-		publicationPromise = Publication.forge({doi: req.body.publication_id}).save();
-	}
-	else if (publicationValidator.isPubmedId(req.body.publication_id)) {
-		publicationPromise = Publication.forge({pubmed_id: req.body.publication_id}).save();
+		newPublication.doi = req.body.publication_id;
+	} else if (publicationValidator.isPubmedId(req.body.publication_id)) {
+		newPublication.pubmed_id = req.body.publication_id;
 	}
 
-	return publicationPromise;
+	// Use an existing publication record if possible
+	return Publication.where(newPublication).fetch().then(existingPublication => {
+		if (existingPublication) {
+			return Promise.resolve(existingPublication);
+		} else {
+			return Publication.forge(newPublication).save();
+		}
+	});
 }
 
 function geneTermRecordCreator(req) {
