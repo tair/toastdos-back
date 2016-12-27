@@ -167,13 +167,15 @@ function genericFieldVerifier(req) {
 	verificationPromises.push(
 		redefineError(
 			User.where({id: req.body.submitter_id}).fetch({require: true}),
-			'Given submitter_id does not reference an existing record'
+			'Given submitter_id does not reference an existing record',
+			'EmptyResponse'
 		)
 	);
 	verificationPromises.push(
 		redefineError(
 			AnnotationStatus.where({id: req.body.status_id}).fetch({require: true}),
-			'Given status_id does not reference an existing record'
+			'Given status_id does not reference an existing record',
+			'EmptyResponse'
 		)
 	);
 
@@ -189,13 +191,15 @@ function geneTermFieldVerifier(req) {
 	verificationPromises.push(
 		redefineError(
 			Keyword.where({id: req.body.method_id}).fetch({require: true}),
-			'Given method_id does not reference an existing record'
+			'Given method_id does not reference an existing record',
+			'EmptyResponse'
 		)
 	);
 	verificationPromises.push(
 		redefineError(
 			Keyword.where({id: req.body.keyword_id}).fetch({require: true}),
-			'Given keyword_id does not reference an existing record'
+			'Given keyword_id does not reference an existing record',
+			'EmptyResponse'
 		)
 	);
 
@@ -210,7 +214,8 @@ function geneGeneFieldVerifier(req) {
 	verificationPromises.push(
 		redefineError(
 			Keyword.where({id: req.body.method_id}).fetch({require: true}),
-			'Given method_id does not reference an existing record'
+			'Given method_id does not reference an existing record',
+			'EmptyResponse'
 		)
 	);
 
@@ -290,14 +295,26 @@ function commentRecordCreator(req) {
 
 /**
  * The given promise is rejected with the specified message instead of its own message.
+ * If a matcher is specified, the rejection message is only replaced if it matches.
  *
  * This is because Bookshelf errors aren't verbose enough.
+ * Added the matcher because Bookshelf could fail for reasons other than a record not being found.
  */
-function redefineError(promise, message) {
+function redefineError(promise, message, matcher) {
 	return new Promise((resolve, reject) => {
 		promise
 			.then(result => resolve(result))
-			.catch(() => reject(new Error(message)));
+			.catch(err => {
+				if (matcher) {
+					if (err.message.match(matcher)) {
+						reject(new Error(message));
+					} else {
+						reject(err);
+					}
+				} else {
+					reject(new Error(message))
+				}
+			});
 	});
 }
 
