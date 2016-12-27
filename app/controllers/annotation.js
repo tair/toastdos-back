@@ -76,7 +76,7 @@ function createAnnotation(req, res, next) {
 	// Step 2: Verify the data
 	verifyReferentialIntegrity()
 		.then(values => {
-			// TODO check these
+			// NOTE: Don't need to check these values since the promise will get rejected if they don't exist
 
 			// Step 3: Insert the data the main annotation is dependent on
 			return createSubRecords();
@@ -99,13 +99,17 @@ function createAnnotation(req, res, next) {
 		})
 		.catch(err => {
 
-			// TODO figure out what kind of error we got
-
-			res.status(500)
-				.json({
-					error: 'DatabaseError',
-					message: 'Server had an issue adding the annotation'
-				});
+			if (   err.message.match(/Given publication ID is not a DOI or Pubmed ID/)
+				|| err.message.match(/Given .* does not reference an existing record/)) {
+				return badRequest(res, err.message);
+			}
+			else {
+				return res.status(500)
+					.json({
+						error: 'DatabaseError',
+						message: 'Server had an issue adding the annotation'
+					});
+			}
 		});
 }
 
@@ -156,15 +160,21 @@ function genericFieldVerifier(req) {
 
 		// This causes the entire Promise.all chain to reject, which we catch downstream and return as a 400.
 		verificationPromises.push(
-			Promise.reject('Given publication ID is not a DOI or Pubmed ID')
+			Promise.reject(new Error('Given publication ID is not a DOI or Pubmed ID'))
 		);
 	}
 
 	verificationPromises.push(
-		User.where({id: req.body.submitter_id}).fetch({require: true})
+		redefineError(
+			User.where({id: req.body.submitter_id}).fetch({require: true}),
+			'Given submitter_id does not reference an existing record'
+		)
 	);
 	verificationPromises.push(
-		AnnotationStatus.where({id: req.body.status_id}).fetch({require: true})
+		redefineError(
+			AnnotationStatus.where({id: req.body.status_id}).fetch({require: true}),
+			'Given status_id does not reference an existing record'
+		)
 	);
 
 	// TODO how are we verifying Locus IDs?
@@ -177,10 +187,16 @@ function geneTermFieldVerifier(req) {
 	let verificationPromises = genericFieldVerifier(req);
 
 	verificationPromises.push(
-		Keyword.where({id: req.body.method_id}).fetch({require: true})
+		redefineError(
+			Keyword.where({id: req.body.method_id}).fetch({require: true}),
+			'Given method_id does not reference an existing record'
+		)
 	);
 	verificationPromises.push(
-		Keyword.where({id: req.body.keyword_id}).fetch({require: true})
+		redefineError(
+			Keyword.where({id: req.body.keyword_id}).fetch({require: true}),
+			'Given keyword_id does not reference an existing record'
+		)
 	);
 
 	// TODO if necessary, validate evidence_id Locus
@@ -192,7 +208,10 @@ function geneGeneFieldVerifier(req) {
 	let verificationPromises = genericFieldVerifier(req);
 
 	verificationPromises.push(
-		Keyword.where({id: req.body.method_id}).fetch({require: true})
+		redefineError(
+			Keyword.where({id: req.body.method_id}).fetch({require: true}),
+			'Given method_id does not reference an existing record'
+		)
 	);
 
 	// TODO if necessary, validate locus2_id Locus
@@ -269,8 +288,18 @@ function commentRecordCreator(req) {
 	return Promise.all(recordCreationPromises);
 }
 
-
-
+/**
+ * The given promise is rejected with the specified message instead of its own message.
+ *
+ * This is because Bookshelf errors aren't verbose enough.
+ */
+function redefineError(promise, message) {
+	return new Promise((resolve, reject) => {
+		promise
+			.then(result => resolve(result))
+			.catch(() => reject(new Error(message)));
+	});
+}
 
 function badRequest(res, message) {
 	return res.status(400).send(message);

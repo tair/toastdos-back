@@ -96,19 +96,55 @@ describe('Annotation Controller', function() {
 
 			});
 
-			it(`Providing invalid ${type} fields responds with error`);
+			it(`Providing invalid ${type} fields responds with error`, function(done) {
+				let invalidField = 'invalid_field';
+				let annotationWithInvalidField = Object.assign({}, testAnnotation);
+				annotationWithInvalidField[invalidField] = 123;
 
-			it(`Providing invalid Publication ID for ${type} responds with error`);
+				chai.request(server)
+					.post('/api/annotation/')
+					.send(annotationWithInvalidField)
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(400);
+						chai.expect(res.text).to.equal(`Invalid ${type} fields: ${invalidField}`);
+						done();
+					});
+			});
+
+			it(`Providing invalid Publication ID for ${type} responds with error`, function(done) {
+				let badPublicationAnnotation = Object.assign({}, testAnnotation);
+				badPublicationAnnotation.publication_id = 'Not DOI or Pubmed ID';
+
+				chai.request(server)
+					.post('/api/annotation/')
+					.send(badPublicationAnnotation)
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(400);
+						chai.expect(res.text).to.equal('Given publication ID is not a DOI or Pubmed ID');
+						done();
+					});
+			});
 
 			// Test that we catch all types of bad references
 			let referencesToTest = ['submitter_id', 'status_id', 'keyword_id', 'method_id'];
 			Object.keys(_.pick(testAnnotation, referencesToTest)).forEach(fieldToTest => {
 
-				// Make a copy of our test annotation with bad references
-				let invalidatedObject = Object.assign({}, testAnnotation);
-				invalidatedObject[fieldToTest] = 999;
+				it(`Providing non-existing ${fieldToTest} for ${type} responds with error`, function(done) {
+					let invalidReferenceAnnotation = Object.assign({}, testAnnotation);
+					invalidReferenceAnnotation[fieldToTest] = 999;
 
-				it(`Providing non-existing ${fieldToTest} for ${type} responds with error`);
+					chai.request(server)
+						.post('/api/annotation/')
+						.send(invalidReferenceAnnotation)
+						.set({Authorization: `Bearer ${testToken}`})
+						.end((err, res) => {
+							chai.expect(res.status).to.equal(400);
+							chai.expect(res.text).to.equal(`Given ${fieldToTest} does not reference an existing record`);
+							done();
+						});
+				});
 
 			});
 
