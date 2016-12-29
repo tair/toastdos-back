@@ -16,6 +16,7 @@ router.use('/car', require('./car'));
 router.use('/role', require('./role'));
 router.use('/login', require('./login'));
 router.use('/keywordtype', require('./keyword_type'));
+router.use('/annotation', require('./annotation'));
 
 //router.post('/login', authenticationController.login);
 
