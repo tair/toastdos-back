@@ -51,9 +51,9 @@ function validateDOI(doi) {
 			// See http://www.doi.org/factsheets/DOIProxy.html
 			// All you need to know is responseCode '1' means '200 OK'.
 			if (body.responseCode === 1) {
-				resolve(true);
+				resolve(body);
 			} else {
-				reject(new Error('Provided DOI did not match any publications'));
+				reject(new Error(`DOI '${doi}' did not match any publications`));
 			}
 		});
 	});
@@ -72,9 +72,9 @@ function validatePubmedId(pmid) {
 			let lookupError = body.result[pmid].error;
 
 			if (lookupError) {
-				reject(new Error('Provided Pubmed ID did not match any publications'));
+				reject(new Error(`Pubmed ID '${pmid}' did not match any publications`));
 			} else {
-				resolve(true);
+				resolve(body);
 			}
 		});
 	});
