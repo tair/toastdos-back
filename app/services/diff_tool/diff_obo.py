@@ -92,13 +92,13 @@ def main(filepath1, filepath2):
         if line.strip() != '':
             file_changedTerms.write(line)
         else:
-            file_changedTerms.write("\n\n\n")
+            file_changedTerms.write("\n")
             break
 
     for ID_key in dict_changedTerms:
         if dict_changedTerms[ID_key]:
             file_changedTerms.write(dict_changedTerms[ID_key])
-            file_changedTerms.write("\n\n")
+            file_changedTerms.write("\n")
         else:
             file_deletedTermIDs.write(ID_key)
             file_deletedTermIDs.write("\n")
