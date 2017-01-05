@@ -20,56 +20,54 @@ describe('Keyword Controller', function() {
 		return knex.seed.run();
 	});
 
-	describe.only('POST /api/keyword/search', function() {
+	describe('POST /api/keyword/search', function() {
 
 		it('Search is not performed with too few characters', function(done) {
-			const testKeywordType = testdata.keyword_types[0].name;
+			const testKeywordTypeID = testdata.keyword_types[0].id;
 
 			chai.request(server)
 				.post('/api/keyword/search')
 				.send({
 					substring: 'abcd',
-					keyword_type: testKeywordType
+					keyword_type: testKeywordTypeID
 				})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
-					// TODO insert error
-					chai.expect(res.text).to.equal('');
+					chai.expect(res.text).to.equal('Keyword search string too short');
 					done();
 				});
 		});
 
 		it('Only alphanumeric queries are accepted', function(done) {
-			const testKeywordType = testdata.keyword_types[0].name;
+			const testSubstring = 'abcdefg-/@#';
+			const testKeywordTypeID = testdata.keyword_types[0].id;
 
 			chai.request(server)
 				.post('/api/keyword/search')
 				.send({
-					substring: 'abcdefg-/@#',
-					keyword_type: testKeywordType
+					substring: testSubstring,
+					keyword_type: testKeywordTypeID
 				})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
-					// TODO insert error
-					chai.expect(res.text).to.equal('');
+					chai.expect(res.text).to.equal(`Invalid Keyword search string ${testSubstring}`);
 					done();
 				});
 		});
 
 		it('Number of search results is limited', function(done) {
 			const searchLimit = 20;
-			const testKeywordType = testdata.keyword_types[0];
+			const testKeywordTypeID = testdata.keyword_types[0].id;
 			const testSubstring = 'Added Term';
-
 
 			// Need to add more Keywords than the expected limit
 			let keywordPromises = [];
-			for (let i = 0; i < searchLimit; i++) {
+			for (let i = 0; i < searchLimit * 2; i++) {
 				keywordPromises.push(
 					Keyword.forge({
 						name : `${testSubstring} ${i}`,
 						external_id : `T${i}`,
-						keyword_type_id : testKeywordType.id
+						keyword_type_id : testKeywordTypeID
 					}).save()
 				);
 			}
@@ -80,7 +78,7 @@ describe('Keyword Controller', function() {
 					.post('/api/keyword/search')
 					.send({
 						substring: testSubstring,
-						keyword_type: testKeywordType
+						keyword_type: testKeywordTypeID
 					})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
@@ -91,14 +89,14 @@ describe('Keyword Controller', function() {
 		});
 
 		it('Search result filtered by provided KeywordType', function(done) {
-			const testKeywordType = testdata.keyword_types[1].name;
+			const testKeywordTypeID = testdata.keyword_types[1].id;
 			const expectedKeyword = testdata.keywords[2];
 
 			chai.request(server)
 				.post('/api/keyword/search')
 				.send({
-					substring: 'Test',
-					keyword_type: testKeywordType
+					substring: 'Test Term',
+					keyword_type: testKeywordTypeID
 				})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
@@ -109,7 +107,7 @@ describe('Keyword Controller', function() {
 		});
 
 		it('Well-formed search responds with correct data', function(done) {
-			const testKeywordType = testdata.keyword_types[0].name;
+			const testKeywordTypeID = testdata.keyword_types[0].id;
 			const expectedKeywords = [
 				testdata.keywords[0],
 				testdata.keywords[1]
@@ -119,12 +117,12 @@ describe('Keyword Controller', function() {
 				.post('/api/keyword/search')
 				.send({
 					substring: 'Test Term 00',
-					keyword_type: testKeywordType
+					keyword_type: testKeywordTypeID
 				})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.have.length(2);
-					chai.expect(res.body[0]).to.containSubset(expectedKeywords);
+					chai.expect(res.body).to.containSubset(expectedKeywords);
 					done();
 				});
 		});
