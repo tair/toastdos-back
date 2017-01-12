@@ -19,6 +19,8 @@ function getLocusByName(name) {
 		request.get(requestUrl, (error, response, bodyJson) => {
 			if (error) {
 				reject(new Error(error));
+			} else if (response.statusCode === 404) {
+				reject(new Error(`No Locus found for name ${name}`));
 			} else {
 				resolve(JSON.parse(bodyJson));
 			}
@@ -29,6 +31,8 @@ function getLocusByName(name) {
 /**
  * Gets array of all Arabidopsis symbols and the loci to which
  * they map (symbolName, fullName, locusName).
+ *
+ * CAUTION: This request can take several seconds to complete.
  */
 function getAllSymbols() {
 	let requestUrl = `${BASE_URL}/symbols`;
@@ -46,7 +50,7 @@ function getAllSymbols() {
 /**
  * Gets array of symbols matching the given symbol name.
  */
-function getLociForSymbol(symbol) {
+function getSymbolsByName(symbol) {
 	let requestUrl = `${BASE_URL}/symbols/${symbol}`;
 	return new Promise((resolve, reject) => {
 		request.get(requestUrl, (error, response, bodyJson) => {
@@ -67,5 +71,5 @@ function getLociForSymbol(symbol) {
 module.exports = {
 	getLocusByName,
 	getAllSymbols,
-	getLociForSymbol
+	getSymbolsByName
 };
