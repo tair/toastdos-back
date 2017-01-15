@@ -22,7 +22,14 @@ router.use('/annotationstatus', require('./annotation_status'));
 router.use('/gene', require('./gene'));
 router.use('/publication', require('./publication'));
 
-//router.post('/login', authenticationController.login);
+/**
+ * Development endpoints.
+ * These are only available for development, as the name implies.
+ */
+if (process.env.NODE_ENV === 'development') {
+	const devOnlyController = require('../controllers/dev_only');
+	router.post('/dev/token', devOnlyController.makeDevToken);
+}
 
 // Generate 404s
 router.use((req, res, next) => {
