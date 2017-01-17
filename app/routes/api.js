@@ -28,7 +28,7 @@ router.use('/publication', require('./publication'));
  */
 if (process.env.NODE_ENV === 'development') {
 	const devOnlyController = require('../controllers/dev_only');
-	router.post('/dev/token', devOnlyController.makeDevToken);
+	router.get('/dev/token/:id', devOnlyController.makeDevToken);
 }
 
 // Generate 404s
