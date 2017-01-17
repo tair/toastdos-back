@@ -8,5 +8,6 @@ else if (process.env.NODE_ENV === 'test') {
 	module.exports = require('./test');
 }
 else {
+	process.env.NODE_ENV = 'development';
 	module.exports = require('./development');
 }
