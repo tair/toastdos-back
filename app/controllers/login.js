@@ -76,8 +76,11 @@ function login(req, res, next) {
 			}
 		});
 	}).catch(err => {
+		if (err.message.includes('Unexpected token < in JSON')) {
+			return res.status(500).send('Backend failed to authenticate with ORCID. Did you update the orcid_app_info resource with your ORCID ID?');
+		}
+
 		// Default error handling
-		console.log(err);
 		return res.status(500).json({err: "UnknownError"});
 	});
 }
