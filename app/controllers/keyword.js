@@ -32,7 +32,7 @@ function partialKeywordMatch(req, res, next) {
 			return res.status(200).json(results.toJSON());
 		})
 		.catch(err => {
-			return res.status(500).send(err.message);
+			return res.status(500).send('Unknown Error');
 		});
 }
 
