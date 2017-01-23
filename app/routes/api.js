@@ -12,7 +12,6 @@ const authenticationController = require('../controllers/authentication');
 router.use(enableCORS, allowHeaders, allowMethods);
 
 router.use('/user', require('./user'));
-router.use('/car', require('./car'));
 router.use('/role', require('./role'));
 router.use('/login', require('./login'));
 router.use('/keywordtype', require('./keyword_type'));
