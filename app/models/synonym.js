@@ -4,7 +4,7 @@ const bookshelf = require('../lib/bookshelf');
 
 require('./keyword');
 
-let Synonym = bookshelf.model('Synonym', {
+const Synonym = bookshelf.model('Synonym', {
 	tableName: 'synonym',
 	keyword: function() {
 		return this.belongsTo('Keyword', 'keyword_id');

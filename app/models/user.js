@@ -4,7 +4,7 @@ const bookshelf = require('../lib/bookshelf');
 
 require('./role');
 
-let User = bookshelf.model("User", {
+const User = bookshelf.model("User", {
 	tableName: "user",
 	roles: function() {
 		return this.belongsToMany("Role", "user_role")
