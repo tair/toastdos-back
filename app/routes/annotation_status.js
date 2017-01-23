@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const annotationStatusController = require('../controllers/annotation_status');
 

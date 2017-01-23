@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const auth = require('../lib/authentication');
 

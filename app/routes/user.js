@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const userController = require('../controllers/user');
 const authenticationMiddleware = require('../middleware/authentication');

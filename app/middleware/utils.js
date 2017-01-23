@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 function enableCORS(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-
-"use strict"
+'use strict';
 
 const DESTINATION_DIR = "./resources"
 const PUBLIC_KEY = "pubkey.pem";

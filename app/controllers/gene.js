@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const Uniprot = require('../lib/uniprot_api');
 

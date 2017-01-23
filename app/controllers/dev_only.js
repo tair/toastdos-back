@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * This controller is for endpoints we're using in development only.

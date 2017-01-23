@@ -1,4 +1,4 @@
-"use strict"
+'use strict';
 
 const user = require('../models/user');
 const authentication = require('../lib/authentication');

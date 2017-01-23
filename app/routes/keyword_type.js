@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const keywordTypeController = require('../controllers/keyword_type');
 

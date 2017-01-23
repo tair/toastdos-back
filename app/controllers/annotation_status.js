@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const AnnotationStatus = require('../models/annotation_status');
 

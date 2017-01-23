@@ -1,4 +1,4 @@
-"use strict"
+'use strict';
 
 const loginController = require('../controllers/login');
 

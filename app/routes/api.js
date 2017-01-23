@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const {enableCORS, allowHeaders, allowMethods} = require('../middleware/utils');
 

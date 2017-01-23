@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Gene Ontology Data Importer Service

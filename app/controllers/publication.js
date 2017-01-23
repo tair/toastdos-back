@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const validator = require('../lib/publication_id_validator');
 

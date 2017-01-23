@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const KeywordType = require('../models/keyword_type');
 

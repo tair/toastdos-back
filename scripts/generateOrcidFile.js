@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-"use strict";
+'use strict';
 
 const DESTINATION_DIR = "./resources";
 const FILENAME = "orcid_app_info.json";
