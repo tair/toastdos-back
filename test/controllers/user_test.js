@@ -78,7 +78,6 @@ describe('User Controller', function() {
 			let expectedEmail = 'updated.email@test.com';
 
 			let testUser = testdata.users[0];
-			testUser.email_address = testUser;
 
 			chai.request(server)
 				.put('/api/user/' + testUser.id)
