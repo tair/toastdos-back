@@ -4,11 +4,11 @@ const chai = require('chai');
 chai.use(require('chai-http'));
 chai.use(require('chai-subset'));
 
-const server = require('../app');
-const knex    = require('../app/lib/bookshelf').knex;
-const Keyword = require('../app/models/keyword');
+const server = require('../../app/index');
+const knex    = require('../../app/lib/bookshelf').knex;
+const Keyword = require('../../app/models/keyword');
 
-const testdata = require('../seeds/test_data.json');
+const testdata = require('../../seeds/test_data.json');
 
 describe('Keyword Controller', function() {
 

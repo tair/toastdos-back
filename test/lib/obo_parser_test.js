@@ -3,7 +3,7 @@
 const chai   = require('chai');
 const stream = require('stream');
 
-const OboParser = require('../app/lib/obo_parser').OboParser;
+const OboParser = require('../../app/lib/obo_parser').OboParser;
 
 /**
  * Allows us to easily pipe test strings through our obo parser

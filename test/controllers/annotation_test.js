@@ -5,11 +5,11 @@ chai.use(require('chai-http'));
 const combinatorics = require('js-combinatorics');
 const _             = require('lodash');
 
-const server = require('../app');
-const auth   = require('../app/lib/authentication');
-const knex   = require('../app/lib/bookshelf').knex;
+const server = require('../../app/index');
+const auth   = require('../../app/lib/authentication');
+const knex   = require('../../app/lib/bookshelf').knex;
 
-const testdata = require('../seeds/test_data.json');
+const testdata = require('../../seeds/test_data.json');
 
 describe('Annotation Controller', function() {
 

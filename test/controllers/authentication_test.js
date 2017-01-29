@@ -3,11 +3,11 @@
 const chai = require('chai');
 chai.use(require('chai-http'));
 
-const server = require('../app');
-const auth   = require('../app/lib/authentication');
-const knex   = require('../app/lib/bookshelf').knex;
+const server = require('../../app/index');
+const auth   = require('../../app/lib/authentication');
+const knex   = require('../../app/lib/bookshelf').knex;
 
-const testdata = require('../seeds/test_data.json');
+const testdata = require('../../seeds/test_data.json');
 
 describe('Authentication middleware', function() {
 
