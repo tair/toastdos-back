@@ -31,7 +31,7 @@ function signToken(tokenData, callback) {
 
 /**
  * Verify a JWT
- * @param  {Sring}   	token    - the token to verify
+ * @param  {String}   	token    - the token to verify
  * @param  {Function} 	callback - the callback
  */
 function verifyToken(token, callback) {

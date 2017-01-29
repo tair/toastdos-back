@@ -89,7 +89,7 @@ function updateUserById(req, res, next) {
 		return res.status(400)
 			.json({
 				error: 'BadRequest',
-				message: 'Malformed email ' + req.body.email_address
+				message: `Malformed email ${req.body.email_address}`
 			});
 	}
 
@@ -106,7 +106,7 @@ function updateUserById(req, res, next) {
 				return res.status(404)
 					.json({
 						error: 'NotFound',
-						message: 'No User exists for ID ' + req.params.id
+						message: `No User exists for ID ${req.params.id}`
 					});
 			} else {
 				return res.status(500)

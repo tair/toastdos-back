@@ -6,7 +6,7 @@ const User      = require('../models/user');
 const orcidInfo = require('../../resources/orcid_app_info.json');
 const auth      = require('../lib/authentication');
 
-const ORCID_BASE_URL = 'https://orcid.org/';
+const ORCID_BASE_URL = 'https://orcid.org';
 
 /**
  * Controller to log in with an ORCID auth code
@@ -26,7 +26,7 @@ function login(req, res, next) {
 	// First we complete the OAuth process started on the frontend
 	new Promise((resolve, reject) => {
 		request.post({
-			url: ORCID_BASE_URL + 'oauth/token',
+			url: `${ORCID_BASE_URL}/oauth/token`,
 			form: {
 				client_id: orcidInfo.client_id,
 				client_secret: orcidInfo.client_secret,

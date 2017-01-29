@@ -36,8 +36,8 @@ describe('Authentication middleware', function() {
 		it('A well formed authentication header is accepted', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
-				.set({Authorization: 'Bearer ' + testToken})
+				.get(`/api/user/${testUser.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					done();
@@ -47,7 +47,7 @@ describe('Authentication middleware', function() {
 		it('Omitting a header for an authenticated request responds with an error', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
+				.get(`/api/user/${testUser.id}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
 					chai.expect(res.body.error).to.equal('Unauthorized');
@@ -58,7 +58,7 @@ describe('Authentication middleware', function() {
 		it('A JSON Web Token must be used for authentication', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
+				.get(`/api/user/${testUser.id}`)
 				.set({Authorization: 'Some crap that isnt a token'})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
@@ -74,8 +74,8 @@ describe('Authentication middleware', function() {
 				data: {user_id: testUser.id}
 			}, (tokenerr, token) => {
 				chai.request(server)
-					.get('/api/user/' + testUser.id)
-					.set({Authorization: 'Bearer ' + token})
+					.get(`/api/user/${testUser.id}`)
+					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(401);
 						chai.expect(res.body.error).to.equal('TokenExpired');
@@ -88,7 +88,7 @@ describe('Authentication middleware', function() {
 		it('Malformed tokens are rejected', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
+				.get(`/api/user/${testUser.id}`)
 				.set({Authorization: 'Bearer garbagetoken'})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
@@ -105,8 +105,8 @@ describe('Authentication middleware', function() {
 		it('Successfully retrieves user whose ID matches ID in JWT', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
-				.set({Authorization: 'Bearer ' + testToken})
+				.get(`/api/user/${testUser.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.contain(testUser);
@@ -118,8 +118,8 @@ describe('Authentication middleware', function() {
 			let testUser = testdata.users[0];
 			auth.signToken({user_id: 'fakeid'}, (tokenerr, token) => {
 				chai.request(server)
-					.get('/api/user/' + testUser.id)
-					.set({Authorization: 'Bearer ' + token})
+					.get(`/api/user/${testUser.id}`)
+					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(401);
 						done();
