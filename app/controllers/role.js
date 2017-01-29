@@ -3,7 +3,7 @@
  * @module controllers/user
  */
 
-const Role = require("../models/role");
+const Role = require('../models/role');
 
 
 /**
@@ -14,11 +14,11 @@ const Role = require("../models/role");
  */
 function getRoles(req, res, next) {
 	return Role.fetchAll()
-		.then(collection  =>  res.json(collection.serialize()))
+		.then(collection => res.json(collection.serialize()))
 		.catch(err => {
 			console.error(err);
 			res.status(500).json({
-				error: "UnknownError"
+				error: 'UnknownError'
 			});
 		});
 }
@@ -37,7 +37,7 @@ function createRole(req, res, next) {
 		.catch(err => {
 			console.error(err);
 			res.status(500).json({
-				error: "UnknownError"
+				error: 'UnknownError'
 			});
 		});
 }
@@ -61,4 +61,4 @@ module.exports = {
 	getRoles,
 	createRole,
 	getRoleUsers
-}
+};

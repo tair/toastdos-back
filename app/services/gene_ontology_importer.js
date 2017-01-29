@@ -24,7 +24,7 @@ class DataImporter extends stream.Writable {
 
 	constructor(options) {
 		super(options);
-		this.defaultKeywordTypeName;
+		this.defaultKeywordTypeName = null;
 		this.keywordTypeCache = {};
 	}
 

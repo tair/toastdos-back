@@ -11,5 +11,4 @@ const CommentAnnotation = bookshelf.model('CommentAnnotation', {
 	}
 });
 
-
 module.exports = CommentAnnotation;

@@ -5,8 +5,6 @@ const {enableCORS, allowHeaders, allowMethods} = require('../middleware/utils');
 const express = require('express');
 let router = express.Router();
 
-const authenticationController = require('../controllers/authentication');
-
 
 // enable cors
 router.use(enableCORS, allowHeaders, allowMethods);

@@ -35,7 +35,7 @@ function getUsers(req, res, next) {
 function getUserById(req, res, next) {
 	return User.where('id', req.params.id).fetch({
 			require: true,
-			withRelated: req.query["withRelated"]
+			withRelated: req.query['withRelated']
 		})
 		.then(user => res.json(user.serialize()))
 		.catch(err => {
@@ -43,22 +43,22 @@ function getUserById(req, res, next) {
 			if(regMatch = err.message.match(/([a-zA-Z]*) is not defined on the model/)) {
 				return res.status(400)
 					.json({
-						error: "InvalidRelation",
+						error: 'InvalidRelation',
 						message: `'${regMatch[1]}' is not a valid relation on this model.`
 					});
 			}
 			// 404
-			if(err.message === "EmptyResponse") {
+			if(err.message === 'EmptyResponse') {
 				return res.status(404)
 					.json({
-						error: "NotFound"
+						error: 'NotFound'
 					});
 			}
 			// Unknown error
 			console.error(err);
 			return res.status(500)
 				.json({
-					error: "UnknownError"
+					error: 'UnknownError'
 				});
 		});
 }
@@ -126,24 +126,24 @@ function updateUserById(req, res, next) {
 function deleteUserById(req, res, next) {
 	return User.where('id', req.params.id).fetch({
 		require: true,
-		withRelated: req.query["withRelated"]
+		withRelated: req.query['withRelated']
 	})
 	.then(user => user.destroy())
 	.then(result => {
 		return res.status(200).send();
 	})
 	.catch(err => {
-		if(err.message === "EmptyResponse") {
+		if(err.message === 'EmptyResponse') {
 			return res.status(404)
 				.json({
-					error: "NotFound"
+					error: 'NotFound'
 				});
 		}
 		// Unknown error
 		console.error(err);
 		return res.status(500)
 		.json({
-			error: "UnknownError"
+			error: 'UnknownError'
 		});
 	});
 }
@@ -157,7 +157,7 @@ function deleteUserById(req, res, next) {
 function setRoles(req, res, next) {
 	let target_user = User.forge({id: req.params.id});
 	target_user.fetch({
-		withRelated: ["roles"]
+		withRelated: ['roles']
 	})
 	.then(user => {
 		return bookshelf.transaction(t => {
@@ -168,7 +168,7 @@ function setRoles(req, res, next) {
 		});
 	}).then(result => {
 		return target_user.fetch({
-			withRelated: ["roles"]
+			withRelated: ['roles']
 		})
 	})
 	.then(user => {
@@ -177,7 +177,7 @@ function setRoles(req, res, next) {
 		console.error(err);
 		return res.status(500)
 		.json({
-			error: "UnknownError"
+			error: 'UnknownError'
 		});
 	});
 }

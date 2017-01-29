@@ -6,9 +6,6 @@ const express = require('express');
 let router = express.Router();
 
 // GET all keywordtype
-router.get(
-    '/',            // route
-    keywordTypeController.getKeywordTypes    // the controller
-);
+router.get('/', keywordTypeController.getKeywordTypes);
 
 module.exports = router;

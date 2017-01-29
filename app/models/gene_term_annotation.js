@@ -18,5 +18,4 @@ const GeneTermAnnotation = bookshelf.model('GeneTermAnnotation', {
 	}
 });
 
-
 module.exports = GeneTermAnnotation;

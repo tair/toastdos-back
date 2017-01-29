@@ -12,4 +12,3 @@ const Synonym = bookshelf.model('Synonym', {
 });
 
 module.exports = Synonym;
-

@@ -26,5 +26,4 @@ const Annotation = bookshelf.model('Annotation', {
 	}
 });
 
-
 module.exports = Annotation;
