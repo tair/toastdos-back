@@ -1,12 +1,8 @@
 'use strict';
 
-const request   = require('request');
-
-const User      = require('../models/user');
-const orcidInfo = require('../../resources/orcid_app_info.json');
-const auth      = require('../lib/authentication');
-
-const ORCID_BASE_URL = 'https://orcid.org';
+const User  = require('../models/user');
+const auth  = require('../lib/authentication');
+const Orcid = require('../lib/orcid_api');
 
 /**
  * Controller to log in with an ORCID auth code
@@ -21,25 +17,8 @@ function login(req, res, next) {
 		});
 	}
 
-	let authCode = req.body.code;
-
 	// First we complete the OAuth process started on the frontend
-	new Promise((resolve, reject) => {
-		request.post({
-			url: `${ORCID_BASE_URL}/oauth/token`,
-			form: {
-				client_id: orcidInfo.client_id,
-				client_secret: orcidInfo.client_secret,
-				grant_type: 'authorization_code',
-				code: authCode
-			}
-		},
-		(error, response, body) => {
-			error ? reject(error) : resolve(body);
-		});
-	}).then(userTokenResJSON => {
-		let userTokenRes = JSON.parse(userTokenResJSON);
-
+	Orcid.getUserToken(req.body.code).then(userTokenRes => {
 		if (!userTokenRes.orcid) {
 			return res.status(500).json({
 				error: 'OrcidError'
