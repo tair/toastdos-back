@@ -1,6 +1,7 @@
 'use strict';
 
-const auth = require('../lib/authentication');
+const auth     = require('../lib/authentication');
+const response = require('../lib/responses');
 
 const TOKEN_MATCHER = /Bearer (.*)$/;
 
@@ -13,41 +14,25 @@ function validateAuthentication(req, res, next) {
 	// Validate an authorization header was provided
 	let authHeader = req.get('Authorization');
 	if(!authHeader) {
-		return res.status(401).send({
-			error: 'Unauthorized',
-			message: 'No authorization header provided.'
-		})
+		return response.unauthorized(res, 'No authorization header provided.');
 	}
 
 	// Validate that authorization header contains a token
 	let authMatch = authHeader.match(TOKEN_MATCHER);
 	if(!authMatch) {
-		return res.status(401).send({
-			error: 'Unauthorized',
-			message: 'No authorization token provided in header.'
-		});
+		return response.unauthorized(res, 'No authorization token provided in header.');
 	}
 
 	return auth.verifyToken(authMatch[1], (err, data) => {
 		if(err) {
 			if(err.name === 'TokenExpiredError') {
-				return res.status(401).json({
-					error: 'TokenExpired',
-					message: 'jwt expired'
-				});
+				return response.unauthorized(res, 'JWT expired');
 			} else {
-				// JsonWebTokenError
-				return res.status(401).json({
-					error: 'JsonWebTokenError',
-					message: 'jwt malformed'
-				});
+				return response.unauthorized(res, 'JWT malformed');
 			}
 		}
 
-
-
 		return next();
-
 	});
 }
 
@@ -62,13 +47,10 @@ function validateUser(req, res, next) {
 	// Assume the token itself has been validated
 	auth.verifyToken(authMatch[1], (err, tokenBody) => {
 		if (req.params.id && tokenBody.user_id && req.params.id == tokenBody.user_id) {
-			next();
+			return next();
 		}
 		else {
-			return res.status(401).json({
-				error: 'Unauthorized',
-				message: 'Unauthorized to view requested user'
-			});
+			return response.unauthorized(res, 'Unauthorized to view requested user');
 		}
 	});
 }

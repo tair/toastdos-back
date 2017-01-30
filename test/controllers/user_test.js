@@ -105,7 +105,7 @@ describe('User Controller', function() {
 				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
-					chai.expect(res.body.message).to.contain(Object.keys(invalidUpdateRequest).toString());
+					chai.expect(res.text).to.contain(Object.keys(invalidUpdateRequest).toString());
 					done();
 				});
 		});
@@ -119,7 +119,7 @@ describe('User Controller', function() {
 					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(404);
-						chai.expect(res.body.message).to.contain(`ID ${fakeId}`);
+						chai.expect(res.text).to.contain(`ID ${fakeId}`);
 						done();
 					});
 			});
@@ -132,7 +132,7 @@ describe('User Controller', function() {
 				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
-					chai.expect(res.body.message).to.contain('Malformed email');
+					chai.expect(res.text).to.contain('Malformed email');
 					done();
 				});
 		});

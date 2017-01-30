@@ -5,6 +5,7 @@
 
 const Role = require('../models/role');
 
+const response = require('../lib/responses');
 
 /**
  * Get all Roles in the database
@@ -14,13 +15,8 @@ const Role = require('../models/role');
  */
 function getRoles(req, res, next) {
 	return Role.fetchAll()
-		.then(collection => res.json(collection.serialize()))
-		.catch(err => {
-			console.error(err);
-			res.status(500).json({
-				error: 'UnknownError'
-			});
-		});
+		.then(collection => response.ok(res, collection.serialize()))
+		.catch(err => response.defaultServerError(res, err));
 }
 
 /**
@@ -31,15 +27,9 @@ function getRoles(req, res, next) {
  */
 function createRole(req, res, next) {
 	return Role.forge(req.body)
-		.save().then(role => {
-			return res.json(role.serialize());
-		})
-		.catch(err => {
-			console.error(err);
-			res.status(500).json({
-				error: 'UnknownError'
-			});
-		});
+		.save()
+		.then(role => response.ok(res, role.serialize()))
+		.catch(err => response.defaultServerError(res, err));
 }
 
 /**
@@ -50,10 +40,9 @@ function createRole(req, res, next) {
  */
 function getRoleUsers(req, res, next) {
 	return Role.forge({id: req.params.id})
-	.fetch({withRelated: 'users'})
-	.then(role => {
-		return res.json(role.related('users'));
-	})
+		.fetch({withRelated: 'users'})
+		.then(role => response.ok(res, role.related('users')))
+		.catch(err => response.defaultServerError(res, err));
 }
 
 

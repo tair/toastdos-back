@@ -1,9 +1,10 @@
 'use strict';
 
-const user = require('../models/user');
-const authentication = require('../lib/authentication');
+const util = require('util');
 
-const util 		= require('util');
+const user           = require('../models/user');
+const authentication = require('../lib/authentication');
+const response       = require('../lib/responses');
 
 /**
  * Verify password and generate a JWT for a user
@@ -31,10 +32,7 @@ function login(req, res, next) {
 	return Promise.all([userDataPromise, checkPasswordPromise])
 	.then(([userData, passMatch]) => {
 		if(!passMatch) {
-			return res.status(400).json({
-				error: 'BadPassword',
-				message: 'Password is incorrect for user'
-			});
+			return response.badRequest(res, 'Password is incorrect for user');
 		}
 		
 		let tokenData = {
@@ -47,7 +45,8 @@ function login(req, res, next) {
 				if(err) {
 					throw err;
 				}
-				return res.json({
+
+				return response.ok(res, {
 					token: theToken
 				});
 			});
@@ -55,18 +54,10 @@ function login(req, res, next) {
 	})
 	.catch(err => {
 		if(err.message === 'EmptyResponse') {
-			return res.status(400)
-				.json({
-					error: 'NoUser',
-					message: 'Username not found'
-				});
+			return response.badRequest(res, 'Username not found');
 		}
-		// Unknown error
-		console.error(err);
-		return res.status(500)
-		.json({
-			error: 'UnknownError'
-		});
+
+		return response.defaultServerError(res, err);
 	});
 }
 

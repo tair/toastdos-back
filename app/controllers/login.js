@@ -1,8 +1,9 @@
 'use strict';
 
-const User  = require('../models/user');
-const auth  = require('../lib/authentication');
-const Orcid = require('../lib/orcid_api');
+const User     = require('../models/user');
+const auth     = require('../lib/authentication');
+const Orcid    = require('../lib/orcid_api');
+const response = require('../lib/responses');
 
 /**
  * Controller to log in with an ORCID auth code
@@ -12,17 +13,13 @@ const Orcid = require('../lib/orcid_api');
  */
 function login(req, res, next) {
 	if (!req.body.code) {
-		return res.status(400).json({
-			error: 'Missing field: code'
-		});
+		return response.badRequest(400, 'Missing field: code');
 	}
 
 	// First we complete the OAuth process started on the frontend
 	Orcid.getUserToken(req.body.code).then(userTokenRes => {
 		if (!userTokenRes.orcid) {
-			return res.status(500).json({
-				error: 'OrcidError'
-			});
+			return response.serverError(res, 'Orcid error');
 		}
 
 		let orcidId = userTokenRes.orcid;
@@ -34,8 +31,7 @@ function login(req, res, next) {
 			// Return that user if they exist
 			if (user) {
 				auth.signToken({user_id: user.attributes.id}, (err, userJwt) => {
-
-					return res.status(200).json({
+					return response.ok(res, {
 						jwt: userJwt
 					});
 				});
@@ -47,7 +43,7 @@ function login(req, res, next) {
 					orcid_id: orcidId
 				}).save().then(newUser => {
 					auth.signToken({user_id: newUser.attributes.id}, (err, userJwt) => {
-						return res.status(201).json({
+						return response.created(res, {
 							jwt: userJwt
 						});
 					});
@@ -56,11 +52,10 @@ function login(req, res, next) {
 		});
 	}).catch(err => {
 		if (err.message.includes('Unexpected token < in JSON')) {
-			return res.status(500).send('Backend failed to authenticate with ORCID. Did you update the orcid_app_info resource with your ORCID ID?');
+			return response.serverError(res, 'Backend failed to authenticate with ORCID. Did you update the orcid_app_info resource with your ORCID ID?');
 		}
 
-		// Default error handling
-		return res.status(500).json({err: "UnknownError"});
+		return response.defaultServerError(res, err);
 	});
 }
 

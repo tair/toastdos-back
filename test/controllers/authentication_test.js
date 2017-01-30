@@ -50,7 +50,7 @@ describe('Authentication middleware', function() {
 				.get(`/api/user/${testUser.id}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
-					chai.expect(res.body.error).to.equal('Unauthorized');
+					chai.expect(res.text).to.equal('No authorization header provided.');
 					done();
 				});
 		});
@@ -62,7 +62,7 @@ describe('Authentication middleware', function() {
 				.set({Authorization: 'Some crap that isnt a token'})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
-					chai.expect(res.body.error).to.equal('Unauthorized');
+					chai.expect(res.text).to.equal('No authorization token provided in header.');
 					done();
 				});
 		});
@@ -78,8 +78,7 @@ describe('Authentication middleware', function() {
 					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(401);
-						chai.expect(res.body.error).to.equal('TokenExpired');
-						chai.expect(res.body.message).to.equal('jwt expired');
+						chai.expect(res.text).to.equal('JWT expired');
 						done();
 					});
 			});
@@ -92,8 +91,7 @@ describe('Authentication middleware', function() {
 				.set({Authorization: 'Bearer garbagetoken'})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
-					chai.expect(res.body.error).to.equal('JsonWebTokenError');
-					chai.expect(res.body.message).to.equal('jwt malformed');
+					chai.expect(res.text).to.equal('JWT malformed');
 					done();
 				});
 		});

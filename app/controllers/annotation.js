@@ -3,6 +3,7 @@
 const _ = require('lodash');
 
 const publicationValidator = require('../lib/publication_id_validator');
+const response             = require('../lib/responses');
 
 const Publication        = require('../models/publication');
 const GeneTermAnnotation = require('../models/gene_term_annotation');
@@ -59,10 +60,10 @@ function createAnnotation(req, res, next) {
 		createSubRecords = commentRecordCreator.bind(null, req);
 	}
 	else if (!req.body.annotation_type) {
-		return badRequest(res, 'No annotation_type specified');
+		return response.badRequest(res, 'No annotation_type specified');
 	}
 	else {
-		return badRequest(res, 'Unrecognized annotation_type ' + req.body.annotation_type);
+		return response.badRequest(res, `Unrecognized annotation_type ${req.body.annotation_type}`);
 	}
 
 
@@ -70,7 +71,7 @@ function createAnnotation(req, res, next) {
 	try {
 		validateRequest();
 	} catch(e) {
-		return badRequest(res, e.message);
+		return response.badRequest(res, e.message);
 	}
 
 	// Step 2: Verify the data
@@ -94,17 +95,16 @@ function createAnnotation(req, res, next) {
 			return Annotation.forge(newAnnotation).save();
 		})
 		.then(addedAnnotation => {
-			return res.status(201)
-				.json(addedAnnotation);
+			return response.created(res, addedAnnotation);
 		})
 		.catch(err => {
 
 			if (   err.message.match(/Given publication ID is not a DOI or Pubmed ID/)
 				|| err.message.match(/Given .* does not reference an existing record/)) {
-				return badRequest(res, err.message);
+				return response.badRequest(res, err.message);
 			}
 			else {
-				return res.status(500).send('Internal Server Error occurred while adding the annotation');
+				return response.defaultServerError(res, err);
 			}
 		});
 }
@@ -318,10 +318,6 @@ function redefineError(promise, message, matcher) {
 				}
 			});
 	});
-}
-
-function badRequest(res, message) {
-	return res.status(400).send(message);
 }
 
 module.exports = {

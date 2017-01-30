@@ -7,6 +7,7 @@
 const _              = require('lodash');
 const authentication = require('../lib/authentication');
 const bookshelf      = require('../lib/bookshelf');
+const response       = require('../lib/responses');
 
 const User = require('../models/user');
 
@@ -21,8 +22,8 @@ const TERRIFYING_EMAIL_VALIDATING_REGEX = /(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.
  */
 function getUsers(req, res, next) {
 	return User.fetchAll()
-		.then(collection  =>  res.json(collection.serialize()))
-		.catch(e => console.error(e))
+		.then(collection  => response.ok(res, collection.serialize()))
+		.catch(err => response.defaultServerError(res, err));
 }
 
 
@@ -40,26 +41,14 @@ function getUserById(req, res, next) {
 		.then(user => res.json(user.serialize()))
 		.catch(err => {
 			let regMatch;
-			if(regMatch = err.message.match(/([a-zA-Z]*) is not defined on the model/)) {
-				return res.status(400)
-					.json({
-						error: 'InvalidRelation',
-						message: `'${regMatch[1]}' is not a valid relation on this model.`
-					});
+			if (regMatch = err.message.match(/([a-zA-Z]*) is not defined on the model/)) {
+				return response.badRequest(res, `'${regMatch[1]}' is not a valid relation on this model.`);
 			}
-			// 404
-			if(err.message === 'EmptyResponse') {
-				return res.status(404)
-					.json({
-						error: 'NotFound'
-					});
+			if (err.message === 'EmptyResponse') {
+				return response.notFound(res, 'User not found');
 			}
-			// Unknown error
-			console.error(err);
-			return res.status(500)
-				.json({
-					error: 'UnknownError'
-				});
+
+			return response.defaultServerError(res, err);
 		});
 }
 
@@ -77,43 +66,25 @@ function updateUserById(req, res, next) {
 	// Validate we're only trying to update mutable fields
 	let extraFields = Object.keys(_.omit(req.body, mutableFields));
 	if (extraFields.length) {
-		return res.status(400)
-			.json({
-				error: 'BadRequest',
-				message: 'User fields cannot be updated: ' + extraFields
-			});
+		return response.badRequest(res, `User fields cannot be updated: ${extraFields}`);
 	}
 
 	// Validate email address
 	if (req.body.email_address && !req.body.email_address.match(TERRIFYING_EMAIL_VALIDATING_REGEX)) {
-		return res.status(400)
-			.json({
-				error: 'BadRequest',
-				message: `Malformed email ${req.body.email_address}`
-			});
+		return response.badRequest(res, `Malformed email ${req.body.email_address}`);
 	}
 
 	// Update the user with the provided fields
 	let update = Object.assign({id: req.params.id}, req.body);
 	User.forge(update)
 		.save(null, {method: 'update'})
-		.then(updatedUser => {
-			return res.status(200)
-				.json(updatedUser);
-		})
+		.then(updatedUser => response.ok(res, updatedUser))
 		.catch(err => {
 			if (err.toString().includes('No Rows Updated')) {
-				return res.status(404)
-					.json({
-						error: 'NotFound',
-						message: `No User exists for ID ${req.params.id}`
-					});
-			} else {
-				return res.status(500)
-					.json({
-						error: 'UnknownError'
-					});
+				return response.notFound(res, `No User exists for ID ${req.params.id}`);
 			}
+
+			return response.defaultServerError(res, err);
 		});
 }
 
@@ -124,27 +95,19 @@ function updateUserById(req, res, next) {
  * @param  {Function} next - pass to next handler
  */
 function deleteUserById(req, res, next) {
-	return User.where('id', req.params.id).fetch({
-		require: true,
-		withRelated: req.query['withRelated']
-	})
-	.then(user => user.destroy())
-	.then(result => {
-		return res.status(200).send();
-	})
-	.catch(err => {
-		if(err.message === 'EmptyResponse') {
-			return res.status(404)
-				.json({
-					error: 'NotFound'
-				});
-		}
-		// Unknown error
-		console.error(err);
-		return res.status(500)
-		.json({
-			error: 'UnknownError'
-		});
+	return User.where('id', req.params.id)
+		.fetch({
+			require: true,
+			withRelated: req.query['withRelated']
+		})
+		.then(user => user.destroy())
+		.then(result => response.ok(res))
+		.catch(err => {
+			if (err.message === 'EmptyResponse') {
+				return response.notFound(res, 'User not found');
+			}
+
+			return response.defaultServerError(res, err);
 	});
 }
 
@@ -156,30 +119,23 @@ function deleteUserById(req, res, next) {
  */
 function setRoles(req, res, next) {
 	let target_user = User.forge({id: req.params.id});
-	target_user.fetch({
-		withRelated: ['roles']
-	})
-	.then(user => {
-		return bookshelf.transaction(t => {
-			let promises = [];
-			req.body.add ? promises.push(user.roles().attach(req.body.add, {transacting: t})) : null;
-			req.body.remove ? promises.push(user.roles().detach(req.body.remove, {transacting: t})) : null;
-			return Promise.all(promises);
-		});
-	}).then(result => {
-		return target_user.fetch({
-			withRelated: ['roles']
+	target_user
+		.fetch({withRelated: ['roles']})
+		.then(user => {
+			return bookshelf.transaction(t => {
+				let promises = [];
+				req.body.add ? promises.push(user.roles().attach(req.body.add, {transacting: t})) : null;
+				req.body.remove ? promises.push(user.roles().detach(req.body.remove, {transacting: t})) : null;
+				return Promise.all(promises);
+			});
 		})
-	})
-	.then(user => {
-		return res.status(200).send(user);
-	}).catch(err => {
-		console.error(err);
-		return res.status(500)
-		.json({
-			error: 'UnknownError'
-		});
-	});
+		.then(result => {
+			return target_user.fetch({
+			withRelated: ['roles']
+			});
+		})
+		.then(user => response.ok(res, user))
+		.catch(err => response.defaultServerError(res, err));
 }
 
 
