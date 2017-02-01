@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 chai.use(require('chai-subset'));
@@ -22,12 +22,7 @@ describe('TAIR API', function() {
 		// We use a cut down version of the data so the test still works if this response data changes
 		const expectedResponse = {
 			locusName: 'AT1G10000',
-			annotationGroups: [
-				{
-					category: 'GO Molecular Function',
-					relationshipType: 'has',
-				}
-			]
+			taxon: 'Arabidopsis thaliana'
 		};
 
 		return Tair.getLocusByName(goodLocusName).then(locus => {

@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Wrapper for requests to TAIR webservices
@@ -14,7 +14,7 @@ const BASE_URL = 'https://www.arabidopsis.org';
  * annotation groups with annotations.
  */
 function getLocusByName(name) {
-	let requestUrl = `${BASE_URL}/locus/${name}`;
+	let requestUrl = `${BASE_URL}/loci/${name}`;
 	return new Promise((resolve, reject) => {
 		request.get(requestUrl, (error, response, bodyJson) => {
 			if (error) {
