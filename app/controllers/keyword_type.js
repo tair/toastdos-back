@@ -1,6 +1,8 @@
-"use strict";
+'use strict';
 
 const KeywordType = require('../models/keyword_type');
+
+const response = require('../lib/responses');
 
 /**
  * Get all KeywordTypes in the database
@@ -12,15 +14,10 @@ function getKeywordTypes(req, res, next) {
     return KeywordType
 	    .fetchAll()
 	    .then(keywordtypes => {
-		    return res.status(200)
-			    .json(keywordtypes);
+	    	return response.ok(res, keywordtypes);
 	    })
 	    .catch(err => {
-		    console.log(err);
-            return res.status(500)
-	            .json({
-                    error: 'UnknownError'
-                });
+	    	return response.defaultServerError(res, err);
     });
 }
 

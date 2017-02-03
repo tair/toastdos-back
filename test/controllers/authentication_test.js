@@ -1,13 +1,13 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 chai.use(require('chai-http'));
 
-const server = require('../app');
-const auth   = require('../app/lib/authentication');
-const knex   = require('../app/lib/bookshelf').knex;
+const server = require('../../app/index');
+const auth   = require('../../app/lib/authentication');
+const knex   = require('../../app/lib/bookshelf').knex;
 
-const testdata = require('../seeds/test_data.json');
+const testdata = require('../../seeds/test_data.json');
 
 describe('Authentication middleware', function() {
 
@@ -36,8 +36,8 @@ describe('Authentication middleware', function() {
 		it('A well formed authentication header is accepted', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
-				.set({Authorization: 'Bearer ' + testToken})
+				.get(`/api/user/${testUser.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					done();
@@ -47,10 +47,10 @@ describe('Authentication middleware', function() {
 		it('Omitting a header for an authenticated request responds with an error', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
+				.get(`/api/user/${testUser.id}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
-					chai.expect(res.body.error).to.equal('Unauthorized');
+					chai.expect(res.text).to.equal('No authorization header provided.');
 					done();
 				});
 		});
@@ -58,11 +58,11 @@ describe('Authentication middleware', function() {
 		it('A JSON Web Token must be used for authentication', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
+				.get(`/api/user/${testUser.id}`)
 				.set({Authorization: 'Some crap that isnt a token'})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
-					chai.expect(res.body.error).to.equal('Unauthorized');
+					chai.expect(res.text).to.equal('No authorization token provided in header.');
 					done();
 				});
 		});
@@ -74,12 +74,11 @@ describe('Authentication middleware', function() {
 				data: {user_id: testUser.id}
 			}, (tokenerr, token) => {
 				chai.request(server)
-					.get('/api/user/' + testUser.id)
-					.set({Authorization: 'Bearer ' + token})
+					.get(`/api/user/${testUser.id}`)
+					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(401);
-						chai.expect(res.body.error).to.equal('TokenExpired');
-						chai.expect(res.body.message).to.equal('jwt expired');
+						chai.expect(res.text).to.equal('JWT expired');
 						done();
 					});
 			});
@@ -88,12 +87,11 @@ describe('Authentication middleware', function() {
 		it('Malformed tokens are rejected', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
+				.get(`/api/user/${testUser.id}`)
 				.set({Authorization: 'Bearer garbagetoken'})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
-					chai.expect(res.body.error).to.equal('JsonWebTokenError');
-					chai.expect(res.body.message).to.equal('jwt malformed');
+					chai.expect(res.text).to.equal('JWT malformed');
 					done();
 				});
 		});
@@ -105,8 +103,8 @@ describe('Authentication middleware', function() {
 		it('Successfully retrieves user whose ID matches ID in JWT', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
-				.set({Authorization: 'Bearer ' + testToken})
+				.get(`/api/user/${testUser.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.contain(testUser);
@@ -118,8 +116,8 @@ describe('Authentication middleware', function() {
 			let testUser = testdata.users[0];
 			auth.signToken({user_id: 'fakeid'}, (tokenerr, token) => {
 				chai.request(server)
-					.get('/api/user/' + testUser.id)
-					.set({Authorization: 'Bearer ' + token})
+					.get(`/api/user/${testUser.id}`)
+					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(401);
 						done();

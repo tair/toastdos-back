@@ -1,11 +1,11 @@
-"use strict";
+'use strict';
 
-const jwt 		= require('jsonwebtoken');
-const config 	= require('../../config');
+const jwt    = require('jsonwebtoken');
+const config = require('../../config');
 
 
-const JWT_PRIVATE_CERT_FILE 	= "./resources/privkey.pem";
-const JWT_PUBLIC_CERT_FILE 		= "./resources/pubkey.pem";
+const JWT_PRIVATE_CERT_FILE = './resources/privkey.pem';
+const JWT_PUBLIC_CERT_FILE  = './resources/pubkey.pem';
 
 let privateCert = '';
 let publicCert = '';
@@ -31,7 +31,7 @@ function signToken(tokenData, callback) {
 
 /**
  * Verify a JWT
- * @param  {Sring}   	token    - the token to verify
+ * @param  {String}   	token    - the token to verify
  * @param  {Function} 	callback - the callback
  */
 function verifyToken(token, callback) {

@@ -1,11 +1,13 @@
-"use strict";
+'use strict';
 
 /**
  * This controller is for endpoints we're using in development only.
  * This functionality will not be available in production.
  */
 
-const auth = require('../lib/authentication');
+const auth     = require('../lib/authentication');
+const response = require('../lib/responses');
+
 const User = require('../models/user');
 
 /**
@@ -18,14 +20,14 @@ function makeDevToken(req, res, next) {
 		.fetch()
 		.then(fetchedUser => {
 			if (!fetchedUser) {
-				return res.status(400).send(`User with id ${req.params.id} does not exist`);
+				return response.badRequest(res, `User with id ${req.params.id} does not exist`);
 			}
 
 			return auth.signToken({user_id: fetchedUser.attributes.id}, (err, token) => {
 				if (err) {
-					return res.status(500).send(err.message);
+					return response.serverError(res, err.message);
 				} else {
-					return res.status(200).json({
+					return response.ok(res, {
 						dev_token: token
 					});
 				}
@@ -33,7 +35,7 @@ function makeDevToken(req, res, next) {
 
 		})
 		.catch(err => {
-			return res.status(500).send(err.message);
+			return response.defaultServerError(res, err);
 		});
 }
 

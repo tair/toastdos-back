@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const bookshelf = require('../lib/bookshelf');
 
@@ -10,7 +10,7 @@ require('./gene_term_annotation');
 require('./gene_gene_annotation');
 require('./comment_annotation');
 
-let Annotation = bookshelf.model('Annotation', {
+const Annotation = bookshelf.model('Annotation', {
 	tableName: 'annotation',
 	status: function() {
 		return this.belongsTo('AnnotationStatus', 'status_id');
@@ -25,6 +25,5 @@ let Annotation = bookshelf.model('Annotation', {
 		return this.morphTo('annotation', 'GeneTermAnnotation', 'GeneGeneAnnotation', 'CommentAnnotation');
 	}
 });
-
 
 module.exports = Annotation;

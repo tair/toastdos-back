@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 // Switch our configuration based on environment
 if (process.env.NODE_ENV === 'production') {

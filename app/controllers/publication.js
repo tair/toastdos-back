@@ -1,5 +1,6 @@
-"use strict";
+'use strict';
 
+const response  = require('../lib/responses');
 const validator = require('../lib/publication_id_validator');
 
 /**
@@ -17,26 +18,26 @@ function validatePublicationId(req, res, next) {
 	if (validator.isDOI(pubId)) {
 		validator.validateDOI(pubId)
 			.then(query => {
-				res.status(200).json({
+				response.ok(res, {
 					type: 'doi',
 					url: query.values[0].data.value
 				});
 			})
-			.catch(err => res.status(404).send(err.message));
+			.catch(err => response.notFound(res, err.message));
 	}
 	else if (validator.isPubmedId(pubId)) {
 		validator.validatePubmedId(pubId)
 			.then(query => {
-				res.status(200).json({
+				response.ok(res, {
 					type: 'pubmed_id',
 					title: query.result[pubId].title,
 					author: query.result[pubId].authors[0].name
 				});
 			})
-			.catch(err => res.status(404).send(err.message));
+			.catch(err => response.notFound(res, err.message));
 	}
 	else {
-		return res.status(400).send(`Invalid publication ID ${pubId}`);
+		return response.notFound(res, `Invalid publication ID ${pubId}`);
 	}
 }
 

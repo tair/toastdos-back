@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 
-const Uniprot = require('../app/lib/uniprot_api');
+const Uniprot = require('../../app/lib/uniprot_api');
 
 describe('Uniprot API', function () {
 
