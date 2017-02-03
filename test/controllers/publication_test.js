@@ -1,9 +1,9 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 chai.use(require('chai-http'));
 
-const server = require('../app');
+const server = require('../../app/index');
 
 describe('Publication Controller', function() {
 

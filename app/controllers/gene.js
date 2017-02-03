@@ -1,6 +1,7 @@
-"use strict";
+'use strict';
 
-const Uniprot = require('../lib/uniprot_api');
+const response = require('../lib/responses');
+const Uniprot  = require('../lib/uniprot_api');
 
 /**
  * Get a Gene by its full name.
@@ -16,16 +17,16 @@ function getByFullName(req, res, next) {
 	Uniprot.searchGeneByName(req.params.name)
 		.then(genes => {
 			if (genes.length > 1) {
-				return res.status(400).send('Given query matches multiple genes');
+				return response.badRequest(res, 'Given query matches multiple genes');
 			} else {
-				return res.status(200).send(genes[0]);
+				return response.ok(res, genes[0]);
 			}
 		})
 		.catch(err => {
 			if (err.message.match(/Given query matches no genes/)) {
-				return res.status(404).send('Given query matches no genes');
+				return response.notFound(res, 'Given query matches no genes')
 			} else {
-				return res.status(500).send('Unknown Server Error');
+				return response.defaultServerError(res, err);
 			}
 		});
 }

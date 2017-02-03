@@ -1,13 +1,13 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 chai.use(require('chai-http'));
 
-const server = require('../app');
-const auth   = require('../app/lib/authentication');
-const knex    = require('../app/lib/bookshelf').knex;
+const server = require('../../app/index');
+const auth   = require('../../app/lib/authentication');
+const knex    = require('../../app/lib/bookshelf').knex;
 
-const testdata = require('../seeds/test_data.json');
+const testdata = require('../../seeds/test_data.json');
 
 describe('User Controller', function() {
 
@@ -37,8 +37,8 @@ describe('User Controller', function() {
 			let testUser = testdata.users[0];
 
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
-				.set({Authorization: 'Bearer ' + testToken})
+				.get(`/api/user/${testUser.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.contain(testUser);
@@ -50,8 +50,8 @@ describe('User Controller', function() {
 			let fakeId = 999;
 			auth.signToken({user_id: fakeId}, (tokenerr, token) => {
 				chai.request(server)
-					.get('/api/user/' + fakeId)
-					.set({Authorization: 'Bearer ' + token})
+					.get(`/api/user/${fakeId}`)
+					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(404);
 						done();
@@ -62,7 +62,7 @@ describe('User Controller', function() {
 		it('Cannot get user without valid authentication', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.get('/api/user/' + testUser.id)
+				.get(`/api/user/${testUser.id}`)
 				.set({Authorization: 'Bearer invalidtoken'})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
@@ -78,12 +78,11 @@ describe('User Controller', function() {
 			let expectedEmail = 'updated.email@test.com';
 
 			let testUser = testdata.users[0];
-			testUser.email_address = testUser;
 
 			chai.request(server)
-				.put('/api/user/' + testUser.id)
+				.put(`/api/user/${testUser.id}`)
 				.send({email_address: expectedEmail})
-				.set({Authorization: 'Bearer ' + testToken})
+				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					if (err) throw res.body;
 
@@ -101,12 +100,12 @@ describe('User Controller', function() {
 			};
 
 			chai.request(server)
-				.put('/api/user/' + testUser.id)
+				.put(`/api/user/${testUser.id}`)
 				.send(invalidUpdateRequest)
-				.set({Authorization: 'Bearer ' + testToken})
+				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
-					chai.expect(res.body.message).to.contain(Object.keys(invalidUpdateRequest).toString());
+					chai.expect(res.text).to.contain(Object.keys(invalidUpdateRequest).toString());
 					done();
 				});
 		});
@@ -115,12 +114,12 @@ describe('User Controller', function() {
 			let fakeId = 999;
 			auth.signToken({user_id: fakeId}, (tokenerr, token) => {
 				chai.request(server)
-					.put('/api/user/' + fakeId)
+					.put(`/api/user/${fakeId}`)
 					.send({email_address: 'fake.email@email.com'})
-					.set({Authorization: 'Bearer ' + token})
+					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(404);
-						chai.expect(res.body.message).to.contain('ID ' + fakeId);
+						chai.expect(res.text).to.contain(`ID ${fakeId}`);
 						done();
 					});
 			});
@@ -130,10 +129,10 @@ describe('User Controller', function() {
 			chai.request(server)
 				.put('/api/user/1')
 				.send({email_address: 'malformed.email'})
-				.set({Authorization: 'Bearer ' + testToken})
+				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
-					chai.expect(res.body.message).to.contain('Malformed email');
+					chai.expect(res.text).to.contain('Malformed email');
 					done();
 				});
 		});
@@ -141,7 +140,7 @@ describe('User Controller', function() {
 		it('Cannot update user without valid authentication', function() {
 			let testUser = testdata.users[0];
 			chai.request(server)
-				.put('/api/user/' + testUser.id)
+				.put(`/api/user/${testUser.id}`)
 				.set({Authorization: 'Bearer invalidtoken'})
 				.send({email_address: 'new.email@test.com'})
 				.end((err, res) => {

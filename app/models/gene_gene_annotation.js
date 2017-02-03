@@ -1,11 +1,11 @@
-"use strict";
+'use strict';
 
 const bookshelf = require('../lib/bookshelf');
 
 require('./keyword');
 require('./annotation');
 
-let GeneGeneAnnotation = bookshelf.model('GeneGeneAnnotation', {
+const GeneGeneAnnotation = bookshelf.model('GeneGeneAnnotation', {
 	tableName: 'gene_gene_annotation',
 	method: function() {
 		return this.belongsTo('Keyword', 'method_id');
@@ -14,6 +14,5 @@ let GeneGeneAnnotation = bookshelf.model('GeneGeneAnnotation', {
 		return this.morphOne('Annotation', 'annotation');
 	}
 });
-
 
 module.exports = GeneGeneAnnotation;

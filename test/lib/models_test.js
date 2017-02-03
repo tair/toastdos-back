@@ -1,31 +1,31 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 chai.use(require('chai-subset'));
-const knex = require('../app/lib/bookshelf').knex;
+const knex = require('../../app/lib/bookshelf').knex;
 
-const KeywordType        = require('../app/models/keyword_type');
-const Keyword            = require('../app/models/keyword');
-const Synonym            = require('../app/models/synonym');
-const Publication        = require('../app/models/publication');
-const AnnotationStatus   = require('../app/models/annotation_status');
-const Annotation         = require('../app/models/annotation');
-const GeneTermAnnotation = require('../app/models/gene_term_annotation');
-const GeneGeneAnnotation = require('../app/models/gene_gene_annotation');
-const CommentAnnotation  = require('../app/models/comment_annotation');
+const KeywordType        = require('../../app/models/keyword_type');
+const Keyword            = require('../../app/models/keyword');
+const Synonym            = require('../../app/models/synonym');
+const Publication        = require('../../app/models/publication');
+const AnnotationStatus   = require('../../app/models/annotation_status');
+const Annotation         = require('../../app/models/annotation');
+const GeneTermAnnotation = require('../../app/models/gene_term_annotation');
+const GeneGeneAnnotation = require('../../app/models/gene_gene_annotation');
+const CommentAnnotation  = require('../../app/models/comment_annotation');
 
-const testdata = require('../seeds/test_data.json');
+const testdata = require('../../seeds/test_data.json');
 
 describe('Models', function() {
 
 	// Make sure the database is up to date
-	before(function(done) {
-		knex.migrate.latest().then(() => done());
+	before(function() {
+		return knex.migrate.latest();
 	});
 
 	// Give us fresh test data in a sqlite memory database for each test
-	beforeEach(function(done) {
-		knex.seed.run().then(() => done());
+	beforeEach(function() {
+		return knex.seed.run();
 	});
 
 	describe('Keyword', function() {

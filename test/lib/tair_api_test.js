@@ -3,7 +3,7 @@
 const chai = require('chai');
 chai.use(require('chai-subset'));
 
-const Tair = require('../app/lib/tair_api');
+const Tair = require('../../app/lib/tair_api');
 
 describe('TAIR API', function() {
 

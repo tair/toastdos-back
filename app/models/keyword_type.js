@@ -1,10 +1,10 @@
-"use strict";
+'use strict';
 
 const bookshelf = require('../lib/bookshelf');
 
 require('./keyword');
 
-let KeywordType = bookshelf.model('KeywordType', {
+const KeywordType = bookshelf.model('KeywordType', {
 	tableName: 'keyword_type',
 	keywords: function() {
 		return this.hasMany('Keyword', 'keyword_type_id');

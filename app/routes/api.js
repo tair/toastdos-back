@@ -1,18 +1,16 @@
-"use strict";
+'use strict';
 
 const {enableCORS, allowHeaders, allowMethods} = require('../middleware/utils');
 
 const express = require('express');
 let router = express.Router();
 
-const authenticationController = require('../controllers/authentication');
-
+const response = require('../lib/responses');
 
 // enable cors
 router.use(enableCORS, allowHeaders, allowMethods);
 
 router.use('/user', require('./user'));
-router.use('/car', require('./car'));
 router.use('/role', require('./role'));
 router.use('/login', require('./login'));
 router.use('/keywordtype', require('./keyword_type'));
@@ -22,7 +20,14 @@ router.use('/annotationstatus', require('./annotation_status'));
 router.use('/gene', require('./gene'));
 router.use('/publication', require('./publication'));
 
-//router.post('/login', authenticationController.login);
+/**
+ * Development endpoints.
+ * These are only available for development, as the name implies.
+ */
+if (process.env.NODE_ENV === 'development') {
+	const devOnlyController = require('../controllers/dev_only');
+	router.get('/dev/token/:id', devOnlyController.makeDevToken);
+}
 
 // Generate 404s
 router.use((req, res, next) => {
