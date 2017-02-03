@@ -2,7 +2,7 @@
 
 const chai = require('chai');
 
-const RNACentral = require('../app/lib/rna_central_api');
+const RNACentral = require('../../app/lib/rna_central_api');
 
 describe('RNA Central API', function () {
 

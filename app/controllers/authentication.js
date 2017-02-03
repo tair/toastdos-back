@@ -1,9 +1,10 @@
-"use strict"
+'use strict';
 
-const user = require('../models/user');
+const util = require('util');
+
+const user           = require('../models/user');
 const authentication = require('../lib/authentication');
-
-const util 		= require('util');
+const response       = require('../lib/responses');
 
 /**
  * Verify password and generate a JWT for a user
@@ -14,7 +15,7 @@ const util 		= require('util');
 function login(req, res, next) {
 	let userDataPromise = user.where('username', req.body.username.toLowerCase()).fetch({
 		require: true,
-		withRelated: ["password"]
+		withRelated: ['password']
 	});
 
 	let checkPasswordPromise = userDataPromise.then(user => {
@@ -31,46 +32,36 @@ function login(req, res, next) {
 	return Promise.all([userDataPromise, checkPasswordPromise])
 	.then(([userData, passMatch]) => {
 		if(!passMatch) {
-			return res.status(400).json({
-				error: "BadPassword",
-				message: "Password is incorrect for user"
-			});
+			return response.badRequest(res, 'Password is incorrect for user');
 		}
 		
 		let tokenData = {
 			username: userData.attributes.username,
 			// todo add other token data
-		}
+		};
 
 		return new Promise((accept, reject) => {
 			authentication.signToken(tokenData, (err, theToken) => {
 				if(err) {
 					throw err;
 				}
-				return res.json({
+
+				return response.ok(res, {
 					token: theToken
 				});
 			});
 		});
 	})
 	.catch(err => {
-		if(err.message === "EmptyResponse") {
-			return res.status(400)
-				.json({
-					error: "NoUser",
-					message: "Username not found"
-				});
+		if(err.message === 'EmptyResponse') {
+			return response.badRequest(res, 'Username not found');
 		}
-		// Unknown error
-		console.error(err);
-		return res.status(500)
-		.json({
-			error: "UnknownError"
-		});
+
+		return response.defaultServerError(res, err);
 	});
 }
 
 
 module.exports = {
 	login
-}
+};

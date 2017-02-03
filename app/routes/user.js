@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const userController = require('../controllers/user');
 const authenticationMiddleware = require('../middleware/authentication');
@@ -8,9 +8,9 @@ let router = express.Router();
 
 // GET all users
 router.get(
-	'/',			// route
-	authenticationMiddleware.validateAuthentication,	// isAuthenticated middleware
-	userController.getUsers		// the controller
+	'/',
+	authenticationMiddleware.validateAuthentication,
+	userController.getUsers
 );
 
 // GET a specific user
@@ -32,7 +32,7 @@ router.put(
 // DELETE a user
 router.delete(
 	'/:id',
-	authenticationMiddleware.validateAuthentication,	// isAuthenticated middleware
+	authenticationMiddleware.validateAuthentication,
 	userController.deleteUserById
 );
 

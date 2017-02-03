@@ -1,15 +1,14 @@
-"use strict"
+'use strict';
 
 const bookshelf = require('../lib/bookshelf');
 
 require('./user');
 
-let Role = bookshelf.model("Role", {
-	tableName: "role",
+const Role = bookshelf.model('Role', {
+	tableName: 'role',
 	users: function() {
-		return this.belongsToMany("User", "user_role");
+		return this.belongsToMany('User', 'user_role');
 	}
 });
 
 module.exports = Role;
-
