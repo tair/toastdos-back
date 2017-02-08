@@ -89,6 +89,7 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.integer('locus_id').references('locus.id').notNullable();
 			table.string('symbol').notNullable();
+			table.string('full_name').notNullable();
 			table.integer('source_id').references('external_source.id');
 			table.integer('submitter_id').references('user.id').notNullable();
 			table.timestamp('created_at').defaultTo(knex.fn.now());
