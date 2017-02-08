@@ -9,9 +9,11 @@ const request = require('request');
 const BASE_URL = 'https://www.arabidopsis.org';
 
 /**
- * Gets name, description, a URI to an image of the sequence structure,
- * an array of "other names" (symbols and aliases), and an array of
- * annotation groups with annotations.
+ * Gets a TAIR gene by it's name.
+ * These typically look like AT1G10000 for TAIR.
+ *
+ * @param name
+ * @returns {Promise}
  */
 function getLocusByName(name) {
 	let requestUrl = `${BASE_URL}/loci/${name}`;

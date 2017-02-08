@@ -8,7 +8,7 @@ describe('Uniprot API', function () {
 
 	it('Whole existing ID returns single Gene', function() {
 		const validId = 'Q13137';
-		return Uniprot.getGeneById(validId).then(result => {
+		return Uniprot.getLocusByName(validId).then(result => {
 				chai.expect(result).to.be.an('object');
 				chai.expect(result.id).to.equal(validId);
 			}).catch(err => {
@@ -18,19 +18,19 @@ describe('Uniprot API', function () {
 
 	it('Partial existing ID causes error due to multiple results', function() {
 		const validPartialId = 'Q131';
-		return Uniprot.getGeneById(validPartialId).then(result => {
+		return Uniprot.getLocusByName(validPartialId).then(result => {
 			throw new Error('Did not reject when getting multiple values');
 		}).catch(err => {
 			chai.expect(err.toString()).to.contain('Given ID matches multiple genes');
 		});
 	});
 
-	it('Non-existing ID causes error due to no records', function() {
-		const fakeId = 'fakeid';
-		return Uniprot.getGeneById(fakeId).then(result => {
-			throw new Error('Returned a gene for a fake ID');
+	it('Non-existing name causes error due to no records', function() {
+		const fakeName = 'fakename';
+		return Uniprot.getLocusByName(fakeName).then(result => {
+			throw new Error('Returned a gene for a fake name');
 		}).catch(err => {
-			chai.expect(err.toString()).to.contain('ID matches no genes');
+			chai.expect(err.toString()).to.equal(`No Locus found for name ${fakeName}`);
 		});
 	});
 
