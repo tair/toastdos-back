@@ -7,7 +7,7 @@ require('./taxon');
 const Locus = bookshelf.model('Locus', {
 	tableName: 'locus',
 	taxon: function() {
-		return this.belongsTo('Taxon', 'locus_id');
+		return this.belongsTo('Taxon', 'taxon_id');
 	}
 });
 
