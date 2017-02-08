@@ -4,6 +4,7 @@ const bookshelf = require('../lib/bookshelf');
 
 require('./external_source');
 require('./locus');
+require('./user');
 
 const GeneSymbol = bookshelf.model('GeneSymbol', {
 	tableName: 'gene_symbol',
@@ -12,6 +13,9 @@ const GeneSymbol = bookshelf.model('GeneSymbol', {
 	},
 	locus: function() {
 		return this.belongsTo('Locus', 'locus_id');
+	},
+	submitter: function() {
+		return this.belongsTo('User', 'submitter_id');
 	}
 });
 

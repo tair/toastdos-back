@@ -82,8 +82,6 @@ exports.up = function(knex, Promise) {
 			table.integer('locus_id').references('locus.id').notNullable();
 			table.string('locus_name').unique().notNullable();
 			table.integer('source_id').references('external_source.id').notNullable();
-			table.integer('submitted_by').references('user.id').notNullable();
-			table.timestamp('created_at').defaultTo(knex.fn.now());
 
 			table.index('locus_id');
 		})
@@ -92,6 +90,8 @@ exports.up = function(knex, Promise) {
 			table.integer('locus_id').references('locus.id').notNullable();
 			table.string('symbol').notNullable();
 			table.integer('source_id').references('external_source.id');
+			table.integer('submitter_id').references('user.id').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 
 			table.index('locus_id');
 		})
