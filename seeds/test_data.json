@@ -92,7 +92,7 @@
       "publication_id" : 1,
       "status_id" : 1,
       "submitter_id" : 1,
-      "locus_id" : "fake locus id",
+      "locus_id" : 1,
       "annotation_id" : 1,
       "annotation_type" : "gene_term_annotation"
     },
@@ -101,7 +101,7 @@
       "publication_id" : 1,
       "status_id" : 2,
       "submitter_id" : 1,
-      "locus_id" : "fake locus id",
+      "locus_id" : 1,
       "annotation_id" : 2,
       "annotation_type" : "gene_term_annotation"
     },
@@ -110,7 +110,7 @@
       "publication_id" : 2,
       "status_id" : 1,
       "submitter_id" : 2,
-      "locus_id" : "fake locus id 2",
+      "locus_id" : 2,
       "annotation_id" : 1,
       "annotation_type" : "gene_gene_annotation"
     },
@@ -119,7 +119,7 @@
       "publication_id" : 2,
       "status_id" : 2,
       "submitter_id" : 2,
-      "locus_id" : "fake locus id 3",
+      "locus_id" : 3,
       "annotation_id" : 2,
       "annotation_type" : "gene_gene_annotation"
     },
@@ -128,7 +128,7 @@
       "publication_id" : 2,
       "status_id" : 2,
       "submitter_id" : 2,
-      "locus_id" : "fake locus id 3",
+      "locus_id" : 3,
       "annotation_id" : 1,
       "annotation_type" : "comment_annotation"
     },
@@ -137,7 +137,7 @@
       "publication_id" : 2,
       "status_id" : 2,
       "submitter_id" : 2,
-      "locus_id" : "fake locus id 4",
+      "locus_id" : 4,
       "annotation_id" : 2,
       "annotation_type" : "comment_annotation"
     }
@@ -148,7 +148,7 @@
       "id" : 1,
       "method_id" : 1,
       "keyword_id" : 2,
-      "evidence_id" : "fake locus id"
+      "evidence_id" : 1
     },
     {
       "id" : 2,
@@ -160,12 +160,12 @@
   "gene_gene_annotations" : [
     {
       "id" : 1,
-      "locus2_id" : "fake locus id",
+      "locus2_id" : 1,
       "method_id" : 1
     },
     {
       "id" : 2,
-      "locus2_id" : "fake locus id 2",
+      "locus2_id" : 2,
       "method_id" : 1
     }
   ],
@@ -178,6 +178,115 @@
     {
       "id" : 2,
       "text" : "Here's another cool comment about a totally unrelated gene!"
+    }
+  ],
+
+  "taxon" : [
+    {
+      "id" : 1,
+      "name" : "Test Taxon 1"
+    },
+    {
+      "id" : 2,
+      "name" : "Test Taxon 2"
+    }
+  ],
+
+  "locus" : [
+    {
+      "id" : 1,
+      "taxon_id" : 1
+    },
+    {
+      "id" : 2,
+      "taxon_id" : 1
+    },
+    {
+      "id" : 3,
+      "taxon_id" : 2
+    },
+    {
+      "id" : 4,
+      "taxon_id" : 2
+    }
+  ],
+
+  "external_source" : [
+    {
+      "id" : 1,
+      "name" : "Test External Source 1"
+    },
+    {
+      "id" : 2,
+      "name" : "Test External Source 2"
+    }
+  ],
+
+  "locus_name" : [
+    {
+      "id" : 1,
+      "locus_id" : 1,
+      "locus_name" : "Test Locus 1",
+      "source_id" : 1
+    },
+    {
+      "id" : 2,
+      "locus_id" : 2,
+      "locus_name" : "Test Locus 2",
+      "source_id" : 1
+    },
+    {
+      "id" : 3,
+      "locus_id" : 1,
+      "locus_name" : "Test Locus 3",
+      "source_id" : 2
+    },
+    {
+      "id" : 4,
+      "locus_id" : 1,
+      "locus_name" : "Test Locus 4",
+      "source_id" : 2
+    },
+    {
+      "id" : 5,
+      "locus_id" : 4,
+      "locus_name" : "Test Locus 5",
+      "source_id" : 2
+    }
+  ],
+
+  "gene_symbol" : [
+    {
+      "id" : 1,
+      "locus_id" : 1,
+      "symbol" : "TFN1",
+      "full_name" : "Test Full Name 1",
+      "source_id" : 1,
+      "submitter_id" : 1
+    },
+    {
+      "id" : 2,
+      "locus_id" : 1,
+      "symbol" : "TFN2",
+      "full_name" : "Test Full Name 2",
+      "source_id" : 1,
+      "submitter_id" : 1
+    },
+    {
+      "id" : 3,
+      "locus_id" : 2,
+      "symbol" : "TFN3",
+      "full_name" : "Test Full Name 3",
+      "source_id" : 1,
+      "submitter_id" : 2
+    },
+    {
+      "id" : 4,
+      "locus_id" : 1,
+      "symbol" : "TFN4",
+      "full_name" : "Test Full Name 4",
+      "source_id" : 2,
+      "submitter_id" : 2
     }
   ]
 
