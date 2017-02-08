@@ -91,6 +91,7 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.integer('locus_id').references('locus.id').notNullable();
 			table.string('symbol').notNullable();
+			table.integer('source_id').references('external_source.id');
 
 			table.index('locus_id');
 		})
