@@ -13,6 +13,7 @@ const Annotation         = require('../../app/models/annotation');
 const GeneTermAnnotation = require('../../app/models/gene_term_annotation');
 const GeneGeneAnnotation = require('../../app/models/gene_gene_annotation');
 const CommentAnnotation  = require('../../app/models/comment_annotation');
+const Taxon              = require('../../app/models/taxon');
 
 const testdata = require('../../seeds/test_data.json');
 
@@ -323,7 +324,21 @@ describe('Models', function() {
 
 	describe.only('Taxon', function() {
 
-		it('All locuses referencing this Taxon can be retrieved');
+		it('All locuses referencing this Taxon can be retrieved', function() {
+			let testTaxon = testdata.taxon[0];
+			let expectedLocuses = [
+				testdata.locus[0],
+				testdata.locus[1]
+			];
+
+			return Taxon.where({id: testTaxon.id})
+				.fetch({withRelated: 'locuses'})
+				.then(res => {
+					if (!res) throw new Error('No locuses were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.locuses).to.deep.equal(expectedLocuses);
+				});
+		});
 
 	});
 
