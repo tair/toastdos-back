@@ -321,4 +321,40 @@ describe('Models', function() {
 
 	});
 
+	describe.only('Taxon', function() {
+
+		it('All locuses referencing this Taxon can be retrieved');
+
+	});
+
+	describe.only('Locus Name', function() {
+
+		it('Gets parent Locus for this Locus Name');
+
+		it('Gets source for this Locus name');
+
+	});
+
+	describe.only('Locus', function() {
+
+		it('Gets Taxon information for this Locus');
+
+	});
+
+	describe.only('External Source', function() {
+
+		it('Gets all referencing Locuses');
+
+	});
+
+	describe.only('Gene Symbol', function() {
+
+		it('Source for this Gene Symbol can be retrieved');
+
+		it('Locus this Gene Symbol belongs to can be retrieved');
+
+		it('User who submitted this Gene Symbol can be retrieved');
+
+	});
+
 });
