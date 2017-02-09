@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "bcrypt": "^0.8.7",
+    "bluebird": "^3.4.7",
     "body-parser": "~1.15.1",
     "bookshelf": "^0.10.2",
     "byline": "^5.0.0",
