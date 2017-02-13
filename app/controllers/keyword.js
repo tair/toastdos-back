@@ -15,6 +15,14 @@ const KEYWORD_SUBSTRING_REGEX = /^[\w ]+$/;
  * @param  {Function} next - pass to next route handler
  */
 function partialKeywordMatch(req, res, next) {
+	if (!req.body.substring) {
+		return response.badRequest(res, `'substring' is a required field`);
+	}
+
+	if (!req.body.keyword_type) {
+		return response.badRequest(res, `'keyword_type' is a required field`);
+	}
+
 	if (req.body.substring.length < KEYWORD_SUBSTRING_MIN_LENGTH) {
 		return response.badRequest(res, 'Keyword search string too short');
 	}
