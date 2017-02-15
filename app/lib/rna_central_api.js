@@ -23,7 +23,7 @@ function getLocusByName(name) {
 				let body = JSON.parse(bodyJson);
 				let taxonId =  body.xrefs.results[0].taxid;
 
-				NCBI.getTaxonInfo(taxonId).then(taxonInfo => {
+				NCBI.getTaxonById(taxonId).then(taxonInfo => {
 					resolve({
 						source: 'RNA Central',
 						name: body.rnacentral_id,
