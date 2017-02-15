@@ -2,6 +2,8 @@
 
 const request = require('request');
 
+const NCBI = require('./ncbi_api');
+
 const BASE_URL = 'http://rnacentral.org/api/v1/rna';
 
 /**
@@ -13,15 +15,22 @@ const BASE_URL = 'http://rnacentral.org/api/v1/rna';
  */
 function getLocusByName(name) {
 	return new Promise((resolve, reject) => {
-		let requestUrl = `${BASE_URL}/${name}`;
+		let requestUrl = `${BASE_URL}/${name}?flat=true`;
 		request.get(requestUrl, (error, response, bodyJson) => {
-			if (error) {
-				reject(new Error(error));
-			} else if (response.statusCode === 404) {
-				reject(new Error(`No Locus found for name ${name}`));
-			} else {
+			if (error) reject(new Error(error));
+			else if (response.statusCode === 404) reject(new Error(`No Locus found for name ${name}`));
+			else {
 				let body = JSON.parse(bodyJson);
-				resolve(body);
+				let taxonId =  body.xrefs.results[0].taxid;
+
+				NCBI.getTaxonInfo(taxonId).then(taxonInfo => {
+					resolve({
+						source: 'RNA Central',
+						name: body.rnacentral_id,
+						taxon_id: taxonId,
+						taxon_name: taxonInfo.scientificName
+					});
+				});
 			}
 		});
 	});

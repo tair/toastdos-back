@@ -17,9 +17,15 @@ describe('RNA Central API', function () {
 
 	it('Good Locus name responds successfully', function() {
 		const goodLocusName = 'URS0000000018';
-		const expectedSubset = { rnacentral_id: 'URS0000000018' };
+		const expectedResponse = {
+			source: 'RNA Central',
+			name: goodLocusName,
+			taxon_id: 77133,
+			taxon_name: 'uncultured bacterium'
+		};
+
 		return RNACentral.getLocusByName(goodLocusName).then(result => {
-			chai.expect(result).to.contain(expectedSubset);
+			chai.expect(result).to.deep.equal(expectedResponse);
 		}).catch(err => {
 			throw err;
 		});
