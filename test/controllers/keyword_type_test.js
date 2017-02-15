@@ -2,6 +2,7 @@
 
 const chai = require('chai');
 chai.use(require('chai-http'));
+chai.use(require('chai-subset'));
 
 const server = require('../../app/index');
 const knex    = require('../../app/lib/bookshelf').knex;
@@ -27,7 +28,7 @@ describe('KeywordType Controller', function() {
                 .get('/api/keywordtype/')
                 .end((err, res) => {
                     chai.expect(res.status).to.equal(200);
-                    chai.expect(res.body).to.deep.equal(testKeywordTypes);
+                    chai.expect(res.body).to.containSubset(testKeywordTypes);
                     done();
                 });
         });

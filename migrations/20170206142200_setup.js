@@ -13,22 +13,27 @@ exports.up = function(knex, Promise) {
 		.createTable('role', table => {
 			table.increments('id');
 			table.string('name').unique().notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('user_role', table => {
 			table.integer('user_id').references('user.id').notNullable();
 			table.integer('role_id').references('role.id').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 
 			table.primary(['user_id', 'role_id']);
 		})
 		.createTable('keyword_type', table => {
 			table.increments('id');
 			table.string('name').unique();
+
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('keyword', table => {
 			table.increments('id');
 			table.integer('keyword_type_id').references('keyword_type.id').notNullable();
 			table.string('name');
 			table.string('external_id').unique();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 
 			table.index('external_id');
 		})
@@ -36,6 +41,7 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.integer('keyword_id').references('keyword.id');
 			table.string('name');
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 
 			table.index('keyword_id');
 		})
@@ -43,10 +49,12 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.string('doi').unique();
 			table.string('pubmed_id').unique();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('annotation_status', table => {
 			table.increments('id');
 			table.string('name').unique().notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('annotation', table => {
 			table.increments('id');
@@ -63,15 +71,18 @@ exports.up = function(knex, Promise) {
 			table.integer('method_id').references('keyword.id');
 			table.integer('keyword_id').references('keyword.id');
 			table.integer('evidence_id'); // TODO if we ever have a Locus table, this has a reference to it
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('gene_gene_annotation', table => {
 			table.increments('id');
 			table.integer('locus2_id').notNullable(); // TODO see above note about Locus table reference
 			table.integer('method_id').references('keyword.id');
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('comment_annotation', table => {
 			table.increments('id');
 			table.string('text').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		});
 };
 
