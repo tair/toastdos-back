@@ -70,6 +70,7 @@ exports.up = function(knex, Promise) {
 			table.integer('method_id').references('keyword.id');
 			table.integer('keyword_id').references('keyword.id');
 			table.integer('evidence_id'); // TODO if we ever have a Locus table, this has a reference to it
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('gene_gene_annotation', table => {
 			table.increments('id');
