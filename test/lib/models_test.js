@@ -95,20 +95,19 @@ describe('Models', function() {
 
 	describe('Publication', function() {
 
-		it('Get Annotations associated with Publication', function(done) {
+		it('Get Annotations associated with Publication', function() {
 			let testPublication = testdata.publications[0];
 			let expectedAnnotations = [
 				testdata.annotations[0],
 				testdata.annotations[1]
 			];
 
-			Publication.where({id: testPublication.id})
+			return Publication.where({id: testPublication.id})
 				.fetch({withRelated: 'referencedBy'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.referencedBy).to.containSubset(expectedAnnotations);
-					done();
 				});
 		});
 
@@ -116,20 +115,19 @@ describe('Models', function() {
 
 	describe('Annotation Status', function() {
 
-		it('Get Annotations with this status', function(done) {
+		it('Get Annotations with this status', function() {
 			let testStatus = testdata.annotation_statuses[0];
 			let expectedAnnotations = [
 				testdata.annotations[0],
 				testdata.annotations[2]
 			];
 
-			AnnotationStatus.where({id: testStatus.id})
+			return AnnotationStatus.where({id: testStatus.id})
 				.fetch({withRelated: 'annotations'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
-					done();
 				});
 		});
 
@@ -150,31 +148,29 @@ describe('Models', function() {
 				});
 		});
 
-		it('Publication for Annotation can be retrieved', function(done) {
+		it('Publication for Annotation can be retrieved', function() {
 			let testAnnotation = testdata.annotations[0];
 			let expectedPublication = testdata.publications[0];
 
-			Annotation.where({id: testAnnotation.id})
+			return Annotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'publication'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.publication).to.contain(expectedPublication);
-					done();
 				});
 		});
 
-		it('User who submitted the Annotation can be retrieved', function(done) {
+		it('User who submitted the Annotation can be retrieved', function() {
 			let testAnnotation = testdata.annotations[0];
 			let expectedUser = testdata.users[0];
 
-			Annotation.where({id: testAnnotation.id})
+			return Annotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'submitter'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.submitter).to.contain(expectedUser);
-					done();
 				});
 		});
 
@@ -277,17 +273,16 @@ describe('Models', function() {
 				});
 		});
 
-		it('Parent Annotation information can be retrieved', function(done) {
+		it('Parent Annotation information can be retrieved', function() {
 			let testAnnotation = testdata.gene_gene_annotations[0];
 			let expectedParent = testdata.annotations[2];
 
-			GeneGeneAnnotation.where({id: testAnnotation.id})
+			return GeneGeneAnnotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'parentData'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.parentData).to.contain(expectedParent);
-					done();
 				});
 		});
 
@@ -295,17 +290,16 @@ describe('Models', function() {
 
 	describe('Comment Annotation', function() {
 
-		it('Parent Annotation information can be retrieved', function(done) {
+		it('Parent Annotation information can be retrieved', function() {
 			let testAnnotation = testdata.comment_annotations[0];
 			let expectedParent = testdata.annotations[4];
 
-			CommentAnnotation.where({id: testAnnotation.id})
+			return CommentAnnotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'parentData'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.parentData).to.contain(expectedParent);
-					done();
 				});
 		});
 
