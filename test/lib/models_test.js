@@ -257,7 +257,6 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.parentData).to.contain(expectedParent);
-
 				});
 		});
 
