@@ -2,6 +2,10 @@
 
 const request = require('request');
 
+const NCBI = require('./ncbi_api');
+
+// ex: For "Vulpes vulpes (red fox)", capture "Vulpes vulpes"
+const TAXON_EXTRACTING_REGEX = /^(\b[\w ]+\b) *(?:\(.*)?$/;
 const QUERY_RESULT_LIMIT = 10;
 const BASE_URL = 'http://www.uniprot.org/uniprot/?format=json';
 
@@ -25,9 +29,18 @@ function getLocusByName(name) {
 			} else {
 				let body = JSON.parse(bodyJson);
 				if (body.length > 1) {
-					reject(new Error('Given ID matches multiple genes'));
+					reject(new Error('Given ID matches multiple loci'));
 				} else {
-					resolve(body[0]);
+					let taxonName = body[0].organism.match(TAXON_EXTRACTING_REGEX)[1];
+
+					NCBI.getTaxonByScientificName(taxonName).then(taxonInfo => {
+						resolve({
+							source: 'Uniprot',
+							name: body[0].id,
+							taxon_name: taxonName,
+							taxon_id: taxonInfo.taxId
+						});
+					});
 				}
 			}
 		});

@@ -7,10 +7,16 @@ const Uniprot = require('../../app/lib/uniprot_api');
 describe('Uniprot API', function () {
 
 	it('Whole existing ID returns single Gene', function() {
-		const validId = 'Q13137';
+		const validId = 'Q6XXX8';
+		const expectedLocus = {
+			source: 'Uniprot',
+			name: validId,
+			taxon_name: 'Vulpes vulpes',
+			taxon_id: 9627
+		};
+
 		return Uniprot.getLocusByName(validId).then(result => {
-				chai.expect(result).to.be.an('object');
-				chai.expect(result.id).to.equal(validId);
+				chai.expect(result).to.deep.equal(expectedLocus);
 			}).catch(err => {
 				throw err;
 			});
@@ -21,7 +27,7 @@ describe('Uniprot API', function () {
 		return Uniprot.getLocusByName(validPartialId).then(result => {
 			throw new Error('Did not reject when getting multiple values');
 		}).catch(err => {
-			chai.expect(err.toString()).to.contain('Given ID matches multiple genes');
+			chai.expect(err.message).to.equal('Given ID matches multiple loci');
 		});
 	});
 
@@ -30,7 +36,7 @@ describe('Uniprot API', function () {
 		return Uniprot.getLocusByName(fakeName).then(result => {
 			throw new Error('Returned a gene for a fake name');
 		}).catch(err => {
-			chai.expect(err.toString()).to.equal(`No Locus found for name ${fakeName}`);
+			chai.expect(err.message).to.equal(`No Locus found for name ${fakeName}`);
 		});
 	});
 
