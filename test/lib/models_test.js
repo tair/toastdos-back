@@ -56,7 +56,6 @@ describe('Models', function() {
 				.then(res => {
 					let actual = res.toJSON();
 					chai.expect(actual.synonyms).to.containSubset(expectedSynonyms);
-
 				});
 		});
 	});
@@ -215,7 +214,6 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.childData).to.contain(expectedCAnnotationPart);
-
 				});
 		});
 
