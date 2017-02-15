@@ -2,6 +2,8 @@
 
 const chai = require('chai');
 chai.use(require('chai-subset'));
+chai.use(require('chai-subset'));
+
 const knex = require('../../app/lib/bookshelf').knex;
 
 const KeywordType        = require('../../app/models/keyword_type');
@@ -29,68 +31,64 @@ describe('Models', function() {
 	});
 
 	describe('Keyword', function() {
-		it('Get Keyword with KeywordType', function(done) {
+		it('Get Keyword with KeywordType', function() {
 			let expectedKeyword = testdata.keywords[0];
 			let expectedKeywordType = testdata.keyword_types[0];
 
-			Keyword.where({id: expectedKeyword.id})
+			return Keyword.where({id: expectedKeyword.id})
 				.fetch({withRelated: 'keywordType'})
 				.then(res => {
 					let actual = res.toJSON();
 					chai.expect(actual).to.include(expectedKeyword);
-					chai.expect(actual.keywordType).to.deep.equal(expectedKeywordType);
-					done();
+					chai.expect(actual.keywordType).to.contain(expectedKeywordType);
 				});
 		});
 
-		it('Get Synonyms', function(done) {
+		it('Get Synonyms', function() {
 			let testKeyword = testdata.keywords[0];
 			let expectedSynonyms = [
 				testdata.synonyms[0],
 				testdata.synonyms[1]
 			];
 
-			Keyword.where({id: testKeyword.id})
+			return Keyword.where({id: testKeyword.id})
 				.fetch({withRelated: 'synonyms'})
 				.then(res => {
 					let actual = res.toJSON();
-					chai.expect(actual.synonyms).to.deep.equal(expectedSynonyms);
-					done();
+					chai.expect(actual.synonyms).to.containSubset(expectedSynonyms);
 				});
 		});
 	});
 
 	describe('KeywordType', function() {
-		it('Get KeywordType and associated Keywords', function(done) {
+		it('Get KeywordType and associated Keywords', function() {
 			let expectedKeywordType = testdata.keyword_types[0];
 			let expectedKeywords = [
 				testdata.keywords[0],
 				testdata.keywords[1]
 			];
 
-			KeywordType.where({id: expectedKeywordType.id})
+			return KeywordType.where({id: expectedKeywordType.id})
 				.fetch({withRelated: 'keywords'})
 				.then(res => {
 					let actual = res.toJSON();
 					chai.expect(actual).to.include(expectedKeywordType);
-					chai.expect(actual.keywords).to.deep.equal(expectedKeywords);
-					done();
+					chai.expect(actual.keywords).to.containSubset(expectedKeywords);
 				});
 		});
 	});
 
 	describe('Synonym', function() {
-		it('Get Synonym with associated Keyword', function(done) {
+		it('Get Synonym with associated Keyword', function() {
 			let expectedSynonym = testdata.synonyms[0];
 			let expectedKeyword = testdata.keywords[0];
 
-			Synonym.where({id: expectedSynonym.id})
+			return Synonym.where({id: expectedSynonym.id})
 				.fetch({withRelated: 'keyword'})
 				.then(res => {
 					let actual = res.toJSON();
 					chai.expect(actual).to.include(expectedSynonym);
-					chai.expect(actual.keyword).to.deep.equal(expectedKeyword);
-					done();
+					chai.expect(actual.keyword).to.contain(expectedKeyword);
 				});
 		});
 	});
@@ -139,17 +137,16 @@ describe('Models', function() {
 
 	describe('Annotation Base', function() {
 
-		it('Status for Annotation can be retrieved', function(done) {
+		it('Status for Annotation can be retrieved', function() {
 			let testAnnotation = testdata.annotations[0];
 			let expectedStatus = testdata.annotation_statuses[0];
 
-			Annotation.where({id: testAnnotation.id})
+			return Annotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'status'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.status).to.deep.equal(expectedStatus);
-					done();
+					chai.expect(actual.status).to.contain(expectedStatus);
 				});
 		});
 
@@ -181,45 +178,42 @@ describe('Models', function() {
 				});
 		});
 
-		it('Gene to Term information can be retrieved', function(done) {
+		it('Gene to Term information can be retrieved', function() {
 			let testAnnotation = testdata.annotations[0];
 			let expectedGTAnnotationPart = testdata.gene_term_annotations[0];
 
-			Annotation.where({id: testAnnotation.id})
+			return Annotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'childData'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.childData).to.deep.equal(expectedGTAnnotationPart);
-					done();
+					chai.expect(actual.childData).to.contain(expectedGTAnnotationPart);
 				});
 		});
 
-		it('Gene to Gene information can be retrieved', function(done) {
+		it('Gene to Gene information can be retrieved', function() {
 			let testAnnotation = testdata.annotations[2];
 			let expectedGGAnnotationPart = testdata.gene_gene_annotations[0];
 
-			Annotation.where({id: testAnnotation.id})
+			return Annotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'childData'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.childData).to.deep.equal(expectedGGAnnotationPart);
-					done();
+					chai.expect(actual.childData).to.contain(expectedGGAnnotationPart);
 				});
 		});
 
-		it('Comment information can be retrieved', function(done) {
+		it('Comment information can be retrieved', function() {
 			let testAnnotation = testdata.annotations[4];
 			let expectedCAnnotationPart = testdata.comment_annotations[0];
 
-			Annotation.where({id: testAnnotation.id})
+			return Annotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'childData'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.childData).to.deep.equal(expectedCAnnotationPart);
-					done();
+					chai.expect(actual.childData).to.contain(expectedCAnnotationPart);
 				});
 		});
 
@@ -227,45 +221,42 @@ describe('Models', function() {
 
 	describe('Gene to Term Annotation', function() {
 
-		it('Method Keyword for Annotation can be retrieved', function(done) {
+		it('Method Keyword for Annotation can be retrieved', function() {
 			let testAnnotation = testdata.gene_term_annotations[0];
 			let expectedKeyword = testdata.keywords[0];
 
-			GeneTermAnnotation.where({id: testAnnotation.id})
+			return GeneTermAnnotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'method'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.method).to.deep.equal(expectedKeyword);
-					done();
+					chai.expect(actual.method).to.contain(expectedKeyword);
 				});
 		});
 
-		it('Subject Keyword for Annotation can be retrieved', function(done) {
+		it('Subject Keyword for Annotation can be retrieved', function() {
 			let testAnnotation = testdata.gene_term_annotations[0];
 			let expectedKeyword = testdata.keywords[1];
 
-			GeneTermAnnotation.where({id: testAnnotation.id})
+			return GeneTermAnnotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'keyword'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.keyword).to.deep.equal(expectedKeyword);
-					done();
+					chai.expect(actual.keyword).to.contain(expectedKeyword);
 				});
 		});
 
-		it('Parent Annotation information can be retrieved', function(done) {
+		it('Parent Annotation information can be retrieved', function() {
 			let testAnnotation = testdata.gene_term_annotations[0];
 			let expectedParent = testdata.annotations[0];
 
-			GeneTermAnnotation.where({id: testAnnotation.id})
+			return GeneTermAnnotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'parentData'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.parentData).to.contain(expectedParent);
-					done();
 				});
 		});
 
@@ -273,17 +264,16 @@ describe('Models', function() {
 
 	describe('Gene to Gene Annotation', function() {
 
-		it('Method Keyword for Annotation can be retrieved', function(done) {
+		it('Method Keyword for Annotation can be retrieved', function() {
 			let testAnnotation = testdata.gene_gene_annotations[0];
 			let expectedKeyword = testdata.keywords[0];
 
-			GeneGeneAnnotation.where({id: testAnnotation.id})
+			return GeneGeneAnnotation.where({id: testAnnotation.id})
 				.fetch({withRelated: 'method'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.method).to.deep.equal(expectedKeyword);
-					done();
+					chai.expect(actual.method).to.contain(expectedKeyword);
 				});
 		});
 

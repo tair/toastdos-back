@@ -137,7 +137,7 @@ describe('User Controller', function() {
 				});
 		});
 
-		it('Cannot update user without valid authentication', function() {
+		it('Cannot update user without valid authentication', function(done) {
 			let testUser = testdata.users[0];
 			chai.request(server)
 				.put(`/api/user/${testUser.id}`)
