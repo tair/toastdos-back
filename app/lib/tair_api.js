@@ -6,7 +6,14 @@
 
 const request = require('request');
 
+const NCBI = require('./ncbi_api');
+
 const BASE_URL = 'https://www.arabidopsis.org';
+
+const DEFAULT_TAXON = {
+	taxon_name: 'Arabidopsis thaliana',
+	taxon_id: 3702
+};
 
 /**
  * Gets a TAIR gene by it's name.
@@ -19,12 +26,30 @@ function getLocusByName(name) {
 	let requestUrl = `${BASE_URL}/loci/${name}`;
 	return new Promise((resolve, reject) => {
 		request.get(requestUrl, (error, response, bodyJson) => {
-			if (error) {
-				reject(new Error(error));
-			} else if (response.statusCode === 404) {
-				reject(new Error(`No Locus found for name ${name}`));
-			} else {
-				resolve(JSON.parse(bodyJson));
+			if (error) reject(new Error(error));
+			else if (response.statusCode === 404) reject(new Error(`No Locus found for name ${name}`));
+			else {
+				let body = JSON.parse(bodyJson);
+				let partialTaxon = {
+					source: 'TAIR',
+					name: body.locusName
+				};
+
+				/* Most of the time TAIR will be giving us 'Arabidopsis thaliana' as a
+				 * taxon name, so we can save a request to NCBI by hard-coding the response.
+				 */
+				if (body.taxon === DEFAULT_TAXON.taxon_name) {
+					resolve(Object.assign(partialTaxon, DEFAULT_TAXON));
+				}
+				else {
+					// For other taxa we need to get the maching ID from NCBI
+					NCBI.getTaxonByScientificName(body.taxon).then(taxonInfo => {
+						resolve(Object.assign(partialTaxon, {
+							taxon_name: body.taxon,
+							taxon_id: taxonInfo.taxId
+						}));
+					});
+				}
 			}
 		});
 	});
