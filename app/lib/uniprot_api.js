@@ -36,7 +36,7 @@ function getLocusByName(name) {
 					NCBI.getTaxonByScientificName(taxonName).then(taxonInfo => {
 						resolve({
 							source: 'Uniprot',
-							name: body[0].id,
+							locus_name: body[0].id,
 							taxon_name: taxonName,
 							taxon_id: taxonInfo.taxId
 						});

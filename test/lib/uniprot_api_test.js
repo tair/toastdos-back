@@ -10,7 +10,7 @@ describe('Uniprot API', function () {
 		const validId = 'Q6XXX8';
 		const expectedLocus = {
 			source: 'Uniprot',
-			name: validId,
+			locus_name: validId,
 			taxon_name: 'Vulpes vulpes',
 			taxon_id: 9627
 		};

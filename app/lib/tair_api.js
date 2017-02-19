@@ -32,7 +32,7 @@ function getLocusByName(name) {
 				let body = JSON.parse(bodyJson);
 				let partialTaxon = {
 					source: 'TAIR',
-					name: body.locusName
+					locus_name: body.locusName
 				};
 
 				/* Most of the time TAIR will be giving us 'Arabidopsis thaliana' as a

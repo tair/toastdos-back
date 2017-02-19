@@ -20,7 +20,7 @@ describe('TAIR API', function() {
 		const goodLocusName = 'AT1G10000';
 		const expectedResponse = {
 			source: 'TAIR',
-			name: 'AT1G10000',
+			locus_name: 'AT1G10000',
 			taxon_name: 'Arabidopsis thaliana',
 			taxon_id: 3702
 		};

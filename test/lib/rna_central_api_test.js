@@ -19,7 +19,7 @@ describe('RNA Central API', function () {
 		const goodLocusName = 'URS0000000018';
 		const expectedResponse = {
 			source: 'RNA Central',
-			name: goodLocusName,
+			locus_name: goodLocusName,
 			taxon_id: 77133,
 			taxon_name: 'uncultured bacterium'
 		};

@@ -26,7 +26,7 @@ function getLocusByName(name) {
 				NCBI.getTaxonById(taxonId).then(taxonInfo => {
 					resolve({
 						source: 'RNA Central',
-						name: body.rnacentral_id,
+						locus_name: body.rnacentral_id,
 						taxon_id: taxonId,
 						taxon_name: taxonInfo.scientificName
 					});
