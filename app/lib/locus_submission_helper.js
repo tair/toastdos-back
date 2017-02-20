@@ -174,7 +174,7 @@ function verifyLocus(name) {
 			locusLookup(name)
 				.then(locus => resolve(locus))
 				.catch(err => {
-					if (err.contains('No Locus found')) {
+					if (err.message.includes('No Locus found')) {
 						return Bluebird.any([
 							locusLookupFallback1(name),
 							locusLookupFallback2(name)
@@ -185,8 +185,8 @@ function verifyLocus(name) {
 				})
 				.then(locus => resolve(locus))
 				.catch(aggregateError => {
-					if (aggregateError.every(err => err.contains('No Locus found'))) {
-						reject(`No Locus found for name ${name}`);
+					if (aggregateError.every(err => err.message.includes('No Locus found'))) {
+						reject(new Error(`No Locus found for name ${name}`));
 					} else {
 						reject(err);
 					}
@@ -201,8 +201,8 @@ function verifyLocus(name) {
 			])
 				.then(locus => resolve(locus))
 				.catch(aggregateError => {
-					if (aggregateError.every(err => err.contains('No Locus found'))) {
-						reject(`No Locus found for name ${name}`);
+					if (aggregateError.every(err => err.message.includes('No Locus found'))) {
+						reject(new Error(`No Locus found for name ${name}`));
 					} else {
 						reject(err);
 					}
