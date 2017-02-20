@@ -76,12 +76,14 @@ exports.up = function(knex, Promise) {
 		.createTable('locus', table => {
 			table.increments('id');
 			table.integer('taxon_id').references('taxon.id').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('locus_name', table => {
 			table.increments('id');
 			table.integer('locus_id').references('locus.id').notNullable();
 			table.string('locus_name').unique().notNullable();
 			table.integer('source_id').references('external_source.id').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 
 			table.index('locus_id');
 		})
@@ -100,10 +102,12 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.integer('taxon_id').unique().notNullable();
 			table.string('name').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('external_source', table => {
 			table.increments('id');
 			table.string('name').unique().notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		});
 };
 
