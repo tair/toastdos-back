@@ -38,7 +38,7 @@ const UNIPROT_NAME_REGEX     = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][
 function addLocusRecords(name, fullName, symbol, submitter) {
 
 	// Try to find an existing record for this locus
-	return LocusName.where({locus_id: name})
+	return LocusName.where({locus_name: name})
 		.fetch({withRelated: ['locus', 'source']})
 		.then(existingLocusName => {
 			if (existingLocusName) {
@@ -90,7 +90,7 @@ function addLocusRecords(name, fullName, symbol, submitter) {
 						.then(() => {
 							/* Fetch the records we just added so our return data is consistent
 							 * with what we return when the Locus already exists. */
-							return LocusName.where({locus_name: name}).fetch({withRelated: 'locus'});
+							return LocusName.where({locus_name: name}).fetch({withRelated: ['locus', 'source']});
 						});
 				});
 			}

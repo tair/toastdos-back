@@ -101,7 +101,19 @@ describe('TAIR API', function() {
 				});
 		});
 
-		it('Creating new Loci and updating existing Loci return the same values');
+		it('Creating new Loci and updating existing Loci return the same values', function() {
+			const locusName = 'Q6XXX8';
+			const locusSymbol = 'Fox';
+			const locusFullname = 'Jupiter the Red Fox';
+			const submitterId = 1;
+
+			return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
+				.then(addedLocus => locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
+					.then(modifiedLocus => {
+						chai.expect(addedLocus.toJSON()).to.deep.equal(modifiedLocus.toJSON());
+					})
+				);
+		});
 
 		it('New symbols for existing loci are created');
 
