@@ -38,7 +38,7 @@ const UNIPROT_NAME_REGEX     = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][
 function addLocusRecords(name, fullName, symbol, submitter) {
 
 	// Try to find an existing record for this locus
-	LocusName.where({locus_id: name})
+	return LocusName.where({locus_id: name})
 		.fetch({withRelated: ['locus', 'source']})
 		.then(existingLocusName => {
 			if (existingLocusName) {
@@ -82,7 +82,7 @@ function addLocusRecords(name, fullName, symbol, submitter) {
 								locus_id: locus.attributes.id,
 								submitter_id: submitter,
 								symbol: symbol,
-								fullname: fullName
+								full_name: fullName
 							}).save();
 
 							return Promise.all([namePromise, symbolPromise]);
@@ -90,9 +90,8 @@ function addLocusRecords(name, fullName, symbol, submitter) {
 						.then(() => {
 							/* Fetch the records we just added so our return data is consistent
 							 * with what we return when the Locus already exists. */
-							return LocusName.where({locus_id: name}).fetch({withRelated: 'locus'});
-						})
-						.then(newLocus => Promise.resolve(newLocus));
+							return LocusName.where({locus_name: name}).fetch({withRelated: 'locus'});
+						});
 				});
 			}
 		});
@@ -104,7 +103,7 @@ function addLocusRecords(name, fullName, symbol, submitter) {
  * Returns a promise that resolves with a Taxon object.
  */
 function addOrGetTaxon(taxonId, taxonName) {
-	Taxon.where({taxon_id: taxonId})
+	return Taxon.where({taxon_id: taxonId})
 		.fetch()
 		.then(existingTaxon => {
 			if (existingTaxon) return Promise.resolve(existingTaxon);
@@ -121,7 +120,7 @@ function addOrGetTaxon(taxonId, taxonName) {
  * Returns a promise that resolves with a Source object.
  */
 function addOrGetSource(name) {
-	Source.where({name: name})
+	return Source.where({name: name})
 		.fetch()
 		.then(existingSource => {
 			if (existingSource) return Promise.resolve(existingSource);

@@ -2,8 +2,12 @@
 
 const chai = require('chai');
 chai.use(require('chai-subset'));
+const knex = require('../../app/lib/bookshelf').knex;
 
 const locusHelper = require('../../app/lib/locus_submission_helper');
+
+const Locus      = require('../../app/models/locus');
+const LocusName  = require('../../app/models/locus_name');
 
 describe('TAIR API', function() {
 
@@ -49,7 +53,55 @@ describe('TAIR API', function() {
 
 	describe('Add Locus', function() {
 
-		it('Totally new loci create all proper records');
+		// Make sure the database is up to date
+		before(function() {
+			return knex.migrate.latest();
+		});
+
+		// Give us fresh test data in a sqlite memory database for each test
+		beforeEach(function() {
+			return knex.seed.run();
+		});
+
+		it('Totally new loci create all proper records', function() {
+			const locusName = 'Q6XXX8';
+			const locusSymbol = 'Fox';
+			const locusFullname = 'Jupiter the Red Fox';
+			const submitterId = 1;
+
+			const expectedSource = {name: 'Uniprot'};
+			const expectedLocusName = { locus_name: locusName };
+			const expectedGeneSymbol = {
+				symbol: locusSymbol,
+				full_name: locusFullname
+			};
+			const expectedTaxon = {
+				name: 'Vulpes vulpes',
+				taxon_id: 9627
+			};
+
+			return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
+				.then(createdLocusName => {
+					let createdLocusId = createdLocusName.related('locus').attributes.id;
+
+					return Locus.where({id: createdLocusId})
+						.fetch({withRelated: ['taxon', 'names', 'symbols']})
+						.then(res => {
+							let actual = res.toJSON();
+							chai.expect(actual.taxon).to.contain(expectedTaxon);
+							chai.expect(actual.names[0]).to.contain(expectedLocusName);
+							chai.expect(actual.symbols[0]).to.contain(expectedGeneSymbol);
+
+							return LocusName.where({id: actual.names[0].id}).fetch({withRelated: 'source'});
+						})
+						.then(res => {
+							let actual = res.toJSON();
+							chai.expect(actual.source).to.contain(expectedSource);
+						});
+				});
+		});
+
+		it('Creating new Loci and updating existing Loci return the same values');
 
 		it('New symbols for existing loci are created');
 
