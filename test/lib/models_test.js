@@ -391,6 +391,40 @@ describe('Models', function() {
 				});
 		});
 
+		it('Gets LocusName information for this Locus', function() {
+			const testLocus = testdata.locus[0];
+			const expectedLocusNames = [
+				testdata.locus_name[0],
+				testdata.locus_name[2],
+				testdata.locus_name[3]
+			];
+
+			return Locus.where({id: testLocus.id})
+				.fetch({withRelated: 'names'})
+				.then(res => {
+					if (!res) throw new Error('No LocusNames were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.names).to.containSubset(expectedLocusNames);
+				});
+		});
+
+		it('Gets GeneSymbol information for this Locus', function() {
+			const testLocus = testdata.locus[0];
+			const expectedGeneSymbols = [
+				testdata.gene_symbol[0],
+				testdata.gene_symbol[1],
+				testdata.gene_symbol[3]
+			];
+
+			return Locus.where({id: testLocus.id})
+				.fetch({withRelated: 'symbols'})
+				.then(res => {
+					if (!res) throw new Error('No GeneSymbols were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.symbols).to.containSubset(expectedGeneSymbols);
+				});
+		});
+
 	});
 
 	describe('External Source', function() {

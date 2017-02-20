@@ -184,10 +184,12 @@
   "taxon" : [
     {
       "id" : 1,
+      "taxon_id" : 1234,
       "name" : "Test Taxon 1"
     },
     {
       "id" : 2,
+      "taxon_id" : 5678,
       "name" : "Test Taxon 2"
     }
   ],
