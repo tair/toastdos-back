@@ -340,7 +340,7 @@ describe('Models', function() {
 				.then(res => {
 					if (!res) throw new Error('No locuses were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.locuses).to.deep.equal(expectedLocuses);
+					chai.expect(actual.locuses).to.containSubset(expectedLocuses);
 				});
 		});
 
@@ -357,7 +357,7 @@ describe('Models', function() {
 				.then(res => {
 					if (!res) throw new Error('No Locus was returned');
 					let actual = res.toJSON();
-					chai.expect(actual.locus).to.deep.equal(expectedLocus);
+					chai.expect(actual.locus).to.contain(expectedLocus);
 				});
 		});
 
@@ -370,7 +370,7 @@ describe('Models', function() {
 				.then(res => {
 					if (!res) throw new Error('No Source was returned');
 					let actual = res.toJSON();
-					chai.expect(actual.source).to.deep.equal(expectedSource);
+					chai.expect(actual.source).to.contain(expectedSource);
 				});
 		});
 
@@ -387,7 +387,7 @@ describe('Models', function() {
 				.then(res => {
 					if (!res) throw new Error('No Taxon was returned');
 					let actual = res.toJSON();
-					chai.expect(actual.taxon).to.deep.equal(expectedTaxon);
+					chai.expect(actual.taxon).to.contain(expectedTaxon);
 				});
 		});
 
@@ -441,7 +441,7 @@ describe('Models', function() {
 				.then(res => {
 					if (!res) throw new Error('No Locus Names were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.locusNames).to.deep.equal(expectedLocusNames);
+					chai.expect(actual.locusNames).to.containSubset(expectedLocusNames);
 				});
 		});
 
@@ -458,7 +458,7 @@ describe('Models', function() {
 				.then(res => {
 					if (!res) throw new Error('No Source was returned');
 					let actual = res.toJSON();
-					chai.expect(actual.source).to.deep.equal(expectedSource);
+					chai.expect(actual.source).to.contain(expectedSource);
 				});
 		});
 
@@ -471,7 +471,7 @@ describe('Models', function() {
 				.then(res => {
 					if (!res) throw new Error('No Locus was returned');
 					let actual = res.toJSON();
-					chai.expect(actual.locus).to.deep.equal(expectedLocus);
+					chai.expect(actual.locus).to.contain(expectedLocus);
 				});
 		});
 
@@ -484,7 +484,7 @@ describe('Models', function() {
 				.then(res => {
 					if (!res) throw new Error('No User was returned');
 					let actual = res.toJSON();
-					chai.expect(actual.submitter).to.deep.contain(expectedUser);
+					chai.expect(actual.submitter).to.contain(expectedUser);
 				});
 		});
 
