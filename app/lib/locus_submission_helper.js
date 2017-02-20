@@ -13,7 +13,7 @@ const Taxon      = require('../models/taxon');
 const Source     = require('../models/external_source');
 
 // ex: AT1G10000
-const TAIR_NAME_REGEX        = /^AT(\d|C|M)G\d{5}$/;
+const TAIR_NAME_REGEX        = /^AT(?:\d|C|M)G\d{5}$/;
 
 // ex: URS00000EF184
 const RNA_CENTRAL_NAME_REGEX = /^(URS[0-9a-fA-F]{10})$/;
