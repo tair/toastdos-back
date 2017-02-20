@@ -98,7 +98,8 @@ exports.up = function(knex, Promise) {
 		})
 		.createTable('taxon', table => {
 			table.increments('id');
-			table.string('name').unique().notNullable();
+			table.integer('taxon_id').unique().notNullable();
+			table.string('name').notNullable();
 		})
 		.createTable('external_source', table => {
 			table.increments('id');
