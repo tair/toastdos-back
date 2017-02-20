@@ -6,8 +6,10 @@ const knex = require('../../app/lib/bookshelf').knex;
 
 const locusHelper = require('../../app/lib/locus_submission_helper');
 
-const Locus      = require('../../app/models/locus');
-const LocusName  = require('../../app/models/locus_name');
+const Locus     = require('../../app/models/locus');
+const LocusName = require('../../app/models/locus_name');
+
+const testdata = require('../../seeds/test_data.json');
 
 describe('TAIR API', function() {
 
@@ -115,7 +117,31 @@ describe('TAIR API', function() {
 				);
 		});
 
-		it('New symbols for existing loci are created');
+		it('New symbols for existing loci are created', function() {
+			const existingLocusName = testdata.locus_name[1];
+			const existingGeneSymbol = testdata.gene_symbol[2];
+			const newSubmitter = testdata.users[1];
+			const newFullName = 'New fullname';
+			const newSymbol = 'NFN';
+
+			const expectedGeneSymbols = [
+				existingGeneSymbol,
+				{
+					symbol : newSymbol,
+					full_name : newFullName
+				}
+			];
+
+			return locusHelper.addLocusRecords(existingLocusName.locus_name, newFullName, newSymbol, newSubmitter.id)
+				.then(modifiedLocus => {
+					return Locus.where({id: modifiedLocus.related('locus').attributes.id})
+						.fetch({withRelated: 'symbols'})
+						.then(res => {
+							let actual = res.toJSON();
+							chai.expect(actual.symbols).to.containSubset(expectedGeneSymbols);
+						});
+				});
+		});
 
 		it('Invalid locus does not create records');
 

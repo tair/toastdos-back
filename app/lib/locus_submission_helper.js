@@ -53,7 +53,7 @@ function addLocusRecords(name, fullName, symbol, submitter) {
 						if (existingAlias) return Promise.resolve(existingLocusName);
 						else return GeneSymbol.forge({
 							locus_id: existingLocusName.related('locus').attributes.id,
-							source_id: existingLocusName.related('source').attributes.name,
+							source_id: existingLocusName.related('source').attributes.id,
 							submitter_id: submitter,
 							full_name: fullName,
 							symbol: symbol
