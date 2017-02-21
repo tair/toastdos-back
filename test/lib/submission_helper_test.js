@@ -143,7 +143,16 @@ describe('TAIR API', function() {
 				});
 		});
 
-		it('Invalid locus does not create records');
+		it('Invalid locus does not create records', function() {
+			const invalidLocusName = 'FakeLocus';
+			return locusHelper.addLocusRecords(invalidLocusName, 'ignore', 'IG', 1)
+				.then(createdLocus => {
+					throw new Error('Created Locus record using a bad name');
+				})
+				.catch(err => {
+					chai.expect(err.message).to.equal(`No Locus found for name ${invalidLocusName}`);
+				});
+		});
 
 	});
 
