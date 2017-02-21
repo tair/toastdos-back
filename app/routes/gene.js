@@ -5,7 +5,7 @@ const geneController = require('../controllers/gene');
 const express = require('express');
 let router = express.Router();
 
-router.get('/name/:name', geneController.getByFullName);
+router.get('/verify/:name', geneController.getByLocusName);
 
 module.exports = router;
 

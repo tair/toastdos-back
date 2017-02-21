@@ -13,12 +13,12 @@ const locusHelper = require('../lib/locus_submission_helper');
  * @param  {Express.Response}   res  - the response object
  * @param  {Function} next - pass to next route handler
  */
-function getByFullName(req, res, next) {
+function getByLocusName(req, res, next) {
 	locusHelper.verifyLocus(req.params.name)
 		.then(locus => response.ok(res, locus))
 		.catch(err => {
 			if (err.message === `No Locus found for name ${req.params.name}`) {
-				return response.notFound(`No Locus found for name ${req.params.name}`);
+				return response.notFound(res, `No Locus found for name ${req.params.name}`);
 			} else {
 				return response.defaultServerError(res, err);
 			}
@@ -27,5 +27,5 @@ function getByFullName(req, res, next) {
 
 
 module.exports = {
-	getByFullName
+	getByLocusName
 };
