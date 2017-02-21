@@ -33,13 +33,16 @@ const UNIPROT_NAME_REGEX     = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][
  * @param fullName - Full name of Locus, like 'Curly Leaf'
  * @param symbol - Symbol for Locus, like 'CLF'
  * @param submitter - ID of user submitting this Locus
+ * @param transaction - optional transaction for adding these records
  * @return a promise that resolves with the LocusName with related Locus.
  */
-function addLocusRecords(name, fullName, symbol, submitter) {
-
+function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 	// Try to find an existing record for this locus
 	return LocusName.where({locus_name: name})
-		.fetch({withRelated: ['locus', 'source']})
+		.fetch({
+			transacting: transaction,
+			withRelated: ['locus', 'source']
+		})
 		.then(existingLocusName => {
 			if (existingLocusName) {
 				/* Even if this locus exists in our system,
@@ -48,7 +51,7 @@ function addLocusRecords(name, fullName, symbol, submitter) {
 					full_name: fullName,
 					symbol: symbol
 				})
-					.fetch()
+					.fetch({transacting: transaction})
 					.then(existingAlias => {
 						if (existingAlias) return Promise.resolve(existingLocusName);
 						else return GeneSymbol.forge({
@@ -58,24 +61,29 @@ function addLocusRecords(name, fullName, symbol, submitter) {
 							full_name: fullName,
 							symbol: symbol
 						})
-							.save()
+							.save(null, null, null, {transacting: transaction})
 							.then(() => Promise.resolve(existingLocusName));
 					});
 			}
 			else {
 				// Go through the whole process of adding a new Locus record
 				return verifyLocus(name).then(locusData => {
-					return addOrGetTaxon(locusData.taxon_id, locusData.taxon_name)
-						.then(taxon => Promise.all([
-							addOrGetSource(locusData.source),
-							Locus.forge({taxon_id: taxon.attributes.id}).save()
-						]))
+					return addOrGetTaxon(locusData.taxon_id, locusData.taxon_name, transaction)
+						.then(taxon => {
+							let locusPromise = Locus.forge({taxon_id: taxon.attributes.id})
+								.save(null, null, null, {transacting: transaction});
+
+							return Promise.all([
+								addOrGetSource(locusData.source, transaction),
+								locusPromise
+							]);
+						})
 						.then(([source, locus]) => {
 							let namePromise = LocusName.forge({
 								source_id: source.attributes.id,
 								locus_id: locus.attributes.id,
 								locus_name: locusData.locus_name
-							}).save();
+							}).save(null, null, null, {transacting: transaction});
 
 							let symbolPromise = GeneSymbol.forge({
 								source_id: source.attributes.id,
@@ -83,14 +91,17 @@ function addLocusRecords(name, fullName, symbol, submitter) {
 								submitter_id: submitter,
 								symbol: symbol,
 								full_name: fullName
-							}).save();
+							}).save(null, null, null, {transacting: transaction});
 
 							return Promise.all([namePromise, symbolPromise]);
 						})
 						.then(() => {
 							/* Fetch the records we just added so our return data is consistent
 							 * with what we return when the Locus already exists. */
-							return LocusName.where({locus_name: name}).fetch({withRelated: ['locus', 'source']});
+							return LocusName.where({locus_name: name}).fetch({
+								transacting: transaction,
+								withRelated: ['locus', 'source']
+							});
 						});
 				});
 			}
@@ -102,15 +113,15 @@ function addLocusRecords(name, fullName, symbol, submitter) {
  * or creates a new taxon record with the given data.
  * Returns a promise that resolves with a Taxon object.
  */
-function addOrGetTaxon(taxonId, taxonName) {
+function addOrGetTaxon(taxonId, taxonName, transaction) {
 	return Taxon.where({taxon_id: taxonId})
-		.fetch()
+		.fetch({transacting: transaction})
 		.then(existingTaxon => {
 			if (existingTaxon) return Promise.resolve(existingTaxon);
 			else return Taxon.forge({
 				taxon_id: taxonId,
 				name: taxonName
-			}).save();
+			}).save(null, null, null, {transacting: transaction});
 		});
 }
 
@@ -119,12 +130,13 @@ function addOrGetTaxon(taxonId, taxonName) {
  * or creates a new one.
  * Returns a promise that resolves with a Source object.
  */
-function addOrGetSource(name) {
+function addOrGetSource(name, transaction) {
 	return Source.where({name: name})
-		.fetch()
+		.fetch({transacting: transaction})
 		.then(existingSource => {
 			if (existingSource) return Promise.resolve(existingSource);
-			else return Source.forge({name: name}).save();
+			else return Source.forge({name: name})
+				.save(null, null, null, {transacting: transaction});
 		});
 }
 
