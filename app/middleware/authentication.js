@@ -23,7 +23,7 @@ function validateAuthentication(req, res, next) {
 		return response.unauthorized(res, 'No authorization token provided in header.');
 	}
 
-	return auth.verifyToken(authMatch[1], (err, data) => {
+	return auth.verifyToken(authMatch[1], (err, tokenBody) => {
 		if(err) {
 			if(err.name === 'TokenExpiredError') {
 				return response.unauthorized(res, 'JWT expired');
@@ -31,6 +31,14 @@ function validateAuthentication(req, res, next) {
 				return response.unauthorized(res, 'JWT malformed');
 			}
 		}
+
+		if (!tokenBody.user_id) {
+			return response.unauthorized(res, 'No user_id in JWT');
+		}
+
+		// Embed the retrieved user in the request object so controllers
+		// down the line know what user is making the request
+		req.user_id = tokenBody.user_id;
 
 		return next();
 	});
@@ -41,18 +49,13 @@ function validateAuthentication(req, res, next) {
  * matches the User whose info we're retrieving.
  */
 function validateUser(req, res, next) {
-	let authHeader = req.get('Authorization');
-	let authMatch = authHeader.match(TOKEN_MATCHER);
 
-	// Assume the token itself has been validated
-	auth.verifyToken(authMatch[1], (err, tokenBody) => {
-		if (req.params.id && tokenBody.user_id && req.params.id == tokenBody.user_id) {
-			return next();
-		}
-		else {
-			return response.unauthorized(res, 'Unauthorized to view requested user');
-		}
-	});
+	// Assume the token itself has been validated and user_id has been attached already
+	if (!req.params.id || req.params.id != req.user_id) {
+		return response.unauthorized(res, 'Unauthorized to view requested user');
+	}
+
+	return next();
 }
 
 
