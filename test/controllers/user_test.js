@@ -53,7 +53,7 @@ describe('User Controller', function() {
 					.get(`/api/user/${fakeId}`)
 					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
-						chai.expect(res.status).to.equal(404);
+						chai.expect(res.status).to.equal(401);
 						done();
 					});
 			});
@@ -118,8 +118,7 @@ describe('User Controller', function() {
 					.send({email_address: 'fake.email@email.com'})
 					.set({Authorization: `Bearer ${token}`})
 					.end((err, res) => {
-						chai.expect(res.status).to.equal(404);
-						chai.expect(res.text).to.contain(`ID ${fakeId}`);
+						chai.expect(res.status).to.equal(401);
 						done();
 					});
 			});

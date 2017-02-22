@@ -3,6 +3,8 @@
 const auth     = require('../lib/authentication');
 const response = require('../lib/responses');
 
+const User = require('../models/user');
+
 const TOKEN_MATCHER = /Bearer (.*)$/;
 
 /**
@@ -38,9 +40,15 @@ function validateAuthentication(req, res, next) {
 
 		// Embed the retrieved user in the request object so controllers
 		// down the line know what user is making the request
-		req.user_id = tokenBody.user_id;
-
-		return next();
+		User.where({id: tokenBody.user_id})
+			.fetch({withRelated: 'roles'})
+			.then(user => {
+				req.user = user;
+				next();
+			})
+			.catch(err => {
+				response.defaultServerError(res, err);
+			});
 	});
 }
 
@@ -51,7 +59,7 @@ function validateAuthentication(req, res, next) {
 function validateUser(req, res, next) {
 
 	// Assume the token itself has been validated and user_id has been attached already
-	if (!req.params.id || req.params.id != req.user_id) {
+	if (!req.user || !req.params.id || req.params.id != req.user.attributes.id) {
 		return response.unauthorized(res, 'Unauthorized to view requested user');
 	}
 
