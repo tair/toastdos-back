@@ -79,24 +79,30 @@ const AnnotationTypeData = {
 	}
 };
 
-/*
-{
-	"type": "TEMPORAL_EXPRESSION",
-	"data": {
-		"gene": "My First Gene",
-		"keyword": "some keyword",
-		"method": "some method"
-	}
-}
-*/
 
-// FIXME locusMap - an optimization to help looking up genes used in an annotation
+/**
+ * TODO description
+ *
+ * @param annotation - type and data for a single annotation submission
+ * @param locusMap - an optimization to help looking up genes used in an annotation
+ * @param transaction - optional transaction for adding these records
+ * @return {Promise.<*>}
+ */
 function addAnnotationRecords(annotation, locusMap, transaction) {
 
 	let strategy = AnnotationTypeData[annotation.type];
 
+	// Step 1: Ensure annotation request all required fields and nothing extra
+	if (!strategy) {
+		return Promise.reject(new Error(`Invalid annotation type ${annotation.type}`));
+	}
 
-	// Step 1: Ensure no extraneous data was attached to the request
+	try {
+		validateFields(annotation, strategy.format.fields, strategy.format.optionalFields);
+	} catch (err) {
+		return Promise.reject(err);
+	}
+
 	// Step 2: Verify the data
 	// Step 3: Insert the data the main annotation is dependent on
 	// Step 4: With dependencies created, now add the Annotation itself
@@ -104,24 +110,24 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 }
 
 /**
- * Verifies that all required annotation fields were passed in,
+ * Validates that all required annotation fields were passed in,
  * without any extras.
  *
  * Throws an error for failed validation
  */
-function requestValidator(req, validFields, optionalFields) {
+function validateFields(annotation, validFields, optionalFields) {
 
 	// Look for extra fields
-	let extraFields = Object.keys(_.omit(req.body, validFields));
+	let extraFields = Object.keys(_.omit(annotation.data, validFields));
 	if (extraFields.length) {
-		throw new Error(`Invalid ${req.body.annotation_type} fields: ${extraFields}`);
+		throw new Error(`Invalid ${annotation.type} fields: ${extraFields}`);
 	}
 
 	// Make sure we have all required fields
 	const requiredFields = _.difference(validFields, optionalFields);
-	let missingFields = _.difference(requiredFields, Object.keys(req.body));
+	let missingFields = _.difference(requiredFields, Object.keys(annotation.data));
 	if (missingFields.length) {
-		throw new Error(`Missing ${req.body.annotation_type} fields: ${missingFields}`);
+		throw new Error(`Missing ${annotation.type} fields: ${missingFields}`);
 	}
 }
 
