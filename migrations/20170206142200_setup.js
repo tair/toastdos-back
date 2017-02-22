@@ -22,6 +22,12 @@ exports.up = function(knex, Promise) {
 
 			table.primary(['user_id', 'role_id']);
 		})
+		.createTable('draft', table => {
+			table.increments('id');
+			table.integer('submitter_id').references('user.id');
+			table.json('wip_state');
+			table.timestamp('created_at').defaultTo(knex.fn.now());
+		})
 		.createTable('keyword_type', table => {
 			table.increments('id');
 			table.string('name').unique();
@@ -87,6 +93,7 @@ exports.down = function(knex, Promise) {
 		.dropTable('user')
 		.dropTable('role')
 		.dropTable('user_role')
+		.dropTable('draft')
 		.dropTable('keyword')
 		.dropTable('synonym')
 		.dropTable('keyword_type')

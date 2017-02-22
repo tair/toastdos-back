@@ -12,6 +12,7 @@ exports.seed = function(knex, Promise) {
 		knex('annotation').truncate(),
 		knex('keyword').truncate(),
 		knex('keyword_type').truncate(),
+		knex('draft').truncate(),
 		knex('user').truncate(),
 		knex('publication').truncate(),
 		knex('annotation_status').truncate()
@@ -36,7 +37,9 @@ exports.seed = function(knex, Promise) {
 			).concat(
 				testdata.gene_gene_annotations.map(ggAnnotation => knex('gene_gene_annotation').insert(ggAnnotation))
 			).concat(
-				testdata.comment_annotations.map(cAnnotation => knex('comment_annotation').insert(cAnnotation))
+			    testdata.comment_annotations.map(cAnnotation => knex('comment_annotation').insert(cAnnotation))
+			).concat(
+			    testdata.draft.map(draft => knex('draft').insert(draft))
 			)
 		);
 	});
