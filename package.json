@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "test": "NODE_ENV=test mocha",
+    "test": "NODE_ENV=test mocha --recursive",
     "docs": "jsdoc -c ./jsdoc.json -r",
     "coverage": "istanbul cover _mocha",
     "exec": "exec",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "bcrypt": "^0.8.7",
+    "bluebird": "^3.4.7",
     "body-parser": "~1.15.1",
     "bookshelf": "^0.10.2",
     "byline": "^5.0.0",
@@ -22,6 +23,7 @@
     "jsonwebtoken": "^7.1.9",
     "knex": "^0.12.6",
     "morgan": "~1.7.0",
+    "pg": "^6.1.2",
     "request": "^2.75.0",
     "serve-favicon": "~2.3.0"
   },

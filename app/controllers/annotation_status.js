@@ -1,6 +1,8 @@
-"use strict";
+'use strict';
 
 const AnnotationStatus = require('../models/annotation_status');
+
+const response = require('../lib/responses');
 
 /**
  * Gets the list of all annotation statuses in our system
@@ -11,10 +13,10 @@ const AnnotationStatus = require('../models/annotation_status');
 function getAnnotationStatuses(req, res, next) {
 	AnnotationStatus.fetchAll()
 		.then(statuses => {
-			res.status(200).json(statuses);
+			response.ok(res, statuses);
 		})
 		.catch(err => {
-			res.status(500).send('Internal Server Error');
+			response.defaultServerError(res, err);
 		});
 }
 

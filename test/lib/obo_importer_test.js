@@ -1,20 +1,20 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 
-const knex        = require('../app/lib/bookshelf').knex;
-const oboImporter = require('../app/services/gene_ontology_importer');
+const knex        = require('../../app/lib/bookshelf').knex;
+const oboImporter = require('../../app/services/gene_ontology_importer');
 
-const KeywordType = require('../app/models/keyword_type');
-const Keyword     = require('../app/models/keyword');
-const Synonym     = require('../app/models/synonym');
+const KeywordType = require('../../app/models/keyword_type');
+const Keyword     = require('../../app/models/keyword');
+const Synonym     = require('../../app/models/synonym');
 
 describe('OBO Data Importer', function() {
 
 	before('Run the data import script on a test file to populate the database', function() {
 		return knex.migrate.latest()
-			.then(() => oboImporter.loadOboIntoDB('./test/test_terms.obo'))
-			.then(() => oboImporter.loadOboIntoDB('./test/test_terms.obo'));
+			.then(() => oboImporter.loadOboIntoDB('./test/lib/test_terms.obo'))
+			.then(() => oboImporter.loadOboIntoDB('./test/lib/test_terms.obo'));
 			 // Do it twice to ensure no duplicates
 	});
 

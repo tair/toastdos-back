@@ -12,19 +12,34 @@ exports.seed = function(knex, Promise) {
 		knex('annotation').truncate(),
 		knex('keyword').truncate(),
 		knex('keyword_type').truncate(),
-		knex('user').truncate(),
 		knex('publication').truncate(),
-		knex('annotation_status').truncate()
+		knex('annotation_status').truncate(),
+		knex('locus_name').truncate(),
+		knex('gene_symbol').truncate(),
+		knex('user').truncate(),
+		knex('locus').truncate(),
+		knex('taxon').truncate(),
+		knex('external_source').truncate()
 	]).then(() => {
 		return Promise.all([
 			].concat(
+				testdata.taxon.map(taxon => knex('taxon').insert(taxon))
+			).concat(
+				testdata.external_source.map(externalSource => knex('external_source').insert(externalSource))
+			).concat(
+				testdata.locus.map(locus => knex('locus').insert(locus))
+			).concat(
+				testdata.locus_name.map(locusName => knex('locus_name').insert(locusName))
+			).concat(
+				testdata.users.map(user => knex('user').insert(user))
+			).concat(
+				testdata.gene_symbol.map(geneSymbol => knex('gene_symbol').insert(geneSymbol))
+			).concat(
 				testdata.keyword_types.map(keywordType => knex('keyword_type').insert(keywordType))
 			).concat(
 				testdata.keywords.map(keyword => knex('keyword').insert(keyword))
 			).concat(
 				testdata.synonyms.map(synonym => knex('synonym').insert(synonym))
-			).concat(
-				testdata.users.map(user => knex('user').insert(user))
 			).concat(
 				testdata.publications.map(publication => knex('publication').insert(publication))
 			).concat(

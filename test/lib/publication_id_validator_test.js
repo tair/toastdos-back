@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 
-const validator = require('../app/lib/publication_id_validator');
+const validator = require('../../app/lib/publication_id_validator');
 
 describe('Publication ID Validator', function() {
 

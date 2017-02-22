@@ -1,14 +1,14 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 chai.use(require('chai-http'));
 chai.use(require('chai-subset'));
 
-const server = require('../app');
-const knex    = require('../app/lib/bookshelf').knex;
-const Keyword = require('../app/models/keyword');
+const server = require('../../app/index');
+const knex    = require('../../app/lib/bookshelf').knex;
+const Keyword = require('../../app/models/keyword');
 
-const testdata = require('../seeds/test_data.json');
+const testdata = require('../../seeds/test_data.json');
 
 describe('Keyword Controller', function() {
 
@@ -123,6 +123,36 @@ describe('Keyword Controller', function() {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.have.length(2);
 					chai.expect(res.body).to.containSubset(expectedKeywords);
+					done();
+				});
+		});
+
+		it('Search throws an error when substring is not provided', function(done) {
+			const testKeywordTypeID = testdata.keyword_types[0].id;
+
+			chai.request(server)
+				.post('/api/keyword/search')
+				.send({
+					keyword_type: testKeywordTypeID
+				})
+				.end((err,res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal(`'substring' is a required field`);
+					done();
+				});
+		});
+
+		it('Search throws an error when keyword_type is not provided', function(done) {
+			const testSubstring = 'testString';
+
+			chai.request(server)
+				.post('/api/keyword/search')
+				.send({
+					substring: testSubstring
+				})
+				.end((err,res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal(`'keyword_type' is a required field`);
 					done();
 				});
 		});

@@ -37,9 +37,11 @@ module.exports = {
   production: {
     client: 'postgresql',
     connection: {
-      database: 'my_db',
-      user:     'username',
-      password: 'password'
+      host: process.env.DBHOST,
+      port: process.env.DBPORT,
+      database: "toastdos_prod",
+      user: process.env.DBUSER,
+      password: process.env.DBPASSWORD
     },
     pool: {
       min: 2,

@@ -1,12 +1,13 @@
-"use strict";
+'use strict';
 
 const chai = require('chai');
 chai.use(require('chai-http'));
+chai.use(require('chai-subset'));
 
-const server = require('../app');
-const knex    = require('../app/lib/bookshelf').knex;
+const server = require('../../app/index');
+const knex    = require('../../app/lib/bookshelf').knex;
 
-const testdata = require('../seeds/test_data.json');
+const testdata = require('../../seeds/test_data.json');
 
 
 describe('KeywordType Controller', function() {
@@ -27,7 +28,7 @@ describe('KeywordType Controller', function() {
                 .get('/api/keywordtype/')
                 .end((err, res) => {
                     chai.expect(res.status).to.equal(200);
-                    chai.expect(res.body).to.deep.equal(testKeywordTypes);
+                    chai.expect(res.body).to.containSubset(testKeywordTypes);
                     done();
                 });
         });
