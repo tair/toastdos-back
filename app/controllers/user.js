@@ -97,6 +97,9 @@ function updateUserById(req, res, next) {
 	let update = Object.assign({id: req.params.id}, req.body);
 	User.forge(update)
 		.save(null, {method: 'update'})
+		.then(function(model) {
+			return model ? model.fetch() : model;
+		})
 		.then(updatedUser => {
 			return res.status(200)
 				.json(updatedUser);
