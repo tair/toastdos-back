@@ -92,6 +92,24 @@ describe('User Controller', function() {
 				});
 		});
 
+		it('Returns a Promise that resolves to the updated User object', function(done) {
+			let expectedEmail = 'updated.email2@test.com';
+
+			let testUser = testdata.users[0];
+
+			chai.request(server)
+				.put(`/api/user/${testUser.id}`)
+				.send({email_address: expectedEmail})
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					if (err) throw res.body;
+
+					chai.expect(res.body).to.contain.keys('id','email_address','name','created_at','orcid_id');
+					done();
+				})
+
+		})
+
 		it('Trying to update disallowed fields responds with an error', function(done) {
 			let testUser = testdata.users[0];
 			let invalidUpdateRequest = {
