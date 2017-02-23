@@ -1,10 +1,10 @@
 'use strict';
 
-const bookshelf        = require('../lib/bookshelf');
-const response         = require('../lib/responses');
-const locusHelper      = require('../lib/locus_submission_helper');
-const annotationHelper = require('../lib/annotation_submission_helper');
-
+const bookshelf            = require('../lib/bookshelf');
+const response             = require('../lib/responses');
+const locusHelper          = require('../lib/locus_submission_helper');
+const annotationHelper     = require('../lib/annotation_submission_helper');
+const publicationValidator = require('../lib/publication_id_validator');
 
 /**
  *
@@ -33,6 +33,17 @@ function submitGenesAndAnnotations(req, res, next) {
 		return response.badRequest(res, 'Body contained malformed Annotation data');
 	}
 
+
+	// Publication ID validation
+	if (   !publicationValidator.isDOI(req.body.publicationId)
+		&& !publicationValidator.isPubmedId(req.body.publicationId)) {
+		return response.badRequest(res, `${req.body.publicationID} is not a DOI or Pubmed ID`);
+	}
+
+	// We bundle submitter ID in with the submission request, but it needs to match the authenticated user
+	if (req.user.attributes.id !== req.body.submitterId) {
+		return response.unauthorized(res, 'submitterId does not match authenticated user');
+	}
 
 	// TODO Transaction here
 

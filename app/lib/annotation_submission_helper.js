@@ -2,9 +2,6 @@
 
 const _ = require('lodash');
 
-const publicationValidator = require('../lib/publication_id_validator');
-const response             = require('../lib/responses');
-
 const Publication        = require('../models/publication');
 const GeneTermAnnotation = require('../models/gene_term_annotation');
 const GeneGeneAnnotation = require('../models/gene_gene_annotation');
@@ -26,19 +23,19 @@ const AnnotationFormats = {
 		name: 'gene_term_annotation',
 		fields: BASE_ALLOWED_FIELDS.concat(['method_id', 'keyword_id', 'evidence_id']),
 		optionalFields: ['evidence_id'],
-		referenceCheck: geneTermFieldVerifier,
+		verifyReferences: verifyGeneTermFields,
 		createRecords: geneTermRecordCreator
 	},
 	GENE_GENE: {
 		name: 'gene_gene_annotation',
 		fields: BASE_ALLOWED_FIELDS.concat(['locus2_id', 'method_id']),
-		referenceCheck: geneGeneFieldVerifier,
+		verifyReferences: verifyGeneGeneFields,
 		createRecords: geneGeneRecordCreator
 	},
 	COMMENT: {
 		name: 'comment_annotation',
 		fields: BASE_ALLOWED_FIELDS.concat(['text']),
-		referenceCheck: commentFieldVerifier,
+		verifyReferences: verifyCommentFields,
 		createRecords: commentRecordCreator
 	}
 };
@@ -104,6 +101,8 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 	}
 
 	// Step 2: Verify the data
+	return strategy.format.verifyReferences(annotation)
+
 	// Step 3: Insert the data the main annotation is dependent on
 	// Step 4: With dependencies created, now add the Annotation itself
 
@@ -140,89 +139,81 @@ function validateFields(annotation, validFields, optionalFields) {
  * reject the fetch promise if a record isn't found for the
  * given ID.
  *
- * Any other failed verification is failed with a Promise.reject()
- *
- * While annotations MAY contain new keywords, we expect the client
- * to have created those new Keywords in a separate request.
+ * Any non-bookshelf failed verifications are done via Promise.reject()
  *
  * Returns a Promise.
  */
-function genericFieldVerifier(req) {
+function verifyGenericFields(annotation, locusMap) {
 	let verificationPromises = [];
 
-	// Publication ID validation
-	if (   !publicationValidator.isDOI(req.body.publication_id)
-		&& !publicationValidator.isPubmedId(req.body.publication_id)) {
-
-		// This causes the entire Promise.all chain to reject, which we catch downstream and return as a 400.
-		verificationPromises.push(
-			Promise.reject(new Error('Given publication ID is not a DOI or Pubmed ID'))
-		);
+	// Any locus present in our map has already been validated / added to our system
+	if (!locusMap[annotation.data.locusName]) {
+		verificationPromises.push(Promise.reject(`Locus ${annotation.data.locusName} not present in submission`));
 	}
-
-	verificationPromises.push(
-		redefineError(
-			User.where({id: req.body.submitter_id}).fetch({require: true}),
-			'Given submitter_id does not reference an existing record',
-			'EmptyResponse'
-		)
-	);
-	verificationPromises.push(
-		redefineError(
-			AnnotationStatus.where({id: req.body.status_id}).fetch({require: true}),
-			'Given status_id does not reference an existing record',
-			'EmptyResponse'
-		)
-	);
-
-	// TODO how are we verifying Locus IDs?
-	// TODO If we are, verify locus_id Locus.
 
 	return verificationPromises;
 }
 
-function geneTermFieldVerifier(req) {
-	let verificationPromises = genericFieldVerifier(req);
+function verifyGeneTermFields(annotation, locusMap) {
+	let verificationPromises = verifyGenericFields(annotation, locusMap);
 
-	verificationPromises.push(
-		redefineError(
-			Keyword.where({id: req.body.method_id}).fetch({require: true}),
-			'Given method_id does not reference an existing record',
-			'EmptyResponse'
-		)
-	);
-	verificationPromises.push(
-		redefineError(
-			Keyword.where({id: req.body.keyword_id}).fetch({require: true}),
-			'Given keyword_id does not reference an existing record',
-			'EmptyResponse'
-		)
-	);
+	// A new method Keyword can be created with an Annotation, so we just verify existing ones
+	if (annotation.data.method.id) {
+		verificationPromises.push(
+			redefinePromiseError({
+				promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true}),
+				message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
+				pattern: 'EmptyResponse'
+			})
+		);
+	}
 
-	// TODO if necessary, validate evidence_id Locus
+	// A new keyword Keyword can be created with an Annotation, so we just verify existing ones
+	if (annotation.data.keyword.id) {
+		verificationPromises.push(
+			redefinePromiseError({
+				promise: Keyword.where({id: annotation.data.keyword.id}).fetch({require: true}),
+				message: `Keyword id ${annotation.data.keyword.id} does not reference an existing Keyword`,
+				pattern: 'EmptyResponse'
+			})
+		);
+	}
+
+	// Evidence Locus is optional
+	if (annotation.data.evidence && !locusMap[annotation.data.evidence]) {
+		verificationPromises.push(Promise.reject(`Locus ${annotation.data.evidence} not present in submission`));
+	}
+
 
 	return Promise.all(verificationPromises);
 }
 
-function geneGeneFieldVerifier(req) {
-	let verificationPromises = genericFieldVerifier(req);
+function verifyGeneGeneFields(annotation, locusMap) {
+	let verificationPromises = verifyGenericFields(annotation, locusMap);
 
-	verificationPromises.push(
-		redefineError(
-			Keyword.where({id: req.body.method_id}).fetch({require: true}),
-			'Given method_id does not reference an existing record',
-			'EmptyResponse'
-		)
-	);
+	// A new method Keyword can be created with an Annotation, so we just verify existing ones
+	if (annotation.data.method.id) {
+		verificationPromises.push(
+			redefinePromiseError({
+				promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true}),
+				message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
+				pattern: 'EmptyResponse'
+			})
+		);
+	}
 
-	// TODO if necessary, validate locus2_id Locus
+	// Verify locus2 Locus
+	if (!locusMap[annotation.data.locusName2]) {
+		verificationPromises.push(Promise.reject(`Locus ${annotation.data.evidence} not present in submission`));
+	}
+
 
 	return Promise.all(verificationPromises);
 }
 
 // Comment Annotations have no additional verification
-function commentFieldVerifier(req) {
-	let verificationPromises = genericFieldVerifier(req);
+function verifyCommentFields(annotation, locusMap) {
+	let verificationPromises = verifyGenericFields(annotation, locusMap);
 	return Promise.all(verificationPromises);
 }
 
@@ -302,19 +293,19 @@ function commentRecordCreator(req) {
  * This is because Bookshelf errors aren't verbose enough.
  * Added the matcher because Bookshelf could fail for reasons other than a record not being found.
  */
-function redefineError(promise, message, matcher) {
+function redefinePromiseError(params) {
 	return new Promise((resolve, reject) => {
-		promise
+		params.promise
 			.then(result => resolve(result))
 			.catch(err => {
-				if (matcher) {
-					if (err.message.match(matcher)) {
-						reject(new Error(message));
+				if (params.pattern) {
+					if (err.message.match(params.pattern)) {
+						reject(new Error(params.message));
 					} else {
 						reject(err);
 					}
 				} else {
-					reject(new Error(message))
+					reject(new Error(params.message))
 				}
 			});
 	});
