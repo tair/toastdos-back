@@ -66,7 +66,7 @@ exports.up = function(knex, Promise) {
 			table.integer('publication_id').references('publication.id');
 			table.integer('status_id').references('annotation_status.id');
 			table.integer('submitter_id').references('user.id');
-			table.integer('locus_id').notNullable(); // TODO possibly add a reference here
+			table.integer('locus_id').references('locus.id').notNullable();
 			table.integer('annotation_id').notNullable();
 			table.integer('annotation_type').notNullable();
 			table.timestamps();
@@ -75,16 +75,52 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.integer('method_id').references('keyword.id');
 			table.integer('keyword_id').references('keyword.id');
-			table.integer('evidence_id'); // TODO if we ever have a Locus table, this has a reference to it
+			table.integer('evidence_id').references('locus.id');
 		})
 		.createTable('gene_gene_annotation', table => {
 			table.increments('id');
-			table.integer('locus2_id').notNullable(); // TODO see above note about Locus table reference
+			table.integer('locus2_id').references('locus.id').notNullable();
 			table.integer('method_id').references('keyword.id');
 		})
 		.createTable('comment_annotation', table => {
 			table.increments('id');
 			table.string('text').notNullable();
+		})
+		.createTable('locus', table => {
+			table.increments('id');
+			table.integer('taxon_id').references('taxon.id').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
+		})
+		.createTable('locus_name', table => {
+			table.increments('id');
+			table.integer('locus_id').references('locus.id').notNullable();
+			table.string('locus_name').unique().notNullable();
+			table.integer('source_id').references('external_source.id').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
+
+			table.index('locus_id');
+		})
+		.createTable('gene_symbol', table => {
+			table.increments('id');
+			table.integer('locus_id').references('locus.id').notNullable();
+			table.string('symbol').notNullable();
+			table.string('full_name').notNullable();
+			table.integer('source_id').references('external_source.id');
+			table.integer('submitter_id').references('user.id').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
+
+			table.index('locus_id');
+		})
+		.createTable('taxon', table => {
+			table.increments('id');
+			table.integer('taxon_id').unique().notNullable();
+			table.string('name').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
+		})
+		.createTable('external_source', table => {
+			table.increments('id');
+			table.string('name').unique().notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
 		});
 };
 
@@ -102,5 +138,10 @@ exports.down = function(knex, Promise) {
 		.dropTable('annotation')
 		.dropTable('gene_term_annotation')
 		.dropTable('gene_gene_annotation')
-		.dropTable('comment_annotation');
+		.dropTable('comment_annotation')
+		.dropTable('locus')
+		.dropTable('locus_name')
+		.dropTable('gene_symbol')
+		.dropTable('taxon')
+		.dropTable('external_source');
 };

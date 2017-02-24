@@ -18,11 +18,11 @@ describe('TAIR API', function() {
 
 	it('Existing Locus name returns successfully', function() {
 		const goodLocusName = 'AT1G10000';
-
-		// We use a cut down version of the data so the test still works if this response data changes
 		const expectedResponse = {
-			locusName: 'AT1G10000',
-			taxon: 'Arabidopsis thaliana'
+			source: 'TAIR',
+			locus_name: 'AT1G10000',
+			taxon_name: 'Arabidopsis thaliana',
+			taxon_id: 3702
 		};
 
 		return Tair.getLocusByName(goodLocusName).then(locus => {
