@@ -128,6 +128,17 @@ function validateFields(annotation, validFields, optionalFields) {
 	if (missingFields.length) {
 		throw new Error(`Missing ${annotation.type} fields: ${missingFields}`);
 	}
+
+	// Make sure keyword fields have a name or an ID
+	let method = annotation.data.method;
+	if (method && !((method.id && !method.name) || (!method.id && method.name)) ) {
+		throw new Error('id or name required for Keywords');
+	}
+
+	let keyword = annotation.data.keyword;
+	if (keyword && !((keyword.id && !keyword.name) || (!keyword.id && keyword.name)) ) {
+		throw new Error('id or name required for Keywords');
+	}
 }
 
 /**
