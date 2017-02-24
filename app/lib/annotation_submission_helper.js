@@ -2,17 +2,16 @@
 
 const _ = require('lodash');
 
-const Publication        = require('../models/publication');
 const GeneTermAnnotation = require('../models/gene_term_annotation');
 const GeneGeneAnnotation = require('../models/gene_gene_annotation');
 const CommentAnnotation  = require('../models/comment_annotation');
 const Annotation         = require('../models/annotation');
-const User               = require('../models/user');
 const AnnotationStatus   = require('../models/annotation_status');
 const Keyword            = require('../models/keyword');
+const KeywordType        = require('../models/keyword_type');
 
 
-const BASE_ALLOWED_FIELDS = ['publication_id', 'status_id', 'submitter_id', 'locus_id', 'annotation_type'];
+const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'];
 
 /* This is a bastardized strategy pattern to change
  * how we validate / verify annotation creation requests
@@ -21,14 +20,14 @@ const BASE_ALLOWED_FIELDS = ['publication_id', 'status_id', 'submitter_id', 'loc
 const AnnotationFormats = {
 	GENE_TERM: {
 		name: 'gene_term_annotation',
-		fields: BASE_ALLOWED_FIELDS.concat(['method_id', 'keyword_id', 'evidence_id']),
+		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidence']),
 		optionalFields: ['evidence_id'],
 		verifyReferences: verifyGeneTermFields,
-		createRecords: geneTermRecordCreator
+		createRecords: createGeneTermRecords
 	},
 	GENE_GENE: {
 		name: 'gene_gene_annotation',
-		fields: BASE_ALLOWED_FIELDS.concat(['locus2_id', 'method_id']),
+		fields: BASE_ALLOWED_FIELDS.concat(['locusName2', 'method']),
 		verifyReferences: verifyGeneGeneFields,
 		createRecords: geneGeneRecordCreator
 	},
@@ -76,9 +75,13 @@ const AnnotationTypeData = {
 	}
 };
 
+// There are very few keyword types, so we cache them.
+const METHOD_KEYWORD_TYPE_NAME = 'eco';
+let KEYWORD_TYPES = {};
+
 
 /**
- * TODO description
+ * Creates all of the records necessary for the given annotation.
  *
  * @param annotation - type and data for a single annotation submission
  * @param locusMap - an optimization to help looking up genes used in an annotation
@@ -86,14 +89,13 @@ const AnnotationTypeData = {
  * @return {Promise.<*>}
  */
 function addAnnotationRecords(annotation, locusMap, transaction) {
-
 	let strategy = AnnotationTypeData[annotation.type];
 
-	// Step 1: Ensure annotation request all required fields and nothing extra
 	if (!strategy) {
 		return Promise.reject(new Error(`Invalid annotation type ${annotation.type}`));
 	}
 
+	// Step 1: Ensure annotation request all required fields and nothing extra
 	try {
 		validateFields(annotation, strategy.format.fields, strategy.format.optionalFields);
 	} catch (err) {
@@ -101,11 +103,20 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 	}
 
 	// Step 2: Verify the data
-	return strategy.format.verifyReferences(annotation)
-
-	// Step 3: Insert the data the main annotation is dependent on
-	// Step 4: With dependencies created, now add the Annotation itself
-
+	return strategy.format.verifyReferences(annotation, locusMap)
+		// Step 3: Create sub-annotation and any new Keywords
+		.then(() => strategy.format.createRecords(annotation, locusMap, strategy.keywordScope))
+		// Step 4: With dependencies created, now add the Annotation itself
+		.then(subAnnotation => {
+			return Annotation.forge({
+				publication_id: annotation.internalPublicationId,
+				status_id: null,
+				submitter_id: annotation.submitterId,
+				locus_id: locusMap[annotation.data.locusName].attributes.id,
+				annotation_id: subAnnotation.attributes.id,
+				annotation_type: strategy.format.name
+			}).save();
+		});
 }
 
 /**
@@ -230,71 +241,87 @@ function verifyCommentFields(annotation, locusMap) {
 
 
 /**
- * These functions add the records needed for creating the main Annotation.
- * Currently that includes only the Publication record and
- * specialized Annotation type information.
+ * Adds a new Keyword.
+ * Returned promise resolves to the raw ID of the added Keyword.
+ * This is to stay consistent with the case where we already have
+ * the ID (for annotation record creation).
  *
- * Returns a Promise.
+ * @return {Promise.<TResult>}
  */
-function genericRecordCreator(req) {
-	// Publication ID is stored in the field corresponding to its type
-	let newPublication = {};
-	if (publicationValidator.isDOI(req.body.publication_id)) {
-		newPublication.doi = req.body.publication_id;
-	} else if (publicationValidator.isPubmedId(req.body.publication_id)) {
-		newPublication.pubmed_id = req.body.publication_id;
+function createKeywordRecord(keywordName, keywordTypeName) {
+	let keywordTypePromise;
+
+	// Retrieve the KeywordType id (either via query or our cache)
+	if (KEYWORD_TYPES[keywordTypeName]) {
+		keywordTypePromise = Promise.resolve(KEYWORD_TYPES[keywordTypeName]);
+	} else {
+		keywordTypePromise = KeywordType.where({name: keywordTypeName}).fetch();
 	}
 
-	// Use an existing publication record if possible
-	return Publication.where(newPublication).fetch().then(existingPublication => {
-		if (existingPublication) {
-			return Promise.resolve(existingPublication);
-		} else {
-			return Publication.forge(newPublication).save();
-		}
+	return keywordTypePromise.then(keywordType => {
+		// Cache this for subsequent requests
+		if (!KEYWORD_TYPES[keywordTypeName]) KEYWORD_TYPES[keywordTypeName] = keywordType;
+
+		return Keyword.forge({
+			name: keywordName,
+			keyword_type_id: keywordType.attributes.id
+		}).save();
+	}).then(addedKeyword => Promise.resolve(addedKeyword.attributes.id));
+}
+
+/**
+ * These functions add the records needed for creating the main Annotation.
+ * Currently that includes only the specialized Annotation type information
+ * and any newly created Keywords.
+ *
+ * Returns a Promise that resolves to new sub-annotation.
+ */
+function createGeneTermRecords(annotation, locusMap, keywordScope) {
+
+	// I'm sorry for this. This kind of nonsense is the only way to handle adding
+	// new Keywords without duplicating big chunks of code.
+	let methodPromise;
+	if (!annotation.data.method.id) {
+		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME);
+	} else {
+		methodPromise = Promise.resolve(annotation.data.method.id);
+	}
+
+	let keywordPromise;
+	if (!annotation.data.keyword.id) {
+		keywordPromise = createKeywordRecord(annotation.data.keyword.name, keywordScope);
+	} else {
+		keywordPromise = Promise.resolve(annotation.data.keyword.id);
+	}
+
+	return Promise.all([methodPromise, keywordPromise])
+		.then(([methodId, keywordId]) => {
+			return GeneTermAnnotation.forge({
+				method_id: methodId,
+				keyword_id: keywordId,
+				evidence_id: locusMap[annotation.data.evidence].attributes.id
+			}).save();
+		});
+}
+
+function geneGeneRecordCreator(annotation, locusMap) {
+	let methodPromise;
+	if (!annotation.data.method.id) {
+		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME);
+	} else {
+		methodPromise = Promise.resolve(annotation.data.method.id);
+	}
+
+	return methodPromise.then(methodId => {
+		return GeneGeneAnnotation.forge({
+			method_id: methodId,
+			locus2_id: locusMap[annotation.data.locusName2].attributes.id
+		}).save();
 	});
 }
 
-function geneTermRecordCreator(req) {
-	let recordCreationPromises = [];
-	recordCreationPromises.push(
-		genericRecordCreator(req)
-	);
-
-	let newSubAnnotation = _.pick(req.body, GENE_TERM_ALLOWED_FIELDS);
-	recordCreationPromises.push(
-		GeneTermAnnotation.forge(newSubAnnotation).save()
-	);
-
-	return Promise.all(recordCreationPromises);
-}
-
-function geneGeneRecordCreator(req) {
-	let recordCreationPromises = [];
-	recordCreationPromises.push(
-		genericRecordCreator(req)
-	);
-
-	let newSubAnnotation = _.pick(req.body, GENE_GENE_ALLOWED_FIELDS);
-	recordCreationPromises.push(
-		GeneGeneAnnotation.forge(newSubAnnotation).save()
-	);
-
-	return Promise.all(recordCreationPromises);
-}
-
-function commentRecordCreator(req) {
-	let recordCreationPromises = [];
-	recordCreationPromises.push(
-		genericRecordCreator(req)
-	);
-
-	let newSubAnnotation = _.pick(req.body, COMMENT_ALLOWED_FIELDS);
-	recordCreationPromises.push(
-		CommentAnnotation.forge(newSubAnnotation).save()
-	);
-
-	return Promise.all(recordCreationPromises);
+function commentRecordCreator(annotation) {
+	return CommentAnnotation.forge({text: annotation.data.text}).save();
 }
 
 /**

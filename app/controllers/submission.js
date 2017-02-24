@@ -6,6 +6,8 @@ const locusHelper          = require('../lib/locus_submission_helper');
 const annotationHelper     = require('../lib/annotation_submission_helper');
 const publicationValidator = require('../lib/publication_id_validator');
 
+const Publication = require('../models/publication');
+
 /**
  *
  *
@@ -34,9 +36,13 @@ function submitGenesAndAnnotations(req, res, next) {
 	}
 
 
-	// Publication ID validation
-	if (   !publicationValidator.isDOI(req.body.publicationId)
-		&& !publicationValidator.isPubmedId(req.body.publicationId)) {
+	// Publication ID validation / type detection
+	let publicationType;
+	if (publicationValidator.isDOI(req.body.publicationId)) {
+		publicationType = 'doi';
+	} else if (publicationValidator.isPubmedId(req.body.publicationId)) {
+		publicationType = 'pubmed_id';
+	} else {
 		return response.badRequest(res, `${req.body.publicationID} is not a DOI or Pubmed ID`);
 	}
 
@@ -47,16 +53,36 @@ function submitGenesAndAnnotations(req, res, next) {
 
 	// TODO Transaction here
 
-	Promise.all(req.body.genes.map(
-			gene => locusHelper.addLocusRecords(gene.locusName, gene.fullName, gene.geneSymbol)
-		))
-		.then(locusArray => {
-			let locusMap = locusArray.map(locus => ({[locus.related('locus'.attributes.id)] : locus}))
+	// Use an existing publication record if possible
+	let publicationPromise = Publication.where({[publicationType]: req.body.publicationId})
+		.fetch()
+		.then(existingPublication => {
+			if (existingPublication) {
+				return Promise.resolve(existingPublication);
+			} else {
+				return Publication.forge({[publicationType]: req.body.publicationId}).save();
+			}
+		});
+
+	let locusPromises = req.body.genes.map(
+		gene => locusHelper.addLocusRecords(gene.locusName, gene.fullName, gene.geneSymbol)
+	);
+
+	// Isolate the publication promise from the locus promises
+	Promise.all([publicationPromise, Promise.all(locusPromises)])
+		.then(([publication, locusArray]) => {
+
+			// Create a map of the locuses we added so we can quickly look them up by name
+			let locusMap = locusArray.map(locus => ({[locus.related('locus').attributes.id]: locus}))
 				.reduce((accumulator, curValue) => Object.assign(accumulator, curValue));
 
-			let annotationPromises = req.body.annotations.map(
-				annotation => annotationHelper.addAnnotationRecords(annotation, locusMap)
-			);
+			let annotationPromises = req.body.annotations.map(annotation => {
+				// Every Annotation needs a reference to Publication and User ID
+				annotation.internalPublicationId = publication.attributes.id;
+				annotation.submitterId = req.user.attributes.id;
+
+				return annotationHelper.addAnnotationRecords(annotation, locusMap);
+			});
 
 			return Promise.all(annotationPromises);
 		})
