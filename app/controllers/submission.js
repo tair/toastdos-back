@@ -9,11 +9,14 @@ const publicationValidator = require('../lib/publication_id_validator');
 const Publication = require('../models/publication');
 
 /**
+ * Creates records for all of the new Locuses and Annotations.
+ * Performs all of the database additions inside a transaction,
+ * and if anything goes wrong, the entire thing is rolled back.
  *
- *
- * @param req
- * @param res
- * @param next
+ * Responds with:
+ * 201 with empty body on successful add.
+ * 400 with text describing problem with request.
+ * 500 if something blows up on our end.
  */
 function submitGenesAndAnnotations(req, res, next) {
 
@@ -51,48 +54,51 @@ function submitGenesAndAnnotations(req, res, next) {
 		return response.unauthorized(res, 'submitterId does not match authenticated user');
 	}
 
-	// TODO Transaction here
+	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
+	bookshelf.transaction(transaction => {
 
-	// Use an existing publication record if possible
-	let publicationPromise = Publication.where({[publicationType]: req.body.publicationId})
-		.fetch()
-		.then(existingPublication => {
-			if (existingPublication) {
-				return Promise.resolve(existingPublication);
-			} else {
-				return Publication.forge({[publicationType]: req.body.publicationId}).save();
-			}
-		});
-
-	let locusPromises = req.body.genes.map(
-		gene => locusHelper.addLocusRecords(gene.locusName, gene.fullName, gene.geneSymbol)
-	);
-
-	// Isolate the publication promise from the locus promises
-	Promise.all([publicationPromise, Promise.all(locusPromises)])
-		.then(([publication, locusArray]) => {
-
-			// Create a map of the locuses we added so we can quickly look them up by name
-			let locusMap = locusArray.map(locus => ({[locus.related('locus').attributes.id]: locus}))
-				.reduce((accumulator, curValue) => Object.assign(accumulator, curValue));
-
-			let annotationPromises = req.body.annotations.map(annotation => {
-				// Every Annotation needs a reference to Publication and User ID
-				annotation.internalPublicationId = publication.attributes.id;
-				annotation.submitterId = req.user.attributes.id;
-
-				return annotationHelper.addAnnotationRecords(annotation, locusMap);
+		// Use an existing publication record if possible
+		let publicationPromise = Publication.where({[publicationType]: req.body.publicationId})
+			.fetch({transacting: transaction})
+			.then(existingPublication => {
+				if (existingPublication) {
+					return Promise.resolve(existingPublication);
+				} else {
+					return Publication.forge({[publicationType]: req.body.publicationId})
+						.save({transacting: transaction});
+				}
 			});
 
-			return Promise.all(annotationPromises);
-		})
+		let locusPromises = req.body.genes.map(gene => {
+			return locusHelper.addLocusRecords(gene.locusName, gene.fullName, gene.geneSymbol,
+				req.user.attributes.id, transaction);
+		});
+
+		// Isolate the publication promise from the locus promises
+		return Promise.all([publicationPromise, Promise.all(locusPromises)])
+			.then(([publication, locusArray]) => {
+
+				// Create a map of the locuses we added so we can quickly look them up by name
+				let locusMap = locusArray.map(locus => ({[locus.related('locus').attributes.id]: locus}))
+					.reduce((accumulator, curValue) => Object.assign(accumulator, curValue));
+
+				let annotationPromises = req.body.annotations.map(annotation => {
+					// Every Annotation needs a reference to Publication and User ID
+					annotation.internalPublicationId = publication.attributes.id;
+					annotation.submitterId = req.user.attributes.id;
+
+					return annotationHelper.addAnnotationRecords(annotation, locusMap, transaction);
+				});
+
+				return Promise.all(annotationPromises);
+			});
+	})
 		.then(annotationArray => {
-			// We don't actually do anything with the added annotations
-			// TODO commit transaction here
+			// NOTE: Transaction is automatically committed on successful promise resolution
 			response.created(res);
 		})
 		.catch(err => {
-			// TODO reject transaction here
+			// NOTE: Transaction is automatically rolled back on error
 			response.defaultServerError(res, err);
 		});
 }

@@ -105,7 +105,7 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 	// Step 2: Verify the data
 	return strategy.format.verifyReferences(annotation, locusMap)
 		// Step 3: Create sub-annotation and any new Keywords
-		.then(() => strategy.format.createRecords(annotation, locusMap, strategy.keywordScope))
+		.then(() => strategy.format.createRecords(annotation, locusMap, strategy.keywordScope, transaction))
 		// Step 4: With dependencies created, now add the Annotation itself
 		.then(subAnnotation => {
 			return Annotation.forge({
@@ -115,7 +115,7 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 				locus_id: locusMap[annotation.data.locusName].attributes.id,
 				annotation_id: subAnnotation.attributes.id,
 				annotation_type: strategy.format.name
-			}).save();
+			}).save(null, null, null, {transacting: transaction});
 		});
 }
 
@@ -248,7 +248,7 @@ function verifyCommentFields(annotation, locusMap) {
  *
  * @return {Promise.<TResult>}
  */
-function createKeywordRecord(keywordName, keywordTypeName) {
+function createKeywordRecord(keywordName, keywordTypeName, transaction) {
 	let keywordTypePromise;
 
 	// Retrieve the KeywordType id (either via query or our cache)
@@ -265,7 +265,7 @@ function createKeywordRecord(keywordName, keywordTypeName) {
 		return Keyword.forge({
 			name: keywordName,
 			keyword_type_id: keywordType.attributes.id
-		}).save();
+		}).save(null, null, null, {transacting: transaction});
 	}).then(addedKeyword => Promise.resolve(addedKeyword.attributes.id));
 }
 
@@ -276,20 +276,20 @@ function createKeywordRecord(keywordName, keywordTypeName) {
  *
  * Returns a Promise that resolves to new sub-annotation.
  */
-function createGeneTermRecords(annotation, locusMap, keywordScope) {
+function createGeneTermRecords(annotation, locusMap, keywordScope, transaction) {
 
 	// I'm sorry for this. This kind of nonsense is the only way to handle adding
 	// new Keywords without duplicating big chunks of code.
 	let methodPromise;
 	if (!annotation.data.method.id) {
-		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME);
+		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME, transaction);
 	} else {
 		methodPromise = Promise.resolve(annotation.data.method.id);
 	}
 
 	let keywordPromise;
 	if (!annotation.data.keyword.id) {
-		keywordPromise = createKeywordRecord(annotation.data.keyword.name, keywordScope);
+		keywordPromise = createKeywordRecord(annotation.data.keyword.name, keywordScope, transaction);
 	} else {
 		keywordPromise = Promise.resolve(annotation.data.keyword.id);
 	}
@@ -300,14 +300,14 @@ function createGeneTermRecords(annotation, locusMap, keywordScope) {
 				method_id: methodId,
 				keyword_id: keywordId,
 				evidence_id: locusMap[annotation.data.evidence].attributes.id
-			}).save();
+			}).save(null, null, null, {transacting: transaction});
 		});
 }
 
-function geneGeneRecordCreator(annotation, locusMap) {
+function geneGeneRecordCreator(annotation, locusMap, transaction) {
 	let methodPromise;
 	if (!annotation.data.method.id) {
-		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME);
+		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME, transaction);
 	} else {
 		methodPromise = Promise.resolve(annotation.data.method.id);
 	}
@@ -316,12 +316,12 @@ function geneGeneRecordCreator(annotation, locusMap) {
 		return GeneGeneAnnotation.forge({
 			method_id: methodId,
 			locus2_id: locusMap[annotation.data.locusName2].attributes.id
-		}).save();
+		}).save(null, null, null, {transacting: transaction});
 	});
 }
 
-function commentRecordCreator(annotation) {
-	return CommentAnnotation.forge({text: annotation.data.text}).save();
+function commentRecordCreator(annotation, transaction) {
+	return CommentAnnotation.forge({text: annotation.data.text}).save(null, null, null, {transacting: transaction});
 }
 
 /**
