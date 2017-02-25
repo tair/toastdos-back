@@ -78,6 +78,7 @@ function updateUserById(req, res, next) {
 	let update = Object.assign({id: req.params.id}, req.body);
 	User.forge(update)
 		.save(null, {method: 'update'})
+		.then(model => model.fetch())
 		.then(updatedUser => response.ok(res, updatedUser))
 		.catch(err => {
 			if (err.toString().includes('No Rows Updated')) {
