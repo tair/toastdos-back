@@ -13,6 +13,14 @@ const testdata = require('../../seeds/test_data.json');
 
 describe('TAIR API', function() {
 
+	before('Setup SQLite memory database', function() {
+		return knex.migrate.latest();
+	});
+
+	beforeEach('Populate SQLite memory DB with fresh test data', function() {
+		return knex.seed.run();
+	});
+
 	describe('Verify Locus', function() {
 
 		it('Correctly identifies TAIR Locus name', function() {
@@ -54,16 +62,6 @@ describe('TAIR API', function() {
 	});
 
 	describe('Add Locus', function() {
-
-		// Make sure the database is up to date
-		before(function() {
-			return knex.migrate.latest();
-		});
-
-		// Give us fresh test data in a sqlite memory database for each test
-		beforeEach(function() {
-			return knex.seed.run();
-		});
 
 		it('Totally new loci create all proper records', function() {
 			const locusName = 'Q6XXX8';
@@ -153,6 +151,56 @@ describe('TAIR API', function() {
 					chai.expect(err.message).to.equal(`No Locus found for name ${invalidLocusName}`);
 				});
 		});
+
+	});
+
+	describe('Add Annotation', function() {
+
+		it('GT annotation recognizes invalid fields');
+
+		it('GG annotation recognizes invalid fields');
+
+		it('C annotation recognizes invalid fields');
+
+		it('GT annotation recognizes missing fields');
+
+		it('GG annotation recognizes missing fields');
+
+		it('C annotation recognizes missing fields');
+
+		it('Method keywords must specify an id XOR name');
+
+		it('Keyword keywords must specify an id XOR name');
+
+		it('GT verification rejects for invalid locus');
+
+		it('GG verification rejects for invalid locus');
+
+		it('C verification rejects for invalid locus');
+
+		it('GT verification rejects for non-existent method keyword id');
+
+		it('GT verification rejects for non-existent keyword keyword id');
+
+		it('GT verification rejects for invalid evidence locus');
+
+		it('GG verification rejects for non-existent method keyword id');
+
+		it('GG verification rejects for invalid second locus');
+
+		it('GT creator adds new method keywords with eco KeywordType');
+
+		it('GT creator adds new keyword keywords KeywordType matching scope');
+
+		it('GT sub-annotation is properly added');
+
+		it('GG creator adds new method keywords with eco KeywordType');
+
+		it('GG sub-annotation is properly added');
+
+		it('C sub-annotation is properly added');
+
+		it('Parent annotation added with all proper fields');
 
 	});
 
