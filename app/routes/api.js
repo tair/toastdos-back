@@ -15,10 +15,10 @@ router.use('/role', require('./role'));
 router.use('/login', require('./login'));
 router.use('/keywordtype', require('./keyword_type'));
 router.use('/keyword', require('./keyword'));
-router.use('/annotation', require('./annotation'));
 router.use('/annotationstatus', require('./annotation_status'));
 router.use('/gene', require('./gene'));
 router.use('/publication', require('./publication'));
+router.use('/submission', require('./submission'));
 
 /**
  * Development endpoints.
