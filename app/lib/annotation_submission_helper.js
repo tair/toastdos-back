@@ -21,7 +21,7 @@ const AnnotationFormats = {
 	GENE_TERM: {
 		name: 'gene_term_annotation',
 		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidence']),
-		optionalFields: ['evidence_id'],
+		optionalFields: ['evidence'],
 		verifyReferences: verifyGeneTermFields,
 		createRecords: createGeneTermRecords
 	},
@@ -143,12 +143,12 @@ function validateFields(annotation, validFields, optionalFields) {
 	// Make sure keyword fields have a name or an ID
 	let method = annotation.data.method;
 	if (method && !((method.id && !method.name) || (!method.id && method.name)) ) {
-		throw new Error('id or name required for Keywords');
+		throw new Error('id xor name required for Keywords');
 	}
 
 	let keyword = annotation.data.keyword;
 	if (keyword && !((keyword.id && !keyword.name) || (!keyword.id && keyword.name)) ) {
-		throw new Error('id or name required for Keywords');
+		throw new Error('id xor name required for Keywords');
 	}
 }
 

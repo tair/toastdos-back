@@ -4,7 +4,8 @@ const chai = require('chai');
 chai.use(require('chai-subset'));
 const knex = require('../../app/lib/bookshelf').knex;
 
-const locusHelper = require('../../app/lib/locus_submission_helper');
+const locusHelper      = require('../../app/lib/locus_submission_helper');
+const annotationHelper = require('../../app/lib/annotation_submission_helper');
 
 const Locus     = require('../../app/models/locus');
 const LocusName = require('../../app/models/locus_name');
@@ -154,23 +155,187 @@ describe('TAIR API', function() {
 
 	});
 
+	/**
+	 * We use a module to give us access to the private functions in the
+	 * submission helper so we can isolate tests just to the functions they cover.
+	 * If we went through the standard workflow for each test, one failure
+	 * would cause a bunch of unrelated downstream failures.
+	 *
+	 * The submission tests go through the whole workflow properly.
+	 *
+	 * Also:
+	 * GT - Gene Term
+	 * GG - Gene Gene
+	 * C  - Comment
+	 */
 	describe('Add Annotation', function() {
 
-		it('GT annotation recognizes invalid fields');
+		beforeEach('Build locus map from test data', function () {
+			return LocusName.fetchAll({withRelated: 'locus'}).then(locusNames => {
+				this.currentTest.locusMap = locusNames
+					.map(locus => ({[locus.attributes.locus_name]: locus}))
+					.reduce((curMap, curVal) => Object.assign(curMap, curVal));
+			});
+		});
 
-		it('GG annotation recognizes invalid fields');
+		it('GT annotation recognizes invalid fields', function() {
+			const testType = 'MOLECULAR_FUNCTION'; // GT annotation type
+			const invalidFieldName = 'invalidField';
+			const testGTAnnotation = {
+				type: testType,
+				data: {
+					internalPublicationId: testdata.publications[0].id,
+					submitterId: testdata.users[0].id,
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: testdata.keywords[0].id },
+					keyword: { name: 'New Keyword Name'},
+					evidence: testdata.locus_name[1].locus_name,
+					[invalidFieldName]: 'I am an invalid field'
+				}
+			};
 
-		it('C annotation recognizes invalid fields');
+			return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				// NOTE that 'evidence' is not picked up here.
+				chai.expect(err.message).to.equal(`Invalid ${testType} fields: ${invalidFieldName}`);
+			});
+		});
 
-		it('GT annotation recognizes missing fields');
+		it('GG annotation recognizes invalid fields', function() {
+			const testType = 'PROTEIN_INTERACTION'; // GG type
+			const invalidFieldName = 'invalidField';
+			const testGGAnnotation = {
+				type: testType,
+				data: {
+					internalPublicationId: testdata.publications[0].id,
+					submitterId: testdata.users[0].id,
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: testdata.keywords[0].id },
+					locusName2: testdata.locus_name[1].locus_name,
+					[invalidFieldName]: 'I am an invalid field'
+				}
+			};
 
-		it('GG annotation recognizes missing fields');
+			return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Invalid ${testType} fields: ${invalidFieldName}`);
+			});
+		});
 
-		it('C annotation recognizes missing fields');
+		it('C annotation recognizes invalid fields', function() {
+			const testType = 'COMMENT';
+			const invalidFieldName = 'invalidField';
+			const testCAnnotation = {
+				type: testType,
+				data: {
+					internalPublicationId: testdata.publications[0].id,
+					submitterId: testdata.users[0].id,
+					locusName: testdata.locus_name[0].locus_name,
+					text: 'Some text',
+					[invalidFieldName]: 'I am an invalid field'
+				}
+			};
 
-		it('Method keywords must specify an id XOR name');
+			return annotationHelper.addAnnotationRecords(testCAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Invalid ${testType} fields: ${invalidFieldName}`);
+			});
+		});
 
-		it('Keyword keywords must specify an id XOR name');
+		it('GT annotation recognizes missing fields', function() {
+			const testType = 'BIOLOGICAL_PROCESS'; // A different GT type
+			const reqFields = ['internalPublicationId', 'submitterId', 'locusName', 'method', 'keyword'];
+			const testGTAnnotation = {
+				type: testType,
+				data: {}
+			};
+
+			return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Missing fields were not detected');
+			}).catch(err => {
+				chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
+				reqFields.forEach(field => chai.expect(err.message).to.contain(field));
+				chai.expect(err.message).to.not.contain('evidence'); // Because evidence is optional
+			});
+		});
+
+		it('GG annotation recognizes missing fields', function() {
+			const testType = 'PROTEIN_INTERACTION'; // GG type
+			const reqFields = ['internalPublicationId', 'submitterId', 'locusName', 'method', 'locusName2'];
+			const testGGAnnotation = {
+				type: testType,
+				data: {}
+			};
+
+			return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Missing fields were not detected');
+			}).catch(err => {
+				chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
+				reqFields.forEach(field => chai.expect(err.message).to.contain(field));
+			});
+		});
+
+		it('C annotation recognizes missing fields', function() {
+			const testType = 'COMMENT';
+			const reqFields = ['internalPublicationId', 'submitterId', 'locusName', 'text'];
+			const testCAnnotation = {
+				type: testType,
+				data: {}
+			};
+
+			return annotationHelper.addAnnotationRecords(testCAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Missing fields were not detected');
+			}).catch(err => {
+				chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
+				reqFields.forEach(field => chai.expect(err.message).to.contain(field));
+			});
+		});
+
+		it('Method keywords must specify an id XOR name', function() {
+			const testType = 'PROTEIN_INTERACTION'; // GG type
+			const badMethod = { badField: 'Not id or name' };
+			const testGGAnnotation = {
+				type: testType,
+				data: {
+					internalPublicationId: testdata.publications[0].id,
+					submitterId: testdata.users[0].id,
+					locusName: testdata.locus_name[0].locus_name,
+					method: badMethod,
+					locusName2: testdata.locus_name[1].locus_name
+				}
+			};
+
+			return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal('id xor name required for Keywords');
+			});
+		});
+
+		it('Keyword keywords must specify an id XOR name', function() {
+			const testType = 'SUBCELLULAR_LOCATION'; // Yet another GT annotation type
+			const badKeyword = { id: 'something', name: 'New Keyword Name' };
+			const testGTAnnotation = {
+				type: testType,
+				data: {
+					internalPublicationId: testdata.publications[0].id,
+					submitterId: testdata.users[0].id,
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: testdata.keywords[0].id },
+					keyword: badKeyword,
+					evidence: testdata.locus_name[1].locus_name
+				}
+			};
+
+			return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal('id xor name required for Keywords');
+			});
+		});
 
 		it('GT verification rejects for invalid locus');
 
