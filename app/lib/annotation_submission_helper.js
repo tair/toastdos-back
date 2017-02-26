@@ -170,7 +170,9 @@ function verifyGenericFields(annotation, locusMap) {
 
 	// Any locus present in our map has already been validated / added to our system
 	if (!locusMap[annotation.data.locusName]) {
-		verificationPromises.push(Promise.reject(`Locus ${annotation.data.locusName} not present in submission`));
+		verificationPromises.push(
+			Promise.reject(new Error(`Locus ${annotation.data.locusName} not present in submission`))
+		);
 	}
 
 	return verificationPromises;
@@ -203,7 +205,9 @@ function verifyGeneTermFields(annotation, locusMap) {
 
 	// Evidence Locus is optional
 	if (annotation.data.evidence && !locusMap[annotation.data.evidence]) {
-		verificationPromises.push(Promise.reject(`Locus ${annotation.data.evidence} not present in submission`));
+		verificationPromises.push(
+			Promise.reject(new Error(`Locus ${annotation.data.evidence} not present in submission`))
+		);
 	}
 
 
@@ -226,7 +230,9 @@ function verifyGeneGeneFields(annotation, locusMap) {
 
 	// Verify locus2 Locus
 	if (!locusMap[annotation.data.locusName2]) {
-		verificationPromises.push(Promise.reject(`Locus ${annotation.data.evidence} not present in submission`));
+		verificationPromises.push(
+			Promise.reject(new Error(`Locus ${annotation.data.locusName2} not present in submission`))
+		);
 	}
 
 

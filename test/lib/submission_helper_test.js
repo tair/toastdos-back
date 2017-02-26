@@ -3,9 +3,10 @@
 const chai = require('chai');
 chai.use(require('chai-subset'));
 const knex = require('../../app/lib/bookshelf').knex;
+const rewire = require('rewire'); // To access private functions in modules
 
 const locusHelper      = require('../../app/lib/locus_submission_helper');
-const annotationHelper = require('../../app/lib/annotation_submission_helper');
+const annotationHelper = rewire('../../app/lib/annotation_submission_helper');
 
 const Locus     = require('../../app/models/locus');
 const LocusName = require('../../app/models/locus_name');
@@ -337,21 +338,152 @@ describe('TAIR API', function() {
 			});
 		});
 
-		it('GT verification rejects for invalid locus');
+		it('GT verification rejects for invalid locus', function() {
+			const verifyGeneTermFields = annotationHelper.__get__('verifyGeneTermFields');
+			const badLocusName = 'Bad Locus Name';
+			const partialGTAnnotation = {
+				data: {
+					locusName: badLocusName,
+					method: { id: testdata.keywords[0].id },
+					keyword: { id: testdata.keywords[0].id },
+					evidence: testdata.locus[1].locus_name
+				}
+			};
 
-		it('GG verification rejects for invalid locus');
+			return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
+			});
+		});
 
-		it('C verification rejects for invalid locus');
+		it('GG verification rejects for invalid locus', function() {
+			const verifyGeneGeneFields = annotationHelper.__get__('verifyGeneGeneFields');
+			const badLocusName = 'Bad Locus Name';
+			const partialGGAnnotation = {
+				data: {
+					locusName: badLocusName,
+					method: { id: testdata.keywords[0].id },
+					locusName2: testdata.locus[1].locus_name
+				}
+			};
 
-		it('GT verification rejects for non-existent method keyword id');
+			return verifyGeneGeneFields(partialGGAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
+			});
+		});
 
-		it('GT verification rejects for non-existent keyword keyword id');
+		it('C verification rejects for invalid locus', function() {
+			const verifyCommentFields = annotationHelper.__get__('verifyCommentFields');
+			const badLocusName = 'Bad Locus Name';
+			const partialCAnnotation = {
+				data: {
+					locusName: badLocusName,
+					text: 'Some sample text'
+				}
+			};
 
-		it('GT verification rejects for invalid evidence locus');
+			return verifyCommentFields(partialCAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
+			});
+		});
 
-		it('GG verification rejects for non-existent method keyword id');
+		it('GT verification rejects for non-existent method keyword id', function() {
+			const verifyGeneTermFields = annotationHelper.__get__('verifyGeneTermFields');
+			const badMethodId = 100;
+			const partialGTAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: badMethodId },
+					keyword: { id: testdata.keywords[0].id },
+					evidence: testdata.locus_name[1].locus_name
+				}
+			};
 
-		it('GG verification rejects for invalid second locus');
+			return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Method id ${badMethodId} does not reference an existing Keyword`);
+			});
+		});
+
+		it('GT verification rejects for non-existent keyword keyword id', function() {
+			const verifyGeneTermFields = annotationHelper.__get__('verifyGeneTermFields');
+			const badMethodId = 100;
+			const partialGTAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: testdata.keywords[0].id },
+					keyword: { id: badMethodId },
+					evidence: testdata.locus_name[1].locus_name
+				}
+			};
+
+			return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Keyword id ${badMethodId} does not reference an existing Keyword`);
+			});
+		});
+
+		it('GT verification rejects for invalid evidence locus', function() {
+			const verifyGeneTermFields = annotationHelper.__get__('verifyGeneTermFields');
+			const badLocusName = 'Bad Locus Name';
+			const partialGTAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: testdata.keywords[0].id },
+					keyword: { id: testdata.keywords[0].id },
+					evidence: badLocusName
+				}
+			};
+
+			return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
+			});
+		});
+
+		it('GG verification rejects for non-existent method keyword id', function() {
+			const verifyGeneGeneFields = annotationHelper.__get__('verifyGeneGeneFields');
+			const badMethodId = 100;
+			const partialGGAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: badMethodId },
+					locusName2: testdata.locus_name[1].locus_name
+				}
+			};
+
+			return verifyGeneGeneFields(partialGGAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Method id ${badMethodId} does not reference an existing Keyword`);
+			});
+		});
+
+		it('GG verification rejects for invalid second locus', function() {
+			const verifyGeneGeneFields = annotationHelper.__get__('verifyGeneGeneFields');
+			const badLocusName = 'Bad Locus Name';
+			const partialGGAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: testdata.keywords[0].id },
+					locusName2: badLocusName
+				}
+			};
+
+			return verifyGeneGeneFields(partialGGAnnotation, this.test.locusMap).then(res => {
+				throw new Error('Invalid fields were not rejected');
+			}).catch(err => {
+				chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
+			});
+		});
 
 		it('GT creator adds new method keywords with eco KeywordType');
 
