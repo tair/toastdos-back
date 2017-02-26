@@ -616,7 +616,18 @@ describe('TAIR API', function() {
 			});
 		});
 
-		it('Gracefully handle when two annotations try to add the same new Keyword');
+		it('Only one Keyword record is created when two annotations try to add the same new Keyword', function() {
+			const createKeywordRecord = annotationHelper.__get__('createKeywordRecord');
+			const testKeywordType = testdata.keyword_types[0];
+			const testKeywordName = 'New Test Keyword';
+
+			let keywordPromise1 = createKeywordRecord(testKeywordName, testKeywordType.name);
+			let keywordPromise2 = createKeywordRecord(testKeywordName, testKeywordType.name);
+
+			return Promise.all([keywordPromise1, keywordPromise2]).then(([newKWID1, newKWID2]) => {
+				chai.expect(newKWID1).to.equal(newKWID2);
+			});
+		});
 
 		it('Parent annotation added with all proper fields');
 

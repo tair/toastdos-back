@@ -255,9 +255,8 @@ function verifyCommentFields(annotation, locusMap) {
  * @return {Promise.<TResult>}
  */
 function createKeywordRecord(keywordName, keywordTypeName, transaction) {
-	let keywordTypePromise;
-
 	// Retrieve the KeywordType id (either via query or our cache)
+	let keywordTypePromise;
 	if (KEYWORD_TYPES[keywordTypeName]) {
 		keywordTypePromise = Promise.resolve(KEYWORD_TYPES[keywordTypeName]);
 	} else {
@@ -272,7 +271,19 @@ function createKeywordRecord(keywordName, keywordTypeName, transaction) {
 			name: keywordName,
 			keyword_type_id: keywordType.attributes.id
 		}).save(null, null, null, {transacting: transaction});
-	}).then(addedKeyword => Promise.resolve(addedKeyword.attributes.id));
+	})
+		.then(addedKeyword => Promise.resolve(addedKeyword.attributes.id))
+		.catch(err => {
+			// In case two annotations are trying to create the same new Keyword.
+			// Should match unique errors for SQLite and PostgreSQL.
+			if (err.message.includes('UNIQUE constraint failed') || err.message.includes('unique_violation')) {
+				return Keyword.where({name: keywordName})
+					.fetch()
+					.then(existingKeyword => Promise.resolve(existingKeyword.attributes.id));
+			}
+
+			throw err;
+		});
 }
 
 /**
