@@ -29,13 +29,13 @@ const AnnotationFormats = {
 		name: 'gene_gene_annotation',
 		fields: BASE_ALLOWED_FIELDS.concat(['locusName2', 'method']),
 		verifyReferences: verifyGeneGeneFields,
-		createRecords: geneGeneRecordCreator
+		createRecords: createGeneGeneRecords
 	},
 	COMMENT: {
 		name: 'comment_annotation',
 		fields: BASE_ALLOWED_FIELDS.concat(['text']),
 		verifyReferences: verifyCommentFields,
-		createRecords: commentRecordCreator
+		createRecords: createCommentRecords
 	}
 };
 
@@ -284,8 +284,11 @@ function createKeywordRecord(keywordName, keywordTypeName, transaction) {
  */
 function createGeneTermRecords(annotation, locusMap, keywordScope, transaction) {
 
-	// I'm sorry for this. This kind of nonsense is the only way to handle adding
-	// new Keywords without duplicating big chunks of code.
+	/* Make promises that resolve to the id of a keyword.
+
+	 * I'm sorry for this. This kind of nonsense is the only way to handle adding
+	 * new Keywords without duplicating big chunks of code.
+	 */
 	let methodPromise;
 	if (!annotation.data.method.id) {
 		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME, transaction);
@@ -302,15 +305,21 @@ function createGeneTermRecords(annotation, locusMap, keywordScope, transaction) 
 
 	return Promise.all([methodPromise, keywordPromise])
 		.then(([methodId, keywordId]) => {
-			return GeneTermAnnotation.forge({
+			let subAnnotation = {
 				method_id: methodId,
-				keyword_id: keywordId,
-				evidence_id: locusMap[annotation.data.evidence].attributes.id
-			}).save(null, null, null, {transacting: transaction});
+				keyword_id: keywordId
+			};
+
+			// 'evidence' is an optional field
+			if (annotation.data.evidence) {
+				subAnnotation.evidence_id = locusMap[annotation.data.evidence].attributes.id;
+			}
+
+			return GeneTermAnnotation.forge(subAnnotation).save(null, null, null, {transacting: transaction});
 		});
 }
 
-function geneGeneRecordCreator(annotation, locusMap, transaction) {
+function createGeneGeneRecords(annotation, locusMap, transaction) {
 	let methodPromise;
 	if (!annotation.data.method.id) {
 		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME, transaction);
@@ -326,7 +335,7 @@ function geneGeneRecordCreator(annotation, locusMap, transaction) {
 	});
 }
 
-function commentRecordCreator(annotation, transaction) {
+function createCommentRecords(annotation, transaction) {
 	return CommentAnnotation.forge({text: annotation.data.text}).save(null, null, null, {transacting: transaction});
 }
 

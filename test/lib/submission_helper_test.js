@@ -10,6 +10,7 @@ const annotationHelper = rewire('../../app/lib/annotation_submission_helper');
 
 const Locus     = require('../../app/models/locus');
 const LocusName = require('../../app/models/locus_name');
+const Keyword   = require('../../app/models/keyword');
 
 const testdata = require('../../seeds/test_data.json');
 
@@ -485,17 +486,137 @@ describe('TAIR API', function() {
 			});
 		});
 
-		it('GT creator adds new method keywords with eco KeywordType');
+		it('GT creator adds new method keywords with eco KeywordType', function() {
+			const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
+			const unusedKeywordScope = testdata.keyword_types[0].name;
+			const testKeywordName = 'New Test Keyword';
+			const partialGTAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { name: testKeywordName },
+					keyword: { id: testdata.keywords[0].id }
+				}
+			};
+			const expectedKeywordName = 'eco';
 
-		it('GT creator adds new keyword keywords KeywordType matching scope');
+			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, unusedKeywordScope).then(gtAnn => {
+				return Keyword.where({id: gtAnn.attributes.method_id}).fetch({withRelated: 'keywordType'});
+			}).then(methodKeyword => {
+				chai.expect(methodKeyword.related('keywordType').attributes.name).to.equal(expectedKeywordName);
+			});
+		});
 
-		it('GT sub-annotation is properly added');
+		it('GT creator adds new keyword keywords KeywordType matching scope', function() {
+			const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
+			const testKeywordScope = testdata.keyword_types[0].name;
+			const testKeywordName = 'New Test Keyword';
+			const partialGTAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: testdata.keywords[2].id },
+					keyword: { name: testKeywordName }
+				}
+			};
 
-		it('GG creator adds new method keywords with eco KeywordType');
+			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, testKeywordScope).then(gtAnn => {
+				return Keyword.where({id: gtAnn.attributes.keyword_id}).fetch({withRelated: 'keywordType'});
+			}).then(keywordKeyword => {
+				chai.expect(keywordKeyword.related('keywordType').attributes.name).to.equal(testKeywordScope);
+			});
+		});
 
-		it('GG sub-annotation is properly added');
+		it('GT sub-annotation is properly added', function() {
+			const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
+			const unusedKeywordScope = testdata.keyword_types[0].name;
 
-		it('C sub-annotation is properly added');
+			const expectedMethod = testdata.keywords[2];
+			const expectedKeyword = testdata.keywords[0];
+			const expectedEvidenceLocus = testdata.locus[1];
+
+			const partialGTAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: expectedMethod.id },
+					keyword: { id: expectedKeyword.id },
+					evidence: testdata.locus_name[1].locus_name
+				}
+			};
+
+			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, unusedKeywordScope).then(gtAnn => {
+				return gtAnn.fetch({withRelated: ['method', 'keyword', 'evidence']});
+			}).then(fullGTAnnotation => {
+				let fullGTObj = fullGTAnnotation.toJSON();
+
+				chai.expect(fullGTObj.method).to.contain(expectedMethod);
+				chai.expect(fullGTObj.keyword).to.contain(expectedKeyword);
+				chai.expect(fullGTObj.evidence).to.contain(expectedEvidenceLocus);
+			});
+		});
+
+		it('GG creator adds new method keywords with eco KeywordType', function() {
+			const createGeneGeneRecords = annotationHelper.__get__('createGeneGeneRecords');
+			const unusedKeywordScope = testdata.keyword_types[0].name;
+
+			const expectedKeywordName = 'eco';
+			const testKeywordName = 'New Test Keyword';
+			const partialGGAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { name: testKeywordName },
+					locusName2: testdata.locus_name[1].locus_name
+				}
+			};
+
+			return createGeneGeneRecords(partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
+				return Keyword.where({id: ggAnn.attributes.method_id}).fetch({withRelated: 'keywordType'});
+			}).then(methodKeyword => {
+				chai.expect(methodKeyword.related('keywordType').attributes.name).to.equal(expectedKeywordName);
+			});
+		});
+
+		it('GG sub-annotation is properly added', function() {
+			const createGeneGeneRecords = annotationHelper.__get__('createGeneGeneRecords');
+			const unusedKeywordScope = testdata.keyword_types[0].name;
+
+			const expectedMethod = testdata.keywords[2];
+			const expectedLocus2 = testdata.locus[1];
+
+			const partialGGAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: expectedMethod.id },
+					locusName2: testdata.locus_name[1].locus_name
+				}
+			};
+
+			return createGeneGeneRecords(partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
+				return ggAnn.fetch({withRelated: ['method', 'locus2']});
+			}).then(fullGGAnnotation => {
+				let fullGGObj = fullGGAnnotation.toJSON();
+
+				chai.expect(fullGGObj.method).to.contain(expectedMethod);
+				chai.expect(fullGGObj.locus2).to.contain(expectedLocus2);
+			});
+		});
+
+		it('C sub-annotation is properly added', function() {
+			const createCommentRecords = annotationHelper.__get__('createCommentRecords');
+			const unusedKeywordScope = testdata.keyword_types[0].name;
+
+			const partialCAnnotation = {
+				data: {
+					locusName: testdata.locus_name[0].locus_name,
+					text: 'Some cool text'
+				}
+			};
+
+			return createCommentRecords(partialCAnnotation, this.test.locusMap, unusedKeywordScope).then(cAnn => {
+				chai.expect(cAnn.attributes.id).to.exist;
+				chai.expect(cAnn.attributes.text).to.be.a('string');
+			});
+		});
+
+		it('Gracefully handle when two annotations try to add the same new Keyword');
 
 		it('Parent annotation added with all proper fields');
 
