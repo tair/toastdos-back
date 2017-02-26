@@ -248,6 +248,19 @@ describe('Models', function() {
 				});
 		});
 
+		it('Evidence Locus for Annotation can be retrieved', function() {
+			let testAnnotation = testdata.gene_term_annotations[0];
+			let expectedLocus = testdata.locus[0];
+
+			return GeneTermAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'evidence'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.evidence).to.contain(expectedLocus);
+				});
+		});
+
 		it('Parent Annotation information can be retrieved', function() {
 			let testAnnotation = testdata.gene_term_annotations[0];
 			let expectedParent = testdata.annotations[0];
@@ -275,6 +288,19 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.method).to.contain(expectedKeyword);
+				});
+		});
+
+		it('Locus2 Locus for Annotation can be retrieved', function() {
+			let testAnnotation = testdata.gene_gene_annotations[0];
+			let expectedLocus2 = testdata.locus[0];
+
+			return GeneGeneAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'locus2'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.locus2).to.contain(expectedLocus2);
 				});
 		});
 
