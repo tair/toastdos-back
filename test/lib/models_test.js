@@ -179,6 +179,19 @@ describe('Models', function() {
 				});
 		});
 
+		it('Locus the Annotation refers to can be retrieved', function() {
+			let testAnnotation = testdata.annotations[0];
+			let expectedLocus = testdata.locus[0];
+
+			return Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'locus'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.locus).to.contain(expectedLocus);
+				});
+		});
+
 		it('Gene to Term information can be retrieved', function() {
 			let testAnnotation = testdata.annotations[0];
 			let expectedGTAnnotationPart = testdata.gene_term_annotations[0];
