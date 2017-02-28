@@ -21,7 +21,7 @@ const Locus              = require('../../app/models/locus');
 const ExternalSource     = require('../../app/models/external_source');
 const GeneSymbol         = require('../../app/models/gene_symbol');
 
-const testdata = require('../../seeds/test_data.json');
+const testdata = require('../../seeds/test/test_data.json');
 
 describe('Models', function() {
 

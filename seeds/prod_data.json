@@ -1,0 +1,34 @@
+{
+  "keyword_types": [
+    {
+      "name": "eco"
+    },
+    {
+      "name": "molecular_function"
+    },
+    {
+      "name": "biological_process"
+    },
+    {
+      "name": "cellular_component"
+    },
+    {
+      "name": "plant_anatomy"
+    },
+    {
+      "name": "plant_structure_development_stage"
+    }
+  ],
+
+  "annotation_statuses": [
+    {
+      "name": "pending"
+    },
+    {
+      "name": "accepted"
+    },
+    {
+      "name": "rejected"
+    }
+  ]
+}

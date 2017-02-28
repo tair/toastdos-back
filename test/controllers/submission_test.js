@@ -7,7 +7,7 @@ const server = require('../../app/index');
 const auth   = require('../../app/lib/authentication');
 const knex   = require('../../app/lib/bookshelf').knex;
 
-const testdata = require('../../seeds/test_data.json');
+const testdata = require('../../seeds/test/test_data.json');
 
 describe('Submission Controller', function() {
 

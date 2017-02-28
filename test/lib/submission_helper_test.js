@@ -12,7 +12,7 @@ const Locus     = require('../../app/models/locus');
 const LocusName = require('../../app/models/locus_name');
 const Keyword   = require('../../app/models/keyword');
 
-const testdata = require('../../seeds/test_data.json');
+const testdata = require('../../seeds/test/test_data.json');
 
 describe('TAIR API', function() {
 
