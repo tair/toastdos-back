@@ -46,7 +46,7 @@ function submitGenesAndAnnotations(req, res, next) {
 	} else if (publicationValidator.isPubmedId(req.body.publicationId)) {
 		publicationType = 'pubmed_id';
 	} else {
-		return response.badRequest(res, `${req.body.publicationID} is not a DOI or Pubmed ID`);
+		return response.badRequest(res, `${req.body.publicationId} is not a DOI or Pubmed ID`);
 	}
 
 	// We bundle submitter ID in with the submission request, but it needs to match the authenticated user

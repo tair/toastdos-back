@@ -28,22 +28,136 @@ describe('Submission Controller', function() {
 	});
 
 	beforeEach('Populate SQLite memory DB with fresh test data', function () {
+
+		// Tests will modify this as needed
+		this.currentTest.submission = {
+			publicationId: '10.1234/thing.anotherthing',
+			submitterId: testdata.users[0].id,
+			genes: [
+				{
+					locusName: 'AT1G10000',
+					geneSymbol: 'RIB',
+					fullName: 'Ribonuclease H-like thing'
+				},
+				{
+					locusName: 'URS00000EF184',
+					geneSymbol: 'SNF',
+					fullName: 'Some new fullname'
+				}
+			],
+			annotations: [
+				{
+					type: 'COMMENT',
+					data: {
+						locusName: 'AT1G10000',
+						text: 'Description of something'
+					}
+				},
+				{
+					type: 'MOLECULAR_FUNCTION',
+					data: {
+						locusName: 'AT1G10000',
+						method: {
+							id: 23
+						},
+						keyword: {
+							name: 'New keyword'
+						},
+						evidence: 'URS00000EF184'
+					}
+				},
+			]
+		};
 		return knex.seed.run();
 	});
 
 	describe('POST /api/submission/', function() {
 
-		it('Empty or non-existent gene list responds with error');
+		it('Empty or non-existent gene list responds with error', function(done) {
+			this.test.submission.genes = [];
 
-		it('Empty or non-existent annotation list responds with error');
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal('No genes specified');
+					done();
+				});
+		});
 
-		it('Malformed gene responds with error');
+		it('Empty or non-existent annotation list responds with error', function(done) {
+			this.test.submission.annotations = [];
 
-		it('Malformed annotation responds with error');
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal('No annotations specified');
+					done();
+				});
+		});
 
-		it('Malformed (non DOI or Pubmed) publication id responds with error');
+		it('Malformed gene responds with error', function(done) {
+			delete this.test.submission.genes[0].locusName;
 
-		it('Submitter id must match authenticated user');
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal('Body contained malformed Gene data');
+					done();
+				});
+		});
+
+		it('Malformed annotation responds with error', function(done) {
+			delete this.test.submission.annotations[0].data;
+
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal('Body contained malformed Annotation data');
+					done();
+				});
+		});
+
+		it('Malformed (non DOI or Pubmed) publication id responds with error', function(done) {
+			const badPubId = 'Nonsense';
+			this.test.submission.publicationId = badPubId;
+
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal(`${badPubId} is not a DOI or Pubmed ID`);
+					done();
+				});
+		});
+
+		it('Submitter id must match authenticated user', function(done) {
+			const nonMatchingUser = testdata.users[1];
+			this.test.submission.submitterId = nonMatchingUser.id;
+
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(401);
+					chai.expect(res.text).to.equal('submitterId does not match authenticated user');
+					done();
+				});
+		});
 
 		it('An error in the submission process rolls back entire transaction');
 
