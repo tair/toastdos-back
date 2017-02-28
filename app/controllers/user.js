@@ -35,9 +35,9 @@ function getUsers(req, res, next) {
  */
 function getUserById(req, res, next) {
 	return User.where('id', req.params.id).fetch({
-			require: true,
-			withRelated: req.query['withRelated']
-		})
+		require: true,
+		withRelated: req.query['withRelated']
+	})
 		.then(user => res.json(user.serialize()))
 		.catch(err => {
 			let regMatch;
@@ -78,6 +78,7 @@ function updateUserById(req, res, next) {
 	let update = Object.assign({id: req.params.id}, req.body);
 	User.forge(update)
 		.save(null, {method: 'update'})
+		.then(model => model.fetch())
 		.then(updatedUser => response.ok(res, updatedUser))
 		.catch(err => {
 			if (err.toString().includes('No Rows Updated')) {
@@ -108,7 +109,7 @@ function deleteUserById(req, res, next) {
 			}
 
 			return response.defaultServerError(res, err);
-	});
+		});
 }
 
 /**
@@ -131,7 +132,7 @@ function setRoles(req, res, next) {
 		})
 		.then(result => {
 			return target_user.fetch({
-			withRelated: ['roles']
+				withRelated: ['roles']
 			});
 		})
 		.then(user => response.ok(res, user))

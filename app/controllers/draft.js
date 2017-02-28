@@ -14,29 +14,19 @@ const response = require('../lib/responses');
  */
 
 function getDraft(req, res, next){
-    //check submitter_id
-	if(!req.body.submitter_id){
-		return response.badRequest(res, `submitter_id is missing`);
-	}
-	//400 bad request if missing either wip_state or submitter_id, or if submitter_id is invalid
+
 	if (!req.body.wip_state) {
 		return response.badRequest(res, `Draft (wip state) is missing or invalid`);
 	}
-	//TODO wait for middleware
-	User.where({id: req.body.submitter_id}).fetch({require: true})
-		.then(user => {
-			return Draft.forge(req.body).save();
-
+		Draft.forge({
+			submitter_id: req.user.attributes.id,
+			wip_state: req.body.wip_state
 		})
+		.save()
 		.then(draft =>{
 			return response.created(res, draft);
-			}
-
-		)
+		})
 		.catch(err => {
-			if(err.message ==='EmptyResponse'){
-				return response.badRequest(res,`submitter_id is invalid ${req.body.submitter_id}`);
-			}
 			return response.defaultServerError(res,err);
 		});
 }

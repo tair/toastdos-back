@@ -88,6 +88,7 @@ describe('User Controller', function() {
 
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body.email_address).to.equal(expectedEmail);
+					chai.expect(res.body).to.contain.keys('id','email_address','name','created_at','orcid_id');
 					done();
 				});
 		});

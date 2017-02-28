@@ -23,8 +23,8 @@ exports.up = function(knex, Promise) {
 			table.primary(['user_id', 'role_id']);
 		})
 		.createTable('draft', table => {
-			table.increments('id');
-			table.integer('submitter_id').references('user.id');
+			table.increments('id').notNullable();
+			table.integer('submitter_id').references('user.id').notNullable();
 			table.json('wip_state');
 			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
