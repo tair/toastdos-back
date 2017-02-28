@@ -30,5 +30,29 @@
     {
       "name": "rejected"
     }
+  ],
+
+  "annotation_types": [
+    {
+      "name": "Molecular Function"
+    },
+    {
+      "name": "Biological Process"
+    },
+    {
+      "name": "Subcellular Location"
+    },
+    {
+      "name": "Anatomical Location"
+    },
+    {
+      "name": "Temporal Expression"
+    },
+    {
+      "name": "Protein Interaction"
+    },
+    {
+      "name": "Comment"
+    }
   ]
 }

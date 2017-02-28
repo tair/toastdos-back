@@ -11,6 +11,7 @@ const Keyword            = require('../../app/models/keyword');
 const Synonym            = require('../../app/models/synonym');
 const Publication        = require('../../app/models/publication');
 const AnnotationStatus   = require('../../app/models/annotation_status');
+const AnnotationType     = require('../../app/models/annotation_type');
 const Annotation         = require('../../app/models/annotation');
 const GeneTermAnnotation = require('../../app/models/gene_term_annotation');
 const GeneGeneAnnotation = require('../../app/models/gene_gene_annotation');
@@ -138,6 +139,26 @@ describe('Models', function() {
 
 	});
 
+	describe('Annotation Type', function() {
+
+		it('Get Annotations with this type', function() {
+			let testType = testdata.annotation_types[1];
+			let expectedAnnotations = [
+				testdata.annotations[1],
+				testdata.annotations[2]
+			];
+
+			return AnnotationType.where({id: testType.id})
+				.fetch({withRelated: 'annotations'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
+				});
+		});
+
+	});
+
 	describe('Annotation Base', function() {
 
 		it('Status for Annotation can be retrieved', function() {
@@ -150,6 +171,19 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.status).to.contain(expectedStatus);
+				});
+		});
+
+		it('Type for Annotation can be retrieved', function() {
+			let testAnnotation = testdata.annotations[0];
+			let expectedType = testdata.annotation_types[0];
+
+			return Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'type'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.type).to.contain(expectedType);
 				});
 		});
 

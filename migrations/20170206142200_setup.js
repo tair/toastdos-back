@@ -55,14 +55,19 @@ exports.up = function(knex, Promise) {
 			table.string('name').unique().notNullable();
 			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
+		.createTable('annotation_type', table => {
+			table.increments('id');
+			table.string('name').unique().notNullable();
+		})
 		.createTable('annotation', table => {
 			table.increments('id');
 			table.integer('publication_id').references('publication.id');
 			table.integer('status_id').references('annotation_status.id');
 			table.integer('submitter_id').references('user.id');
 			table.integer('locus_id').references('locus.id').notNullable();
+			table.integer('type_id').references('annotation_type.id').notNullable();
 			table.integer('annotation_id').notNullable();
-			table.integer('annotation_type').notNullable();
+			table.integer('annotation_format').notNullable();
 			table.timestamps();
 		})
 		.createTable('gene_term_annotation', table => {

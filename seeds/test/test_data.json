@@ -86,6 +86,17 @@
     }
   ],
 
+  "annotation_types" : [
+    {
+      "id" : 1,
+      "name" : "Test Annotation Type"
+    },
+    {
+      "id" : 2,
+      "name" : "Test Annotation Type 2"
+    }
+  ],
+
   "annotations" : [
     {
       "id" : 1,
@@ -93,8 +104,9 @@
       "status_id" : 1,
       "submitter_id" : 1,
       "locus_id" : 1,
+      "type_id" : 1,
       "annotation_id" : 1,
-      "annotation_type" : "gene_term_annotation"
+      "annotation_format" : "gene_term_annotation"
     },
     {
       "id" : 2,
@@ -102,8 +114,9 @@
       "status_id" : 2,
       "submitter_id" : 1,
       "locus_id" : 1,
+      "type_id" : 2,
       "annotation_id" : 2,
-      "annotation_type" : "gene_term_annotation"
+      "annotation_format" : "gene_term_annotation"
     },
     {
       "id" : 3,
@@ -111,8 +124,9 @@
       "status_id" : 1,
       "submitter_id" : 2,
       "locus_id" : 2,
+      "type_id" : 2,
       "annotation_id" : 1,
-      "annotation_type" : "gene_gene_annotation"
+      "annotation_format" : "gene_gene_annotation"
     },
     {
       "id" : 4,
@@ -120,8 +134,9 @@
       "status_id" : 2,
       "submitter_id" : 2,
       "locus_id" : 3,
+      "type_id" : 1,
       "annotation_id" : 2,
-      "annotation_type" : "gene_gene_annotation"
+      "annotation_format" : "gene_gene_annotation"
     },
     {
       "id" : 5,
@@ -129,8 +144,9 @@
       "status_id" : 2,
       "submitter_id" : 2,
       "locus_id" : 3,
+      "type_id" : 1,
       "annotation_id" : 1,
-      "annotation_type" : "comment_annotation"
+      "annotation_format" : "comment_annotation"
     },
     {
       "id" : 6,
@@ -138,8 +154,9 @@
       "status_id" : 2,
       "submitter_id" : 2,
       "locus_id" : 4,
+      "type_id" : 1,
       "annotation_id" : 2,
-      "annotation_type" : "comment_annotation"
+      "annotation_format" : "comment_annotation"
     }
   ],
 

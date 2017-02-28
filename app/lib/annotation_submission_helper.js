@@ -114,7 +114,7 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 				submitter_id: annotation.submitterId,
 				locus_id: locusMap[annotation.data.locusName].attributes.id,
 				annotation_id: subAnnotation.attributes.id,
-				annotation_type: strategy.format.name
+				annotation_format: strategy.format.name
 			}).save(null, null, null, {transacting: transaction});
 		});
 }
