@@ -629,7 +629,38 @@ describe('TAIR API', function() {
 			});
 		});
 
-		it('Parent annotation added with all proper fields');
+		it('Parent annotation added with all proper fields', function() {
+			const expectedPublication = testdata.publications[0];
+			const expectedSubmitter = testdata.users[0];
+			const expectedLocus = testdata.locus[0];
+			const expectedMethod = testdata.keywords[2];
+			const newKeyword = 'New Test Keyword';
+			const expectedStatus = 'pending';
+			const expectedType = 'Temporal Expression';
+
+			const annotation = {
+				type: 'TEMPORAL_EXPRESSION',
+				data: {
+					internalPublicationId: expectedPublication.id,
+					submitterId: expectedSubmitter.id,
+					locusName: testdata.locus_name[0].locus_name,
+					method: { id: expectedMethod.id },
+					keyword: { name: newKeyword },
+					evidence: testdata.locus_name[1].locus_name
+				}
+			};
+
+			return annotationHelper.addAnnotationRecords(annotation, this.test.locusMap).then(addedAnnotation => {
+				return addedAnnotation.fetch({withRelated: ['status', 'type', 'publication', 'submitter', 'locus']});
+			}).then(loadedAnnotation => {
+				let la = loadedAnnotation.toJSON();
+				chai.expect(la.publication).to.contain(expectedPublication);
+				chai.expect(la.submitter).to.contain(expectedSubmitter);
+				chai.expect(la.locus).to.contain(expectedLocus);
+				chai.expect(la.type).to.contain({name: expectedType});
+				chai.expect(la.status).to.contain({name: expectedStatus});
+			});
+		});
 
 	});
 

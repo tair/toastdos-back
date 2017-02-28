@@ -7,6 +7,7 @@ const GeneGeneAnnotation = require('../models/gene_gene_annotation');
 const CommentAnnotation  = require('../models/comment_annotation');
 const Annotation         = require('../models/annotation');
 const AnnotationStatus   = require('../models/annotation_status');
+const AnnotationType     = require('../models/annotation_type');
 const Keyword            = require('../models/keyword');
 const KeywordType        = require('../models/keyword_type');
 
@@ -41,42 +42,43 @@ const AnnotationFormats = {
 
 const AnnotationTypeData = {
 	MOLECULAR_FUNCTION: {
-		name: "Molecular Function",
+		name: 'Molecular Function',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: "molecular_function"
+		keywordScope: 'molecular_function'
 	},
 	BIOLOGICAL_PROCESS: {
-		name: "Biological Process",
+		name: 'Biological Process',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: "biological_process"
+		keywordScope: 'biological_process'
 	},
 	SUBCELLULAR_LOCATION: {
-		name: "Subcellular Location",
+		name: 'Subcellular Location',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: "cellular_component"
+		keywordScope: 'cellular_component'
 	},
 	ANATOMICAL_LOCATION: {
-		name: "Anatomical Location",
+		name: 'Anatomical Location',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: "plant_anatomy"
+		keywordScope: 'plant_anatomy'
 	},
 	TEMPORAL_EXPRESSION: {
-		name: "Temporal Expression",
+		name: 'Temporal Expression',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: "plant_structure_development_stage"
+		keywordScope: 'plant_structure_development_stage'
 	},
 	PROTEIN_INTERACTION: {
-		name: "Protein Interaction",
+		name: 'Protein Interaction',
 		format: AnnotationFormats.GENE_GENE
 	},
 	COMMENT: {
-		name: "Comment",
+		name: 'Comment',
 		format: AnnotationFormats.COMMENT
 	}
 };
 
 // There are very few keyword types, so we cache them.
 const METHOD_KEYWORD_TYPE_NAME = 'eco';
+const NEW_ANNOTATION_STATUS = 'pending';
 let KEYWORD_TYPES = {};
 
 
@@ -108,14 +110,22 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 		.then(() => strategy.format.createRecords(annotation, locusMap, strategy.keywordScope, transaction))
 		// Step 4: With dependencies created, now add the Annotation itself
 		.then(subAnnotation => {
-			return Annotation.forge({
-				publication_id: annotation.internalPublicationId,
-				status_id: null,
-				submitter_id: annotation.submitterId,
-				locus_id: locusMap[annotation.data.locusName].attributes.id,
-				annotation_id: subAnnotation.attributes.id,
-				annotation_format: strategy.format.name
-			}).save(null, null, null, {transacting: transaction});
+
+			// We need the status and type IDs
+			return Promise.all([
+				AnnotationType.where({name: strategy.name}).fetch(),
+				AnnotationStatus.where({name: NEW_ANNOTATION_STATUS}).fetch()
+			]).then(([type, status]) => {
+				return Annotation.forge({
+					publication_id: annotation.data.internalPublicationId,
+					status_id: status.attributes.id,
+					type_id: type.attributes.id,
+					submitter_id: annotation.data.submitterId,
+					locus_id: locusMap[annotation.data.locusName].attributes.id,
+					annotation_id: subAnnotation.attributes.id,
+					annotation_format: strategy.format.name
+				}).save(null, null, null, {transacting: transaction});
+			});
 		});
 }
 
