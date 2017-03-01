@@ -14,7 +14,7 @@ const Keyword   = require('../../app/models/keyword');
 
 const testdata = require('../../seeds/test/test_data.json');
 
-describe('TAIR API', function() {
+describe('Submission helper', function() {
 
 	before('Setup SQLite memory database', function() {
 		return knex.migrate.latest();
