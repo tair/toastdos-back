@@ -99,6 +99,18 @@ function submitGenesAndAnnotations(req, res, next) {
 		})
 		.catch(err => {
 			// NOTE: Transaction is automatically rolled back on error
+
+			// This covers any validation / verification errors in submission
+			if (   err.message.includes('No Locus found')
+				|| err.message.includes('Invalid annotation types')
+				|| err.message.match(/(Missing|Invalid) .* fields/)
+				|| err.message.includes('id xor name')
+				|| err.message.includes('not present in submission')
+				|| err.message.includes('does not reference existing Keyword')
+			) {
+				return response.badRequest(res, err.message);
+			}
+
 			response.defaultServerError(res, err);
 		});
 }

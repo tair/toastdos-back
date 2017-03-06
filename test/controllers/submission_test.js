@@ -7,6 +7,9 @@ const server = require('../../app/index');
 const auth   = require('../../app/lib/authentication');
 const knex   = require('../../app/lib/bookshelf').knex;
 
+const Publication = require('../../app/models/publication');
+const LocusName   = require('../../app/models/locus_name');
+
 const testdata = require('../../seeds/test/test_data.json');
 
 describe('Submission Controller', function() {
@@ -169,7 +172,27 @@ describe('Submission Controller', function() {
 				});
 		});
 
-		it('An error in the submission process rolls back entire transaction');
+		it('An error in the submission process rolls back entire transaction', function(done) {
+			this.test.submission.annotations[1].data.locusName = 'Bad thing';
+
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+
+					// If the transaction rolled back, none of these records should exist
+					let sub = this.test.submission;
+					Promise.all([
+						Publication.where({doi: sub.publicationId}).fetch(),
+						LocusName.where({locus_name: sub.genes[0].locusName}).fetch()
+					]).then(resultArray => {
+						resultArray.forEach(result => chai.expect(result).to.not.exist);
+						done();
+					});
+				});
+		});
 
 		it('Well-formed submission request responds with success', function(done) {
 			this.timeout(5000);
