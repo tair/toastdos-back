@@ -61,7 +61,7 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 							full_name: fullName,
 							symbol: symbol
 						})
-							.save(null, null, null, {transacting: transaction})
+							.save(null, {transacting: transaction})
 							.then(() => Promise.resolve(existingLocusName));
 					});
 			}
@@ -71,7 +71,7 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 					return addOrGetTaxon(locusData.taxon_id, locusData.taxon_name, transaction)
 						.then(taxon => {
 							let locusPromise = Locus.forge({taxon_id: taxon.attributes.id})
-								.save(null, null, null, {transacting: transaction});
+								.save(null, {transacting: transaction});
 
 							return Promise.all([
 								addOrGetSource(locusData.source, transaction),
@@ -83,7 +83,7 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 								source_id: source.attributes.id,
 								locus_id: locus.attributes.id,
 								locus_name: locusData.locus_name
-							}).save(null, null, null, {transacting: transaction});
+							}).save(null, {transacting: transaction});
 
 							let symbolPromise = GeneSymbol.forge({
 								source_id: source.attributes.id,
@@ -91,7 +91,7 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 								submitter_id: submitter,
 								symbol: symbol,
 								full_name: fullName
-							}).save(null, null, null, {transacting: transaction});
+							}).save(null, {transacting: transaction});
 
 							return Promise.all([namePromise, symbolPromise]);
 						})
@@ -121,7 +121,7 @@ function addOrGetTaxon(taxonId, taxonName, transaction) {
 			else return Taxon.forge({
 				taxon_id: taxonId,
 				name: taxonName
-			}).save(null, null, null, {transacting: transaction});
+			}).save(null, {transacting: transaction});
 		});
 }
 
@@ -136,7 +136,7 @@ function addOrGetSource(name, transaction) {
 		.then(existingSource => {
 			if (existingSource) return Promise.resolve(existingSource);
 			else return Source.forge({name: name})
-				.save(null, null, null, {transacting: transaction});
+				.save(null, {transacting: transaction});
 		});
 }
 

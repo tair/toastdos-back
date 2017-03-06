@@ -1,17 +1,15 @@
 'use strict';
 
-const annotationController = require('../controllers/annotation');
-
+const submissionController = require('../controllers/submission');
 const authenticationMiddleware = require('../middleware/authentication');
 
 const express = require('express');
 let router = express.Router();
 
-// POST new Annotation
 router.post(
 	'/',
 	authenticationMiddleware.validateAuthentication,
-	annotationController.createAnnotation
+	submissionController.submitGenesAndAnnotations
 );
 
 module.exports = router;

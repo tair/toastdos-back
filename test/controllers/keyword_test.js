@@ -8,7 +8,7 @@ const server = require('../../app/index');
 const knex    = require('../../app/lib/bookshelf').knex;
 const Keyword = require('../../app/models/keyword');
 
-const testdata = require('../../seeds/test_data.json');
+const testdata = require('../../seeds/test/test_data.json');
 
 describe('Keyword Controller', function() {
 

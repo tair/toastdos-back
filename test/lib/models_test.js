@@ -11,6 +11,7 @@ const Keyword            = require('../../app/models/keyword');
 const Synonym            = require('../../app/models/synonym');
 const Publication        = require('../../app/models/publication');
 const AnnotationStatus   = require('../../app/models/annotation_status');
+const AnnotationType     = require('../../app/models/annotation_type');
 const Annotation         = require('../../app/models/annotation');
 const GeneTermAnnotation = require('../../app/models/gene_term_annotation');
 const GeneGeneAnnotation = require('../../app/models/gene_gene_annotation');
@@ -21,7 +22,7 @@ const Locus              = require('../../app/models/locus');
 const ExternalSource     = require('../../app/models/external_source');
 const GeneSymbol         = require('../../app/models/gene_symbol');
 
-const testdata = require('../../seeds/test_data.json');
+const testdata = require('../../seeds/test/test_data.json');
 
 describe('Models', function() {
 
@@ -138,6 +139,26 @@ describe('Models', function() {
 
 	});
 
+	describe('Annotation Type', function() {
+
+		it('Get Annotations with this type', function() {
+			let testType = testdata.annotation_types[1];
+			let expectedAnnotations = [
+				testdata.annotations[1],
+				testdata.annotations[2]
+			];
+
+			return AnnotationType.where({id: testType.id})
+				.fetch({withRelated: 'annotations'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
+				});
+		});
+
+	});
+
 	describe('Annotation Base', function() {
 
 		it('Status for Annotation can be retrieved', function() {
@@ -150,6 +171,19 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.status).to.contain(expectedStatus);
+				});
+		});
+
+		it('Type for Annotation can be retrieved', function() {
+			let testAnnotation = testdata.annotations[0];
+			let expectedType = testdata.annotation_types[0];
+
+			return Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'type'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.type).to.contain(expectedType);
 				});
 		});
 
@@ -176,6 +210,19 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.submitter).to.contain(expectedUser);
+				});
+		});
+
+		it('Locus the Annotation refers to can be retrieved', function() {
+			let testAnnotation = testdata.annotations[0];
+			let expectedLocus = testdata.locus[0];
+
+			return Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'locus'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.locus).to.contain(expectedLocus);
 				});
 		});
 
@@ -248,6 +295,19 @@ describe('Models', function() {
 				});
 		});
 
+		it('Evidence Locus for Annotation can be retrieved', function() {
+			let testAnnotation = testdata.gene_term_annotations[0];
+			let expectedLocus = testdata.locus[0];
+
+			return GeneTermAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'evidence'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.evidence).to.contain(expectedLocus);
+				});
+		});
+
 		it('Parent Annotation information can be retrieved', function() {
 			let testAnnotation = testdata.gene_term_annotations[0];
 			let expectedParent = testdata.annotations[0];
@@ -275,6 +335,19 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.method).to.contain(expectedKeyword);
+				});
+		});
+
+		it('Locus2 Locus for Annotation can be retrieved', function() {
+			let testAnnotation = testdata.gene_gene_annotations[0];
+			let expectedLocus2 = testdata.locus[0];
+
+			return GeneGeneAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'locus2'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.locus2).to.contain(expectedLocus2);
 				});
 		});
 

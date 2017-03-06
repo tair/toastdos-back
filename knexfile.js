@@ -7,7 +7,10 @@ module.exports = {
     connection: {
       filename: './database.sqlite3'
     },
-    useNullAsDefault: true
+    useNullAsDefault: true,
+    seeds: {
+        directory: './seeds'
+    }
   },
 
   test: {
@@ -15,7 +18,10 @@ module.exports = {
     connection : {
       filename: ':memory:'
     },
-    useNullAsDefault: true
+    useNullAsDefault: true,
+    seeds: {
+      directory: './seeds/test'
+    }
   },
 
   staging: {
@@ -31,6 +37,9 @@ module.exports = {
     },
     migrations: {
       tableName: 'knex_migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   },
 
@@ -49,6 +58,9 @@ module.exports = {
     },
     migrations: {
       tableName: 'knex_migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   }
 

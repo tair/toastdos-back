@@ -36,7 +36,7 @@ exports.up = function(knex, Promise) {
 		.createTable('keyword', table => {
 			table.increments('id');
 			table.integer('keyword_type_id').references('keyword_type.id').notNullable();
-			table.string('name');
+			table.string('name').unique().notNullable();
 			table.string('external_id').unique();
 			table.timestamp('created_at').defaultTo(knex.fn.now());
 
@@ -59,7 +59,10 @@ exports.up = function(knex, Promise) {
 		.createTable('annotation_status', table => {
 			table.increments('id');
 			table.string('name').unique().notNullable();
-			table.timestamp('created_at').defaultTo(knex.fn.now());
+		})
+		.createTable('annotation_type', table => {
+			table.increments('id');
+			table.string('name').unique().notNullable();
 		})
 		.createTable('annotation', table => {
 			table.increments('id');
@@ -67,8 +70,9 @@ exports.up = function(knex, Promise) {
 			table.integer('status_id').references('annotation_status.id');
 			table.integer('submitter_id').references('user.id');
 			table.integer('locus_id').references('locus.id').notNullable();
+			table.integer('type_id').references('annotation_type.id').notNullable();
 			table.integer('annotation_id').notNullable();
-			table.integer('annotation_type').notNullable();
+			table.integer('annotation_format').notNullable();
 			table.timestamps();
 		})
 		.createTable('gene_term_annotation', table => {
