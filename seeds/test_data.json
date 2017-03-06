@@ -181,6 +181,33 @@
     }
   ],
 
+  "draft" : [
+    {
+      "submitter_id" : 1,
+      "wip_state" : {
+        "id" : 1,
+        "publication_id" : 1,
+        "status_id" : 1,
+        "submitter_id" : 1,
+        "locus_id" : "fake locus id",
+        "annotation_id" : 1,
+        "annotation_type" : "gene_term_annotation"
+      }
+    },
+    {
+      "submitter_id" : 2,
+      "wip_state" : {
+        "id" : 2,
+        "publication_id" : 1,
+        "status_id" : 2,
+        "submitter_id" : 1,
+        "locus_id" : "fake locus id",
+        "annotation_id" : 2,
+        "annotation_type" : "gene_term_annotation"
+      }
+    }
+  ],
+
   "taxon" : [
     {
       "id" : 1,
