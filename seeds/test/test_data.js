@@ -14,6 +14,7 @@ exports.seed = function(knex, Promise) {
 		knex('annotation_type').truncate(),
 		knex('keyword').truncate(),
 		knex('keyword_type').truncate(),
+		knex('draft').truncate(),
 		knex('publication').truncate(),
 		knex('annotation_status').truncate(),
 		knex('locus_name').truncate(),
@@ -40,6 +41,7 @@ exports.seed = function(knex, Promise) {
 			...testdata.gene_term_annotations.map(gtAnnotation => knex('gene_term_annotation').insert(gtAnnotation)),
 			...testdata.gene_gene_annotations.map(ggAnnotation => knex('gene_gene_annotation').insert(ggAnnotation)),
 			...testdata.comment_annotations.map(cAnnotation => knex('comment_annotation').insert(cAnnotation)),
+			...testdata.draft.map(draft => knex('draft').insert(draft))
 		]).then(() => proddataAdder.seed(knex, Promise));
 	});
 };

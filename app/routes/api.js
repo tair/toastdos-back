@@ -19,6 +19,7 @@ router.use('/annotationstatus', require('./annotation_status'));
 router.use('/gene', require('./gene'));
 router.use('/publication', require('./publication'));
 router.use('/submission', require('./submission'));
+router.use('/draft', require('./draft'));
 
 /**
  * Development endpoints.
