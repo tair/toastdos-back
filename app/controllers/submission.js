@@ -65,7 +65,7 @@ function submitGenesAndAnnotations(req, res, next) {
 					return Promise.resolve(existingPublication);
 				} else {
 					return Publication.forge({[publicationType]: req.body.publicationId})
-						.save({transacting: transaction});
+						.save(null, {transacting: transaction});
 				}
 			});
 
@@ -79,13 +79,13 @@ function submitGenesAndAnnotations(req, res, next) {
 			.then(([publication, locusArray]) => {
 
 				// Create a map of the locuses we added so we can quickly look them up by name
-				let locusMap = locusArray.map(locus => ({[locus.related('locus').attributes.id]: locus}))
+				let locusMap = locusArray.map(locus => ({[locus.attributes.locus_name]: locus}))
 					.reduce((accumulator, curValue) => Object.assign(accumulator, curValue));
 
 				let annotationPromises = req.body.annotations.map(annotation => {
 					// Every Annotation needs a reference to Publication and User ID
-					annotation.internalPublicationId = publication.attributes.id;
-					annotation.submitterId = req.user.attributes.id;
+					annotation.data.internalPublicationId = publication.attributes.id;
+					annotation.data.submitterId = req.user.attributes.id;
 
 					return annotationHelper.addAnnotationRecords(annotation, locusMap, transaction);
 				});

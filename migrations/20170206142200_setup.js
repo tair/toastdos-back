@@ -53,7 +53,6 @@ exports.up = function(knex, Promise) {
 		.createTable('annotation_status', table => {
 			table.increments('id');
 			table.string('name').unique().notNullable();
-			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('annotation_type', table => {
 			table.increments('id');

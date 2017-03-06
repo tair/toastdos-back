@@ -54,11 +54,21 @@ describe('Submission Controller', function() {
 					}
 				},
 				{
+					type: 'PROTEIN_INTERACTION',
+					data: {
+						locusName: 'AT1G10000',
+						locusName2: 'URS00000EF184',
+						method: {
+							id: testdata.keywords[0].id
+						}
+					}
+				},
+				{
 					type: 'MOLECULAR_FUNCTION',
 					data: {
 						locusName: 'AT1G10000',
 						method: {
-							id: 23
+							id: testdata.keywords[0].id
 						},
 						keyword: {
 							name: 'New keyword'
@@ -161,7 +171,17 @@ describe('Submission Controller', function() {
 
 		it('An error in the submission process rolls back entire transaction');
 
-		it('Well-formed submission request responds with success');
+		it('Well-formed submission request responds with success', function(done) {
+			this.timeout(5000);
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(201);
+					done();
+				});
+		});
 
 	});
 

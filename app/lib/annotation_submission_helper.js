@@ -105,7 +105,7 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 	}
 
 	// Step 2: Verify the data
-	return strategy.format.verifyReferences(annotation, locusMap)
+	return strategy.format.verifyReferences(annotation, locusMap, transaction)
 		// Step 3: Create sub-annotation and any new Keywords
 		.then(() => strategy.format.createRecords(annotation, locusMap, strategy.keywordScope, transaction))
 		// Step 4: With dependencies created, now add the Annotation itself
@@ -113,18 +113,18 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 
 			// We need the status and type IDs
 			return Promise.all([
-				AnnotationType.where({name: strategy.name}).fetch(),
-				AnnotationStatus.where({name: NEW_ANNOTATION_STATUS}).fetch()
+				AnnotationType.where({name: strategy.name}).fetch({require: true, transacting: transaction}),
+				AnnotationStatus.where({name: NEW_ANNOTATION_STATUS}).fetch({require: true, transacting: transaction})
 			]).then(([type, status]) => {
 				return Annotation.forge({
 					publication_id: annotation.data.internalPublicationId,
 					status_id: status.attributes.id,
 					type_id: type.attributes.id,
 					submitter_id: annotation.data.submitterId,
-					locus_id: locusMap[annotation.data.locusName].attributes.id,
+					locus_id: locusMap[annotation.data.locusName].attributes.locus_id,
 					annotation_id: subAnnotation.attributes.id,
 					annotation_format: strategy.format.name
-				}).save(null, null, null, {transacting: transaction});
+				}).save(null, {transacting: transaction});
 			});
 		});
 }
@@ -188,14 +188,14 @@ function verifyGenericFields(annotation, locusMap) {
 	return verificationPromises;
 }
 
-function verifyGeneTermFields(annotation, locusMap) {
+function verifyGeneTermFields(annotation, locusMap, transaction) {
 	let verificationPromises = verifyGenericFields(annotation, locusMap);
 
 	// A new method Keyword can be created with an Annotation, so we just verify existing ones
 	if (annotation.data.method.id) {
 		verificationPromises.push(
 			redefinePromiseError({
-				promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true}),
+				promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true, transacting: transaction}),
 				message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
 				pattern: 'EmptyResponse'
 			})
@@ -206,7 +206,7 @@ function verifyGeneTermFields(annotation, locusMap) {
 	if (annotation.data.keyword.id) {
 		verificationPromises.push(
 			redefinePromiseError({
-				promise: Keyword.where({id: annotation.data.keyword.id}).fetch({require: true}),
+				promise: Keyword.where({id: annotation.data.keyword.id}).fetch({require: true, transacting: transaction}),
 				message: `Keyword id ${annotation.data.keyword.id} does not reference an existing Keyword`,
 				pattern: 'EmptyResponse'
 			})
@@ -220,18 +220,17 @@ function verifyGeneTermFields(annotation, locusMap) {
 		);
 	}
 
-
 	return Promise.all(verificationPromises);
 }
 
-function verifyGeneGeneFields(annotation, locusMap) {
+function verifyGeneGeneFields(annotation, locusMap, transaction) {
 	let verificationPromises = verifyGenericFields(annotation, locusMap);
 
 	// A new method Keyword can be created with an Annotation, so we just verify existing ones
 	if (annotation.data.method.id) {
 		verificationPromises.push(
 			redefinePromiseError({
-				promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true}),
+				promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true, transacting: transaction}),
 				message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
 				pattern: 'EmptyResponse'
 			})
@@ -270,7 +269,7 @@ function createKeywordRecord(keywordName, keywordTypeName, transaction) {
 	if (KEYWORD_TYPES[keywordTypeName]) {
 		keywordTypePromise = Promise.resolve(KEYWORD_TYPES[keywordTypeName]);
 	} else {
-		keywordTypePromise = KeywordType.where({name: keywordTypeName}).fetch();
+		keywordTypePromise = KeywordType.where({name: keywordTypeName}).fetch({require: true, transacting: transaction});
 	}
 
 	return keywordTypePromise.then(keywordType => {
@@ -280,7 +279,7 @@ function createKeywordRecord(keywordName, keywordTypeName, transaction) {
 		return Keyword.forge({
 			name: keywordName,
 			keyword_type_id: keywordType.attributes.id
-		}).save(null, null, null, {transacting: transaction});
+		}).save(null, {transacting: transaction});
 	})
 		.then(addedKeyword => Promise.resolve(addedKeyword.attributes.id))
 		.catch(err => {
@@ -288,7 +287,7 @@ function createKeywordRecord(keywordName, keywordTypeName, transaction) {
 			// Should match unique errors for SQLite and PostgreSQL.
 			if (err.message.includes('UNIQUE constraint failed') || err.message.includes('unique_violation')) {
 				return Keyword.where({name: keywordName})
-					.fetch()
+					.fetch({require: true, transacting: transaction})
 					.then(existingKeyword => Promise.resolve(existingKeyword.attributes.id));
 			}
 
@@ -333,14 +332,16 @@ function createGeneTermRecords(annotation, locusMap, keywordScope, transaction) 
 
 			// 'evidence' is an optional field
 			if (annotation.data.evidence) {
-				subAnnotation.evidence_id = locusMap[annotation.data.evidence].attributes.id;
+				subAnnotation.evidence_id = locusMap[annotation.data.evidence].attributes.locus_id;
 			}
 
-			return GeneTermAnnotation.forge(subAnnotation).save(null, null, null, {transacting: transaction});
+			return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
 		});
 }
 
-function createGeneGeneRecords(annotation, locusMap, transaction) {
+function createGeneGeneRecords(annotation, locusMap, keywordScope, transaction) {
+	// keywordScope unused, but needed to keep function signature consistent
+
 	let methodPromise;
 	if (!annotation.data.method.id) {
 		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME, transaction);
@@ -351,13 +352,14 @@ function createGeneGeneRecords(annotation, locusMap, transaction) {
 	return methodPromise.then(methodId => {
 		return GeneGeneAnnotation.forge({
 			method_id: methodId,
-			locus2_id: locusMap[annotation.data.locusName2].attributes.id
-		}).save(null, null, null, {transacting: transaction});
+			locus2_id: locusMap[annotation.data.locusName2].attributes.locus_id
+		}).save(null, {transacting: transaction});
 	});
 }
 
-function createCommentRecords(annotation, transaction) {
-	return CommentAnnotation.forge({text: annotation.data.text}).save(null, null, null, {transacting: transaction});
+function createCommentRecords(annotation, locusMap, keywordScope, transaction) {
+	// locusMap and keywordScope unused, but needed to keep function signature consistent
+	return CommentAnnotation.forge({text: annotation.data.text}).save(null, {transacting: transaction});
 }
 
 /**
