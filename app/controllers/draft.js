@@ -1,7 +1,6 @@
 'use strict';
 
-const User =require('../models/user');
-const Draft=require('../models/draft');
+const Draft = require('../models/draft');
 
 const response = require('../lib/responses');
 
@@ -18,17 +17,13 @@ function getDraft(req, res, next){
 	if (!req.body.wip_state) {
 		return response.badRequest(res, `Draft (wip state) is missing or invalid`);
 	}
-		Draft.forge({
-			submitter_id: req.user.attributes.id,
-			wip_state: req.body.wip_state
-		})
-		.save()
-		.then(draft =>{
-			return response.created(res, draft);
-		})
-		.catch(err => {
-			return response.defaultServerError(res,err);
-		});
+	Draft.forge({
+		submitter_id: req.user.attributes.id,
+		wip_state: req.body.wip_state
+	})
+	.save()
+	.then(draft => response.created(res, draft))
+	.catch(err => response.defaultServerError(res, err));
 }
 
 module.exports={
