@@ -4,6 +4,8 @@
  * @module controllers/user
  */
 
+const logger = require("../services/logger");
+
 const _              = require('lodash');
 const authentication = require('../lib/authentication');
 const bookshelf      = require('../lib/bookshelf');
@@ -21,9 +23,13 @@ const TERRIFYING_EMAIL_VALIDATING_REGEX = /(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.
  * @param  {Function} next - pass to next route handler
  */
 function getUsers(req, res, next) {
+	logger.info('errors for getUsers in user.js...');
 	return User.fetchAll()
 		.then(collection  => response.ok(res, collection.serialize()))
-		.catch(err => response.defaultServerError(res, err));
+		.catch(err => {
+			logger.debug(res, err);
+			return response.defaultServerError(res, err)
+		});
 }
 
 
@@ -34,6 +40,7 @@ function getUsers(req, res, next) {
  * @param  {Function} next - pass to the next route handler
  */
 function getUserById(req, res, next) {
+	logger.info('errors for getUserById in user.js...');
 	return User.where('id', req.params.id).fetch({
 		require: true,
 		withRelated: req.query['withRelated']
@@ -42,12 +49,14 @@ function getUserById(req, res, next) {
 		.catch(err => {
 			let regMatch;
 			if (regMatch = err.message.match(/([a-zA-Z]*) is not defined on the model/)) {
+				logger.debug(res, `'${regMatch[1]}' is not a valid relation on this model.`);
 				return response.badRequest(res, `'${regMatch[1]}' is not a valid relation on this model.`);
 			}
 			if (err.message === 'EmptyResponse') {
+				logger.debug(res, 'User not found');
 				return response.notFound(res, 'User not found');
 			}
-
+            logger.debug(res,err);
 			return response.defaultServerError(res, err);
 		});
 }
@@ -61,16 +70,19 @@ function getUserById(req, res, next) {
  * @param  {Function} 			next - pass to next handler
  */
 function updateUserById(req, res, next) {
+	logger.info('errors for updateUserById in user.js...');
 	let mutableFields = ['email_address'];
 
 	// Validate we're only trying to update mutable fields
 	let extraFields = Object.keys(_.omit(req.body, mutableFields));
 	if (extraFields.length) {
+		logger.debug(res, `User fields cannot be updated: ${extraFields}`);
 		return response.badRequest(res, `User fields cannot be updated: ${extraFields}`);
 	}
 
 	// Validate email address
 	if (req.body.email_address && !req.body.email_address.match(TERRIFYING_EMAIL_VALIDATING_REGEX)) {
+		logger.debug(res, `Malformed email ${req.body.email_address}`);
 		return response.badRequest(res, `Malformed email ${req.body.email_address}`);
 	}
 
@@ -82,9 +94,10 @@ function updateUserById(req, res, next) {
 		.then(updatedUser => response.ok(res, updatedUser))
 		.catch(err => {
 			if (err.toString().includes('No Rows Updated')) {
+				logger.debug(res, `No User exists for ID ${req.params.id}`);
 				return response.notFound(res, `No User exists for ID ${req.params.id}`);
 			}
-
+            logger.debug(res,err);
 			return response.defaultServerError(res, err);
 		});
 }
@@ -96,6 +109,7 @@ function updateUserById(req, res, next) {
  * @param  {Function} next - pass to next handler
  */
 function deleteUserById(req, res, next) {
+	logger.info('errors for deleteUserById in user.js...');
 	return User.where('id', req.params.id)
 		.fetch({
 			require: true,
@@ -105,9 +119,11 @@ function deleteUserById(req, res, next) {
 		.then(result => response.ok(res))
 		.catch(err => {
 			if (err.message === 'EmptyResponse') {
+				logger.debug(res, 'User not found');
 				return response.notFound(res, 'User not found');
 			}
 
+			logger.debug(res,err);
 			return response.defaultServerError(res, err);
 		});
 }
@@ -119,6 +135,7 @@ function deleteUserById(req, res, next) {
  * @param  {Function} 			next - pass to next handler
  */
 function setRoles(req, res, next) {
+	logger.info('errors for setRoles in user.js...');
 	let target_user = User.forge({id: req.params.id});
 	target_user
 		.fetch({withRelated: ['roles']})
@@ -136,7 +153,10 @@ function setRoles(req, res, next) {
 			});
 		})
 		.then(user => response.ok(res, user))
-		.catch(err => response.defaultServerError(res, err));
+		.catch(err => {
+			logger.debug(res,err);
+			return response.defaultServerError(res, err)
+		});
 }
 
 

@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require("../services/logger");
+
 const KeywordType = require('../models/keyword_type');
 
 const response = require('../lib/responses');
@@ -11,12 +13,15 @@ const response = require('../lib/responses');
  * @param  {Function} next - pass to next route handler
  */
 function getKeywordTypes(req, res, next) {
+	logger.info('errors for keyword_type.js...');
+
     return KeywordType
 	    .fetchAll()
 	    .then(keywordtypes => {
 	    	return response.ok(res, keywordtypes);
 	    })
 	    .catch(err => {
+	    	logger.debug(res,err);
 	    	return response.defaultServerError(res, err);
     });
 }

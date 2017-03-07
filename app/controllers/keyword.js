@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require("../services/logger");
+
 const Keyword = require('../models/keyword');
 
 const response = require('../lib/responses');
@@ -15,19 +17,25 @@ const KEYWORD_SUBSTRING_REGEX = /^[\w ]+$/;
  * @param  {Function} next - pass to next route handler
  */
 function partialKeywordMatch(req, res, next) {
+	logger.info('errors for keyword.js...');
+
 	if (!req.body.substring) {
+		logger.debug(res, `'substring' is a required field`);
 		return response.badRequest(res, `'substring' is a required field`);
 	}
 
 	if (!req.body.keyword_type) {
+		logger.debug(res, `'keyword_type' is a required field`);
 		return response.badRequest(res, `'keyword_type' is a required field`);
 	}
 
 	if (req.body.substring.length < KEYWORD_SUBSTRING_MIN_LENGTH) {
+		logger.debug(res, 'Keyword search string too short');
 		return response.badRequest(res, 'Keyword search string too short');
 	}
 
 	if (!req.body.substring.match(KEYWORD_SUBSTRING_REGEX)) {
+		logger.debug(res, `Invalid Keyword search string ${req.body.substring}`);
 		return response.badRequest(res, `Invalid Keyword search string ${req.body.substring}`);
 	}
 
@@ -42,6 +50,7 @@ function partialKeywordMatch(req, res, next) {
 			return response.ok(res, results.toJSON());
 		})
 		.catch(err => {
+			logger.debug(res,err);
 			return response.defaultServerError(res, err);
 		});
 }

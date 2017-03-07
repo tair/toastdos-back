@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require("../services/logger");
+
 const AnnotationStatus = require('../models/annotation_status');
 
 const response = require('../lib/responses');
@@ -11,11 +13,13 @@ const response = require('../lib/responses');
  * @param  {Function} next - pass to next route handler
  */
 function getAnnotationStatuses(req, res, next) {
+	logger.info('errors for getAnnotationStatuses.js...');
 	AnnotationStatus.fetchAll()
 		.then(statuses => {
 			response.ok(res, statuses);
 		})
 		.catch(err => {
+			logger.debug(res, error);
 			response.defaultServerError(res, err);
 		});
 }

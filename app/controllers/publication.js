@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require("../services/logger");
+
 const response  = require('../lib/responses');
 const validator = require('../lib/publication_id_validator');
 
@@ -13,6 +15,8 @@ const validator = require('../lib/publication_id_validator');
  * @param  {Function} next - pass to next route handler
  */
 function validatePublicationId(req, res, next) {
+	logger.info('errors for publication.js...');
+
 	const pubId = req.body.publication_id;
 
 	if (validator.isDOI(pubId)) {
@@ -23,7 +27,10 @@ function validatePublicationId(req, res, next) {
 					url: query.values[0].data.value
 				});
 			})
-			.catch(err => response.notFound(res, err.message));
+			.catch(err => {
+				logger.debug(res, err.message);
+				return response.notFound(res, err.message)
+			});
 	}
 	else if (validator.isPubmedId(pubId)) {
 		validator.validatePubmedId(pubId)
@@ -34,7 +41,10 @@ function validatePublicationId(req, res, next) {
 					author: query.result[pubId].authors[0].name
 				});
 			})
-			.catch(err => response.notFound(res, err.message));
+			.catch(err => {
+				logger.debug(res,err.message);
+				return response.notFound(res, err.message)
+			});
 	}
 	else {
 		return response.notFound(res, `Invalid publication ID ${pubId}`);

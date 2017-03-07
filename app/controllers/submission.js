@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require("../services/logger");
+
 const bookshelf            = require('../lib/bookshelf');
 const response             = require('../lib/responses');
 const locusHelper          = require('../lib/locus_submission_helper');
@@ -19,22 +21,27 @@ const Publication = require('../models/publication');
  * 500 if something blows up on our end.
  */
 function submitGenesAndAnnotations(req, res, next) {
+	logger.info('errors for submission.js...');
 
 	// Ensure we actually provided a list of genes and annotations
 	if (!req.body.genes || req.body.genes.length === 0) {
+		logger.debug(res,'No genes specified');
 		return response.badRequest(res, 'No genes specified');
 	}
 
 	if (!req.body.annotations || req.body.annotations.length === 0) {
+		logger.debug(res,'No annotations specified');
 		return response.badRequest(res, 'No annotations specified');
 	}
 
 	// Ensure the top level fields for each element all exist
 	if (req.body.genes.some(gene => (!gene.locusName || !gene.geneSymbol || !gene.fullName) )) {
+		logger.debug(res,'Body contained malformed Gene data');
 		return response.badRequest(res, 'Body contained malformed Gene data');
 	}
 
 	if (req.body.annotations.some(ann => (!ann.type || !ann.data) )) {
+		logger.debug(res, 'Body contained malformed Annotation data');
 		return response.badRequest(res, 'Body contained malformed Annotation data');
 	}
 
@@ -46,11 +53,13 @@ function submitGenesAndAnnotations(req, res, next) {
 	} else if (publicationValidator.isPubmedId(req.body.publicationId)) {
 		publicationType = 'pubmed_id';
 	} else {
+		logger.debug(res, `${req.body.publicationId} is not a DOI or Pubmed ID`);
 		return response.badRequest(res, `${req.body.publicationId} is not a DOI or Pubmed ID`);
 	}
 
 	// We bundle submitter ID in with the submission request, but it needs to match the authenticated user
 	if (req.user.attributes.id !== req.body.submitterId) {
+		logger.debug(res, 'submitterId does not match authenticated user');
 		return response.unauthorized(res, 'submitterId does not match authenticated user');
 	}
 
@@ -108,6 +117,7 @@ function submitGenesAndAnnotations(req, res, next) {
 				|| err.message.includes('not present in submission')
 				|| err.message.includes('does not reference existing Keyword')
 			) {
+				logger.debug(res, err.message);
 				return response.badRequest(res, err.message);
 			}
 

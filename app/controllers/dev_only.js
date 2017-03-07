@@ -5,6 +5,8 @@
  * This functionality will not be available in production.
  */
 
+const logger = require("../services/logger");
+
 const auth     = require('../lib/authentication');
 const response = require('../lib/responses');
 
@@ -16,15 +18,18 @@ const User = require('../models/user');
  * This sidesteps the need to manually login / validate through the orcid site.
  */
 function makeDevToken(req, res, next) {
+	logger.info('errors for dev_only.js...');
 	User.where({id: req.params.id})
 		.fetch()
 		.then(fetchedUser => {
 			if (!fetchedUser) {
+				logger.debug(res, `User with id ${req.params.id} does not exist`);
 				return response.badRequest(res, `User with id ${req.params.id} does not exist`);
 			}
 
 			return auth.signToken({user_id: fetchedUser.attributes.id}, (err, token) => {
 				if (err) {
+					logger.debug(res, err.message);
 					return response.serverError(res, err.message);
 				} else {
 					return response.ok(res, {
@@ -35,6 +40,7 @@ function makeDevToken(req, res, next) {
 
 		})
 		.catch(err => {
+			logger.debug(res,err);
 			return response.defaultServerError(res, err);
 		});
 }

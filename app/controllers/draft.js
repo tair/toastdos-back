@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require("../services/logger");
+
 const Draft = require('../models/draft');
 
 const response = require('../lib/responses');
@@ -13,8 +15,9 @@ const response = require('../lib/responses');
  */
 
 function getDraft(req, res, next){
-
+	logger.info('errors for draft.js...');
 	if (!req.body.wip_state) {
+		logger.debug(res,`Draft (wip state) is missing or invalid`);
 		return response.badRequest(res, `Draft (wip state) is missing or invalid`);
 	}
 	Draft.forge({
@@ -23,7 +26,10 @@ function getDraft(req, res, next){
 	})
 	.save()
 	.then(draft => response.created(res, draft))
-	.catch(err => response.defaultServerError(res, err));
+	.catch(err => {
+		logger.debug(res,err);
+		return response.defaultServerError(res, err)
+     });
 }
 
 module.exports={
