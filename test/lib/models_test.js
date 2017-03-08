@@ -42,7 +42,20 @@ describe('Models', function() {
 
 		it('Drafts associated with this User are successfully retrieved');
 
-		it('Roles this User has can be retrieved');
+		it('Roles this User has can be retrieved', function() {
+			const testUser = testdata.users[0];
+			const expectedRoles = [
+				testdata.roles[0],
+				testdata.roles[1]
+			];
+
+			return User.where({id: testUser.id})
+				.fetch({withRelated: 'roles'})
+				.then(res => {
+					let actual = res.toJSON();
+					chai.expect(actual.roles).to.containSubset(expectedRoles);
+				});
+		});
 
 	});
 
