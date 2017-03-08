@@ -54,5 +54,17 @@
     {
       "name": "Comment"
     }
+  ],
+
+  "roles": [
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "Researcher"
+    },
+    {
+      "name": "Curator"
+    }
   ]
 }
