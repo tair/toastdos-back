@@ -30,21 +30,20 @@ function login(req, res, next) {
 
 			// Return that user if they exist
 			if (user) {
+				// Update the user's name if it's been changed in the ORCID system
 				let userPromise;
-				// Update the user's name if it changed
 				if(user.get('name') !== userName){
 					userPromise = user.set({name: userName}).save()
-				}
-				else {
+				} else {
 					userPromise = Promise.resolve(user);
 				}
 				return userPromise.then(resolvedUser => {
 					auth.signToken({user_id: resolvedUser.attributes.id}, (err, userJwt) => {
 						return response.ok(res, {
 							jwt: userJwt
-						})
-					})
-				})
+						});
+					});
+				});
 			}
 			else {
 				// Make the user if they don't exist
