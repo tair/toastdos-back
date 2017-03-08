@@ -6,6 +6,7 @@ chai.use(require('chai-subset'));
 
 const knex = require('../../app/lib/bookshelf').knex;
 
+const User               = require('../../app/models/user');
 const KeywordType        = require('../../app/models/keyword_type');
 const Keyword            = require('../../app/models/keyword');
 const Synonym            = require('../../app/models/synonym');
@@ -21,19 +22,34 @@ const LocusName          = require('../../app/models/locus_name');
 const Locus              = require('../../app/models/locus');
 const ExternalSource     = require('../../app/models/external_source');
 const GeneSymbol         = require('../../app/models/gene_symbol');
+const Draft              = require('../../app/models/draft');
 
 const testdata = require('../../seeds/test/test_data.json');
 
 describe('Models', function() {
 
 	// Make sure the database is up to date
-	before(function() {
+	before('Setup SQLite memory database', function() {
 		return knex.migrate.latest();
 	});
 
 	// Give us fresh test data in a sqlite memory database for each test
-	beforeEach(function() {
+	beforeEach('Populate SQLite memory DB with fresh test data', function() {
 		return knex.seed.run();
+	});
+
+	describe('User', function() {
+
+		it('Drafts associated with this User are successfully retrieved');
+
+		it('Roles this User has can be retrieved');
+
+	});
+
+	describe('Draft', function() {
+
+		it('User who submitted this Draft can be retrieved');
+
 	});
 
 	describe('Keyword', function() {
