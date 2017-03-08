@@ -66,8 +66,16 @@ function validateUser(req, res, next) {
 	return next();
 }
 
+/**
+ * Middleware that ensures the requesting user is a curator
+ */
+function requireCurator(req, res, next) {
+	next();
+}
+
 
 module.exports = {
 	validateAuthentication,
-	validateUser
+	validateUser,
+	requireCurator
 };

@@ -12,4 +12,11 @@ router.post(
 	submissionController.submitGenesAndAnnotations
 );
 
+router.get(
+	'/',
+	authenticationMiddleware.validateAuthentication,
+	authenticationMiddleware.requireCurator,
+	submissionController.generateSubmissionSummary
+);
+
 module.exports = router;

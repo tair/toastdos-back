@@ -115,6 +115,14 @@ function submitGenesAndAnnotations(req, res, next) {
 		});
 }
 
+/**
+ *
+ */
+function generateSubmissionSummary(req, res, next) {
+	return response.serverError(res, 'Not yet implemented');
+}
+
 module.exports = {
-	submitGenesAndAnnotations
+	submitGenesAndAnnotations,
+	generateSubmissionSummary
 };
