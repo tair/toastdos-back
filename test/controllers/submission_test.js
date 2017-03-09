@@ -35,7 +35,6 @@ describe('Submission Controller', function() {
 		// Tests will modify this as needed
 		this.currentTest.submission = {
 			publicationId: '10.1234/thing.anotherthing',
-			submitterId: testdata.users[0].id,
 			genes: [
 				{
 					locusName: 'AT1G10000',
@@ -153,21 +152,6 @@ describe('Submission Controller', function() {
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
 					chai.expect(res.text).to.equal(`${badPubId} is not a DOI or Pubmed ID`);
-					done();
-				});
-		});
-
-		it('Submitter id must match authenticated user', function(done) {
-			const nonMatchingUser = testdata.users[1];
-			this.test.submission.submitterId = nonMatchingUser.id;
-
-			chai.request(server)
-				.post('/api/submission/')
-				.send(this.test.submission)
-				.set({Authorization: `Bearer ${testToken}`})
-				.end((err, res) => {
-					chai.expect(res.status).to.equal(401);
-					chai.expect(res.text).to.equal('submitterId does not match authenticated user');
 					done();
 				});
 		});

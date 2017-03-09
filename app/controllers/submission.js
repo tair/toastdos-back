@@ -49,11 +49,6 @@ function submitGenesAndAnnotations(req, res, next) {
 		return response.badRequest(res, `${req.body.publicationId} is not a DOI or Pubmed ID`);
 	}
 
-	// We bundle submitter ID in with the submission request, but it needs to match the authenticated user
-	if (req.user.attributes.id !== req.body.submitterId) {
-		return response.unauthorized(res, 'submitterId does not match authenticated user');
-	}
-
 	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
 	bookshelf.transaction(transaction => {
 
