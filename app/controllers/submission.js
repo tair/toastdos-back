@@ -7,6 +7,7 @@ const annotationHelper     = require('../lib/annotation_submission_helper');
 const publicationValidator = require('../lib/publication_id_validator');
 
 const Publication = require('../models/publication');
+const Annotation  = require('../models/annotation');
 
 /**
  * Creates records for all of the new Locuses and Annotations.
@@ -119,7 +120,41 @@ function submitGenesAndAnnotations(req, res, next) {
  *
  */
 function generateSubmissionSummary(req, res, next) {
-	return response.serverError(res, 'Not yet implemented');
+
+	const PENDING_STATUS = 'pending';
+	bookshelf.knex.raw(`
+		WITH mod_annotation AS
+			(SELECT id, date(created_at) as created_date FROM annotation)
+		SELECT
+			COUNT(*) as count,
+			publication.doi,
+			publication.pubmed_id,
+			annotation_status.name,
+			mod_annotation.created_date
+		FROM
+			annotation
+		LEFT JOIN mod_annotation
+			ON
+				mod_annotation.id = annotation.id
+		LEFT JOIN annotation_status
+			ON
+				annotation.status_id = annotation_status.id
+		LEFT JOIN publication
+			ON
+				annotation.publication_id = publication.id
+		GROUP BY
+			mod_annotation.created_date,
+			annotation.submitter_id,
+			publication.id,
+			annotation_status.name
+		ORDER BY
+			mod_annotation.created_date DESC,
+			annotation.submitter_id,
+			publication.id
+		LIMIT 20
+	`).then(thing => {
+		response.serverError(res, 'Not yet implemented');
+	})
 }
 
 module.exports = {
