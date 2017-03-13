@@ -1,5 +1,7 @@
 'use strict';
 
+const _ = require('lodash');
+
 const bookshelf            = require('../lib/bookshelf');
 const response             = require('../lib/responses');
 const locusHelper          = require('../lib/locus_submission_helper');
@@ -122,13 +124,22 @@ function submitGenesAndAnnotations(req, res, next) {
 function generateSubmissionSummary(req, res, next) {
 
 	const PENDING_STATUS = 'pending';
+
+	/* Gets us a list of sub-groups of submissions, separated by status.
+	 *
+	 * The ordering in the above query guarantees that the sub-groups
+	 * for each submission are all adjacent.
+	 *
+	 * This allows us to get two different counts from a single query.
+	 */
 	bookshelf.knex.raw(`
 		WITH mod_annotation AS
 			(SELECT id, date(created_at) as created_date FROM annotation)
 		SELECT
-			COUNT(*) as count,
+			COUNT(*) as sub_total,
 			publication.doi,
 			publication.pubmed_id,
+			annotation.submitter_id,
 			annotation_status.name,
 			mod_annotation.created_date
 		FROM
@@ -152,9 +163,37 @@ function generateSubmissionSummary(req, res, next) {
 			annotation.submitter_id,
 			publication.id
 		LIMIT 20
-	`).then(thing => {
+	`).then(submissionChunks => {
+		/* We need to manually reduce this list to get the values for 'total'
+		 * and 'pending' annotations in each submission.
+		 */
+
+		// Subdivide submission chunk list into individual arrays of chunks, grouped by submission
+		let subdividedChunkArrays = [];
+		let curSubdivisionChunks = [];
+		let curSubdivisionKey = {}; // Tells us which submission group we're on
+		submissionChunks.forEach(curChunk => {
+
+			// Is this a chunk for a different submission?
+			if (! (curSubdivisionKey.submitter_id === curChunk.submitter_id
+				&& curSubdivisionKey.created_date === curChunk.created_date
+				&& curSubdivisionKey.pubmed_id === curChunk.pubmed_id
+				&& curSubdivisionKey.doi === curChunk.doi
+				)
+			) {
+				// Store the REFERENCE to this array, which we will modify later.
+				curSubdivisionChunks = [];
+				subdividedChunkArrays.push(curSubdivisionChunks);
+
+				// Store keys from this new chunk to match subsequent chunks
+				curSubdivisionKey = _.pick(curChunk, ['doi', 'pubmed_id', 'submitter_id', 'created_date']);
+			}
+
+			curSubdivisionChunks.push(curChunk);
+		});
+
 		response.serverError(res, 'Not yet implemented');
-	})
+	});
 }
 
 module.exports = {
