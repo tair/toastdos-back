@@ -229,22 +229,22 @@ describe('Submission Controller', function() {
 			// There's also a secondary sort by publication ID
 			let expectedSubmissions = [
 				{
-					document: '10.1594/GFZ.GEOFON.gfz2009kciu',
+					document: testdata.publications[0].doi,
 					total: 2,
 					pending: 1,
-					submission_date: '2017-03-10'
+					submission_date: testdata.annotations[0].created_at.split(' ')[0]
 				},
 				{
-					document: '999999',
+					document: testdata.publications[1].pubmed_id,
 					total: 3,
 					pending: 1,
-					submission_date: '2017-03-10'
+					submission_date: testdata.annotations[3].created_at.split(' ')[0]
 				},
 				{
-					document: '999999',
+					document: testdata.publications[1].pubmed_id,
 					total: 1,
 					pending: 0,
-					submission_date: '2017-03-09'
+					submission_date: testdata.annotations[2].created_at.split(' ')[0]
 				}
 			];
 
@@ -263,6 +263,27 @@ describe('Submission Controller', function() {
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
 						chai.expect(res.body).to.containSubset(expectedSubmissions);
+						done();
+					});
+			});
+		});
+
+		it('Single submissions return as a proper array', function(done) {
+			const expectedSubmission = {
+				document: testdata.publications[0].doi,
+				total: 1,
+				pending: 0,
+				submission_date: testdata.annotations[0].created_at.split(' ')[0]
+			};
+
+			// Ensure there's only one Annotation
+			Annotation.where('id', '!=', 1).destroy().then(() => {
+				chai.request(server)
+					.get('/api/submission/')
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body).to.contain(expectedSubmission);
 						done();
 					});
 			});
