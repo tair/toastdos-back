@@ -192,8 +192,37 @@ function generateSubmissionSummary(req, res, next) {
 			curSubdivisionChunks.push(curChunk);
 		});
 
-		response.serverError(res, 'Not yet implemented');
-	});
+		// Reduce all the submission groups into single objects
+		let submissions = subdividedChunkArrays.map(chunkArray => {
+			let submission = {};
+
+			// We're guaranteed to have at least one chunk in the array
+			// so use that for our submission values
+			let firstChunk = chunkArray[0];
+
+			submission.submission_date = firstChunk.created_date;
+			submission.pending = 0;
+			submission.total = 0;
+			if (firstChunk.doi) {
+				submission.document = firstChunk.doi;
+			} else if (firstChunk.pubmed_id) {
+				submission.document = firstChunk.pubmed_id;
+			} else {
+				throw new Error('Submission chunk missing valid publication');
+			}
+
+			chunkArray.forEach(chunk => {
+				submission.total += chunk.sub_total;
+				if (chunk.name === PENDING_STATUS) {
+					submission.pending += chunk.sub_total;
+				}
+			});
+
+			return submission;
+		});
+
+		return response.ok(res, submissions);
+	}).catch(err => response.defaultServerError(res, err));
 }
 
 module.exports = {
