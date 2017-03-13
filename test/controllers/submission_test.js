@@ -3,6 +3,7 @@
 const chai = require('chai');
 chai.use(require('chai-http'));
 chai.use(require('chai-subset'));
+const _    = require('lodash');
 
 const server = require('../../app/index');
 const auth   = require('../../app/lib/authentication');
@@ -284,6 +285,77 @@ describe('Submission Controller', function() {
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
 						chai.expect(res.body).to.contain(expectedSubmission);
+						done();
+					});
+			});
+		});
+
+		it('Pagination defaults correctly if not provided', function(done) {
+			const expectedLength = 20;
+			const expectedSubmission = {
+				submission_date: testdata.annotations[0].created_at.split(' ')[0],
+				pending: 0,
+				total: 1,
+				document: testdata.publications[0].doi
+			};
+
+			// Add annotations with incremental dates to make the list paginate
+			const fakeAnnotation = Object.assign({}, testdata.annotations[0]);
+			delete fakeAnnotation.id;
+			delete fakeAnnotation.created_at;
+
+			let annotationPromises = _.range(expectedLength - 1).map(x => {
+				let date = new Date();
+				date.setDate(date.getDate() + x);
+
+				fakeAnnotation.created_at = date.toISOString().substring(0, 10);
+				return Annotation.forge(fakeAnnotation).save();
+			});
+
+			Promise.all(annotationPromises).then(() => {
+				chai.request(server)
+					.get('/api/submission/')
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body).to.have.lengthOf(expectedLength);
+						chai.expect(res.body[expectedLength - 1]).to.deep.equal(expectedSubmission);
+						done();
+					});
+			});
+		});
+
+		it('Pagination matches provided values', function(done) {
+			const expectedLength = 5;
+			const testPage = 3;
+			const expectedSubmission = {
+				submission_date: testdata.annotations[0].created_at.split(' ')[0],
+				pending: 0,
+				total: 1,
+				document: testdata.publications[0].doi
+			};
+
+			// Add annotations with incremental dates to make the list paginate
+			const fakeAnnotation = Object.assign({}, testdata.annotations[0]);
+			delete fakeAnnotation.id;
+			delete fakeAnnotation.created_at;
+
+			let annotationPromises = _.range(expectedLength * testPage - 1).map(x => {
+				let date = new Date();
+				date.setDate(date.getDate() + x);
+
+				fakeAnnotation.created_at = date.toISOString().substring(0, 10);
+				return Annotation.forge(fakeAnnotation).save();
+			});
+
+			Promise.all(annotationPromises).then(() => {
+				chai.request(server)
+					.get(`/api/submission?limit=${expectedLength}&page=${testPage}`)
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body).to.have.lengthOf(expectedLength);
+						chai.expect(res.body[expectedLength - 1]).to.deep.equal(expectedSubmission);
 						done();
 					});
 			});

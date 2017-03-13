@@ -12,7 +12,7 @@ const Publication = require('../models/publication');
 const Annotation  = require('../models/annotation');
 
 const PENDING_STATUS = 'pending';
-const SUBMISSION_PAGE_LIMIT = 20;
+const PAGE_LIMIT = 20;
 
 /**
  * Creates records for all of the new Locuses and Annotations.
@@ -122,9 +122,38 @@ function submitGenesAndAnnotations(req, res, next) {
 }
 
 /**
+ * Gets a list of submissions.
+ * Submissions are a transient model in our system. They're represented by the
+ * list of all annotations that share a publication id, submitter id, and
+ * submission date.
  *
+ * Query params:
+ * limit - Number of results to fetch. Defaults to / hard capped at PAGE_LIMIT.
+ * page - Page of results to start on. Defaults to 1.
+ *
+ * Responses:
+ * 200 with submission list in body
+ * 500 if something internally goes wrong
  */
 function generateSubmissionSummary(req, res, next) {
+
+	// Calculate pagination values
+	let itemsPerPage;
+	let offset;
+
+	if (!req.query.limit || req.query.limit > PAGE_LIMIT) {
+		itemsPerPage = PAGE_LIMIT;
+	} else if (req.query.limit < 1) {
+		itemsPerPage = 1;
+	} else {
+		itemsPerPage = req.query.limit;
+	}
+
+	if (!req.query.page || req.query.page <= 1) {
+		offset = 0;
+	} else {
+		offset = (req.query.page - 1) * itemsPerPage;
+	}
 
 	/* Gets us a list of sub-groups of submissions, separated by status.
 	 *
@@ -160,7 +189,8 @@ function generateSubmissionSummary(req, res, next) {
 			annotation.submitter_id,
 			publication.id
 		`)
-		.limit(SUBMISSION_PAGE_LIMIT)
+		.offset(offset)
+		.limit(itemsPerPage)
 		.then(submissionChunks => {
 			/* We need to manually reduce this list to get the values for 'total'
 			 * and 'pending' annotations in each submission.
