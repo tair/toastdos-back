@@ -259,7 +259,7 @@ describe('Submission Controller', function() {
 					.save({status_id: status.get('id')}, {patch: true});
 			}).then(() => {
 				chai.request(server)
-					.get('/api/submission/')
+					.get('/api/submission/list/')
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
@@ -280,7 +280,7 @@ describe('Submission Controller', function() {
 			// Ensure there's only one Annotation
 			Annotation.where('id', '!=', 1).destroy().then(() => {
 				chai.request(server)
-					.get('/api/submission/')
+					.get('/api/submission/list/')
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
@@ -314,7 +314,7 @@ describe('Submission Controller', function() {
 
 			Promise.all(annotationPromises).then(() => {
 				chai.request(server)
-					.get('/api/submission/')
+					.get('/api/submission/list/')
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
@@ -350,7 +350,7 @@ describe('Submission Controller', function() {
 
 			Promise.all(annotationPromises).then(() => {
 				chai.request(server)
-					.get(`/api/submission?limit=${expectedLength}&page=${testPage}`)
+					.get(`/api/submission/list?limit=${expectedLength}&page=${testPage}`)
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);

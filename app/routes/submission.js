@@ -13,7 +13,7 @@ router.post(
 );
 
 router.get(
-	'/',
+	'/list/',
 	authenticationMiddleware.validateAuthentication,
 	authenticationMiddleware.requireCurator,
 	submissionController.generateSubmissionSummary
