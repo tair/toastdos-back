@@ -9,12 +9,12 @@
 
 const stream     = require('stream');
 const fs         = require('fs');
-const OboParser  = require('../lib/obo_parser').OboParser;
+const OboParser  = require('../../lib/obo_parser').OboParser;
 const LineStream = require('byline').LineStream;
 
-const Keyword     = require('../models/keyword');
-const KeywordType = require('../models/keyword_type');
-const Synonym     = require('../models/synonym');
+const Keyword     = require('../../models/keyword');
+const KeywordType = require('../../models/keyword_type');
+const Synonym     = require('../../models/synonym');
 
 
 /**
