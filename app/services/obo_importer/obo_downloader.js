@@ -7,10 +7,10 @@ const NAME_EXTRACTOR = /.*\/(.*)/;
 const DEFAULT_FILE_NAME = 'default_name';
 
 /**
- * Downloads the file at the given uri into the resources directory.
+ * Downloads the obo file from the given uri
  */
-function downloadFile(uri) {
-	let filePath = `resources/${uri.match(NAME_EXTRACTOR)[1]}`;
+function downloadObo(uri) {
+	let filePath = `resources/obo/${uri.match(NAME_EXTRACTOR)[1]}`;
 	if (!filePath) filePath = DEFAULT_FILE_NAME;
 
 	let fileStream = fs.createWriteStream(filePath);
@@ -24,4 +24,18 @@ function downloadFile(uri) {
 			}
 		})
 		.pipe(fileStream);
+}
+
+/**
+ * Moves the given obo file into the obo cache
+ */
+function cacheObo(filename) {
+	fs.renameSync(`resources/obo/${filename}`, `resources/obo/cache/${filename}`);
+}
+
+/**
+ * Restores the given obo file from the obo cache
+ */
+function uncacheObo(filename) {
+	fs.renameSync(`resources/obo/cache/${filename}`, `resources/obo/${filename}`);
 }
