@@ -21,7 +21,7 @@ const OBO_ROOT = 'resources/obo';
  */
 function updateKeywordsUsing(oboURI) {
 	console.log(`Downloading from ${oboURI}`);
-	oboHelper.downloadObo(OBO_ROOT, oboURI).then((oboName) => {
+	return oboHelper.downloadObo(OBO_ROOT, oboURI).then((oboName) => {
 
 		console.log(`Downloaded ${oboName}`);
 
@@ -30,7 +30,7 @@ function updateKeywordsUsing(oboURI) {
 			if (md5file.sync(`${OBO_ROOT}/${oboName}`) !== md5file.sync(`${OBO_ROOT}/cache/${oboName}`)) {
 
 				console.log('File has changed, importing updates...');
-				oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
+				return oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
 					.then(() => console.log(`Finished importing ${oboName}`));
 			}
 			else {
@@ -39,7 +39,7 @@ function updateKeywordsUsing(oboURI) {
 		}
 		else {
 			console.log('No cached version found. Running initial import...');
-			oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
+			return oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
 				.then(() => console.log(`Finished importing ${oboName}`));
 		}
 	});
