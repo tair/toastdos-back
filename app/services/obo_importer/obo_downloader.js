@@ -5,20 +5,31 @@ const fs      = require('fs');
 
 const NAME_EXTRACTOR = /.*\/(.*)/;
 const DEFAULT_FILE_NAME = 'default_name';
-const OBO_ROOT = 'resources/obo';
 
 /**
- * Downloads the obo file from the given uri
+ * Downloads the obo file from the given uri.
+ * If the file already exists, the existing file is cached before
+ * the new one starts downloading.
+ *
+ * Returns a promise that resolves to the name of the downloaded file.
  */
-function downloadObo(uri) {
-	let filename = filenameFrom(uri);
-	if (!filename) filename = DEFAULT_FILE_NAME;
+function downloadObo(oboRoot, uri) {
+	// Extract obo file name from uri
+	let filename = uri.match(NAME_EXTRACTOR)[1];
+	if (!filename) {
+		filename = DEFAULT_FILE_NAME;
+	}
 
-	let filePath = `${OBO_ROOT}/${filename}`;
-	let fileStream = fs.createWriteStream(filePath);
-
+	let filePath = `${oboRoot}/${filename}`;
 	let error = null;
 
+	// Cache existing obo file
+	if (fs.existsSync(`${oboRoot}/${filename}`)) {
+		fs.renameSync(`${oboRoot}/${filename}`, `${oboRoot}/cache/${filename}`);
+	}
+
+	// Download new obo file
+	let fileStream = fs.createWriteStream(filePath);
 	return new Promise((resolve, reject) => {
 		request.get(uri)
 			.on('response', res => {
@@ -33,40 +44,12 @@ function downloadObo(uri) {
 					fs.unlinkSync(filePath);
 					reject(new Error(`Error downloading '${uri}': ${error}`));
 				} else {
-					resolve();
+					resolve(filename);
 				}
 			});
 	});
 }
 
-/**
- * Moves the given obo file into the obo cache
- */
-function cacheObo(filename) {
-	return new Promise((resolve, reject) => {
-		fs.renameSync(`${OBO_ROOT}/${filename}`, `${OBO_ROOT}/cache/${filename}`, () => resolve());
-	});
-}
-
-/**
- * Restores the given obo file from the obo cache
- */
-function uncacheObo(filename) {
-	return new Promise((resolve, reject) => {
-		fs.renameSync(`${OBO_ROOT}/cache/${filename}`, `${OBO_ROOT}/${filename}`, () => resolve());
-	});
-}
-
-/**
- * Extracts the name of the file located at the given uri
- */
-function filenameFrom(uri) {
-	return uri.match(NAME_EXTRACTOR)[1];
-}
-
 module.exports = {
 	downloadObo,
-	cacheObo,
-	uncacheObo,
-	filenameFrom
 };
