@@ -22,3 +22,5 @@ let goJob = new CronJob('0 0 1 * * *', () => {
 ecoJob.start();
 poJob.start();
 goJob.start();
+
+console.log('Obo update daemon started');
