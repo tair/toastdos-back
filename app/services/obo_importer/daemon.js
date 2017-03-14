@@ -1,5 +1,6 @@
 'use strict';
 
+const CronJob = require('cron').CronJob;
 const fs      = require('fs');
 const md5file = require('md5-file');
 
@@ -7,6 +8,14 @@ const oboHelper   = require('./obo_downloader');
 const oboImporter = require('./gene_ontology_importer');
 
 const OBO_ROOT = 'resources/obo';
+
+// Every day at midnight
+let ecoJob = new CronJob('0 0 0 * * *', () => {
+	updateKeywordsUsing('https://raw.githubusercontent.com/evidenceontology/evidenceontology/master/eco.obo');
+});
+
+ecoJob.start();
+
 
 function updateKeywordsUsing(oboURI) {
 	console.log(`Downloading from ${oboURI}`);
