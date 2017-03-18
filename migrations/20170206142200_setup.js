@@ -73,7 +73,7 @@ exports.up = function(knex, Promise) {
 			table.integer('type_id').references('annotation_type.id').notNullable();
 			table.integer('annotation_id').notNullable();
 			table.integer('annotation_format').notNullable();
-			table.timestamps();
+			table.timestamps(true, true); // Use Javascript Date format, default to knex.fn.now()
 		})
 		.createTable('gene_term_annotation', table => {
 			table.increments('id');

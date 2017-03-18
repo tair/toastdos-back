@@ -6,6 +6,7 @@ const response = require('../lib/responses');
 const User = require('../models/user');
 
 const TOKEN_MATCHER = /Bearer (.*)$/;
+const CURATOR_ROLE = 'Curator';
 
 /**
  * Verify that a token is valid, thus proving that this user
@@ -66,8 +67,21 @@ function validateUser(req, res, next) {
 	return next();
 }
 
+/**
+ * Middleware that ensures the requesting user is a curator
+ */
+function requireCurator(req, res, next) {
+	let roleNames = req.user.related('roles').pluck('name');
+	if (roleNames.includes(CURATOR_ROLE)) {
+		next();
+	} else {
+		response.unauthorized(res, 'Only Curators may access this resource');
+	}
+}
+
 
 module.exports = {
 	validateAuthentication,
-	validateUser
+	validateUser,
+	requireCurator
 };

@@ -2,13 +2,19 @@
 
 const chai = require('chai');
 chai.use(require('chai-http'));
+chai.use(require('chai-subset'));
+const _    = require('lodash');
 
 const server = require('../../app/index');
 const auth   = require('../../app/lib/authentication');
 const knex   = require('../../app/lib/bookshelf').knex;
 
-const Publication = require('../../app/models/publication');
-const LocusName   = require('../../app/models/locus_name');
+const Publication      = require('../../app/models/publication');
+const LocusName        = require('../../app/models/locus_name');
+const Role             = require('../../app/models/role');
+const User             = require('../../app/models/user');
+const Annotation       = require('../../app/models/annotation');
+const AnnotationStatus = require('../../app/models/annotation_status');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -188,6 +194,155 @@ describe('Submission Controller', function() {
 					chai.expect(res.status).to.equal(201);
 					done();
 				});
+		});
+
+	});
+
+	describe('GET /api/submission/', function() {
+
+		beforeEach('Generate curator and token', function() {
+			// Add the Curator role to the authenticated user to access this endpoint
+			return Role.where({name: 'Curator'}).fetch().then(curatorRole => {
+				return User.where({id: testdata.users[0].id}).fetch().then(user => {
+					return user.roles().attach(curatorRole);
+				});
+			});
+		});
+
+		it('Default sort is by ascending date', function(done) {
+
+			// There's also a secondary sort by publication ID
+			let expectedSubmissions = [
+				{
+					document: testdata.publications[0].doi,
+					total: 2,
+					pending: 1,
+					submission_date: testdata.annotations[0].created_at.split(' ')[0]
+				},
+				{
+					document: testdata.publications[1].pubmed_id,
+					total: 3,
+					pending: 1,
+					submission_date: testdata.annotations[3].created_at.split(' ')[0]
+				},
+				{
+					document: testdata.publications[1].pubmed_id,
+					total: 1,
+					pending: 0,
+					submission_date: testdata.annotations[2].created_at.split(' ')[0]
+				}
+			];
+
+			// Set some Annotation statuses to 'pending'
+			const testAnn1 = testdata.annotations[5];
+			const testAnn2 = testdata.annotations[0];
+
+			AnnotationStatus.where({name: 'pending'}).fetch().then(status => {
+				return Annotation
+					.where('id', 'in', [testAnn1.id, testAnn2.id])
+					.save({status_id: status.get('id')}, {patch: true});
+			}).then(() => {
+				chai.request(server)
+					.get('/api/submission/list/')
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body).to.containSubset(expectedSubmissions);
+						done();
+					});
+			});
+		});
+
+		it('Single submissions return as a proper array', function(done) {
+			const expectedSubmission = {
+				document: testdata.publications[0].doi,
+				total: 1,
+				pending: 0,
+				submission_date: testdata.annotations[0].created_at.split(' ')[0]
+			};
+
+			// Ensure there's only one Annotation
+			Annotation.where('id', '!=', 1).destroy().then(() => {
+				chai.request(server)
+					.get('/api/submission/list/')
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body).to.contain(expectedSubmission);
+						done();
+					});
+			});
+		});
+
+		it('Pagination defaults correctly if not provided', function(done) {
+			const expectedLength = 20;
+			const expectedSubmission = {
+				submission_date: testdata.annotations[0].created_at.split(' ')[0],
+				pending: 0,
+				total: 1,
+				document: testdata.publications[0].doi
+			};
+
+			// Add annotations with incremental dates to make the list paginate
+			const fakeAnnotation = Object.assign({}, testdata.annotations[0]);
+			delete fakeAnnotation.id;
+			delete fakeAnnotation.created_at;
+
+			let annotationPromises = _.range(expectedLength - 1).map(x => {
+				let date = new Date();
+				date.setDate(date.getDate() + x);
+
+				fakeAnnotation.created_at = date.toISOString().substring(0, 10);
+				return Annotation.forge(fakeAnnotation).save();
+			});
+
+			Promise.all(annotationPromises).then(() => {
+				chai.request(server)
+					.get('/api/submission/list/')
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body).to.have.lengthOf(expectedLength);
+						chai.expect(res.body[expectedLength - 1]).to.deep.equal(expectedSubmission);
+						done();
+					});
+			});
+		});
+
+		it('Pagination matches provided values', function(done) {
+			const expectedLength = 5;
+			const testPage = 3;
+			const expectedSubmission = {
+				submission_date: testdata.annotations[0].created_at.split(' ')[0],
+				pending: 0,
+				total: 1,
+				document: testdata.publications[0].doi
+			};
+
+			// Add annotations with incremental dates to make the list paginate
+			const fakeAnnotation = Object.assign({}, testdata.annotations[0]);
+			delete fakeAnnotation.id;
+			delete fakeAnnotation.created_at;
+
+			let annotationPromises = _.range(expectedLength * testPage - 1).map(x => {
+				let date = new Date();
+				date.setDate(date.getDate() + x);
+
+				fakeAnnotation.created_at = date.toISOString().substring(0, 10);
+				return Annotation.forge(fakeAnnotation).save();
+			});
+
+			Promise.all(annotationPromises).then(() => {
+				chai.request(server)
+					.get(`/api/submission/list?limit=${expectedLength}&page=${testPage}`)
+					.set({Authorization: `Bearer ${testToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body).to.have.lengthOf(expectedLength);
+						chai.expect(res.body[expectedLength - 1]).to.deep.equal(expectedSubmission);
+						done();
+					});
+			});
 		});
 
 	});
