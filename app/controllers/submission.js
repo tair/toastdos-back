@@ -250,7 +250,26 @@ function generateSubmissionSummary(req, res, next) {
 		.catch(err => response.defaultServerError(res, err));
 }
 
+/**
+ * Gets a single submission with all annotation / gene data.
+ *
+ * Query params:
+ * submitter_id - ID of the user who made the submission.
+ * publication_id - (Required) Our internal ID for the referenced publication.
+ * submission_date - (Required) Date of submission (YYYY-MM-DD).
+ *
+ * Responses:
+ * 200 with submission body
+ * 400 if given parameters are bad
+ * 500 if something goes wrong internally
+ */
+function getSingleSubmission(req, res, next) {
+	return response.serverError(res, 'Not yet implemented');
+}
+
+
 module.exports = {
 	submitGenesAndAnnotations,
-	generateSubmissionSummary
+	generateSubmissionSummary,
+	getSingleSubmission
 };

@@ -37,7 +37,10 @@ describe('Submission Controller', function() {
 	});
 
 	beforeEach('Populate SQLite memory DB with fresh test data', function () {
+		return knex.seed.run();
+	});
 
+	beforeEach('Set up submission test data', function() {
 		// Tests will modify this as needed
 		this.currentTest.submission = {
 			publicationId: '10.1234/thing.anotherthing',
@@ -86,7 +89,13 @@ describe('Submission Controller', function() {
 				},
 			]
 		};
-		return knex.seed.run();
+
+		// Add the Curator role to the authenticated user to access this endpoint
+		return Role.where({name: 'Curator'}).fetch().then(curatorRole => {
+			return User.where({id: testdata.users[0].id}).fetch().then(user => {
+				return user.roles().attach(curatorRole);
+			});
+		});
 	});
 
 	describe('POST /api/submission/', function() {
@@ -198,16 +207,7 @@ describe('Submission Controller', function() {
 
 	});
 
-	describe('GET /api/submission/', function() {
-
-		beforeEach('Generate curator and token', function() {
-			// Add the Curator role to the authenticated user to access this endpoint
-			return Role.where({name: 'Curator'}).fetch().then(curatorRole => {
-				return User.where({id: testdata.users[0].id}).fetch().then(user => {
-					return user.roles().attach(curatorRole);
-				});
-			});
-		});
+	describe('GET /api/submission/list/', function() {
 
 		it('Default sort is by ascending date', function(done) {
 
@@ -344,6 +344,18 @@ describe('Submission Controller', function() {
 					});
 			});
 		});
+
+	});
+
+	describe('GET /api/submission', function() {
+
+		it('Invalid submitter ID responds with error');
+
+		it('Invalid publication ID responds with error');
+
+		it('Malformed date responds with error');
+
+		it('Submission is returned with all proper data');
 
 	});
 
