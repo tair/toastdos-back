@@ -19,10 +19,6 @@ function partialKeywordMatch(req, res, next) {
 		return response.badRequest(res, `'substring' is a required field`);
 	}
 
-	if (!req.body.keyword_type) {
-		return response.badRequest(res, `'keyword_type' is a required field`);
-	}
-
 	if (req.body.substring.length < KEYWORD_SUBSTRING_MIN_LENGTH) {
 		return response.badRequest(res, 'Keyword search string too short');
 	}
@@ -33,8 +29,10 @@ function partialKeywordMatch(req, res, next) {
 
 	Keyword
 		.query(qb => {
+			if (req.body.keyword_type) {
+				qb.where('keyword_type_id', '=', req.body.keyword_type);
+			}
 			qb.where('name', 'LIKE', `%${req.body.substring}%`);
-			qb.where('keyword_type_id', '=', req.body.keyword_type);
 			qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
 		})
 		.fetchAll()

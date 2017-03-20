@@ -142,21 +142,6 @@ describe('Keyword Controller', function() {
 				});
 		});
 
-		it('Search throws an error when keyword_type is not provided', function(done) {
-			const testSubstring = 'testString';
-
-			chai.request(server)
-				.post('/api/keyword/search')
-				.send({
-					substring: testSubstring
-				})
-				.end((err,res) => {
-					chai.expect(res.status).to.equal(400);
-					chai.expect(res.text).to.equal(`'keyword_type' is a required field`);
-					done();
-				});
-		});
-
 	});
 
 });
