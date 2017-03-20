@@ -1,6 +1,7 @@
 'use strict';
 
-const Keyword = require('../models/keyword');
+const Keyword     = require('../models/keyword');
+const KeywordType = require('../models/keyword_type');
 
 const response = require('../lib/responses');
 
@@ -13,11 +14,11 @@ const KEYWORD_SUBSTRING_REGEX = /^[\w ]+$/;
  *
  * Query Params:
  * substring - (Required) Keyword name substring to search for.
- * keyword_type - (Optional) Keyword type to constrain search to.
+ * keyword_scope - (Optional) Keyword type to constrain search to.
  *
  * Responses:
  * 200 with search results
- * 400 for invalid substring or keyword_type
+ * 400 for invalid substring or keyword_scope
  */
 function partialKeywordMatch(req, res, next) {
 	if (!req.query.substring) {
@@ -32,17 +33,34 @@ function partialKeywordMatch(req, res, next) {
 		return response.badRequest(res, `Invalid Keyword search string ${req.query.substring}`);
 	}
 
-	Keyword
-		.query(qb => {
-			if (req.query.keyword_type) {
-				qb.where('keyword_type_id', '=', req.query.keyword_type);
-			}
-			qb.where('name', 'LIKE', `%${req.query.substring}%`);
-			qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
+	// Verify / retrieve the provided KeywordType
+	let keywordTypePromise;
+	if (req.query.keyword_scope) {
+		keywordTypePromise = KeywordType.where({name: req.query.keyword_scope}).fetch({require: true});
+	} else {
+		keywordTypePromise = Promise.resolve(null);
+	}
+
+	keywordTypePromise
+		.then(keywordType => {
+			return Keyword.query(qb => {
+				if (keywordType) {
+					qb.where('keyword_type_id', '=', keywordType.get('id'));
+				}
+				qb.where('name', 'LIKE', `%${req.query.substring}%`);
+				qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
+			})
+			.fetchAll();
 		})
-		.fetchAll()
 		.then(results => response.ok(res, results))
-		.catch(err => response.defaultServerError(res, err));
+		.catch(err => {
+			// This error happens if we can't find a KeywordType matching the provided scope
+			if (err.message.includes('EmptyResponse')) {
+				return response.badRequest(res, `Invalid keyword_scope ${req.query.keyword_scope}`);
+			}
+
+			response.defaultServerError(res, err)
+		});
 }
 
 
