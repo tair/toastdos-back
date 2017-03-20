@@ -1,48 +1,65 @@
 'use strict';
 
-const Keyword = require('../models/keyword');
+const Keyword     = require('../models/keyword');
+const KeywordType = require('../models/keyword_type');
 
 const response = require('../lib/responses');
 
-const KEYWORD_SUBSTRING_MIN_LENGTH = 5;
+const KEYWORD_SUBSTRING_MIN_LENGTH = 3;
 const KEYWORD_SEARCH_LIMIT = 20;
 const KEYWORD_SUBSTRING_REGEX = /^[\w ]+$/;
 
 /**
  * Returns a list of keywords that match the given string.
- * @param  {Express.Request}   req  - the request object
- * @param  {Express.Response}  res  - the response object
- * @param  {Function} next - pass to next route handler
+ *
+ * Query Params:
+ * substring - (Required) Keyword name substring to search for.
+ * keyword_scope - (Optional) Keyword type to constrain search to.
+ *
+ * Responses:
+ * 200 with search results
+ * 400 for invalid substring or keyword_scope
  */
 function partialKeywordMatch(req, res, next) {
-	if (!req.body.substring) {
+	if (!req.query.substring) {
 		return response.badRequest(res, `'substring' is a required field`);
 	}
 
-	if (!req.body.keyword_type) {
-		return response.badRequest(res, `'keyword_type' is a required field`);
-	}
-
-	if (req.body.substring.length < KEYWORD_SUBSTRING_MIN_LENGTH) {
+	if (req.query.substring.length < KEYWORD_SUBSTRING_MIN_LENGTH) {
 		return response.badRequest(res, 'Keyword search string too short');
 	}
 
-	if (!req.body.substring.match(KEYWORD_SUBSTRING_REGEX)) {
-		return response.badRequest(res, `Invalid Keyword search string ${req.body.substring}`);
+	if (!req.query.substring.match(KEYWORD_SUBSTRING_REGEX)) {
+		return response.badRequest(res, `Invalid Keyword search string ${req.query.substring}`);
 	}
 
-	Keyword
-		.query(qb => {
-			qb.where('name', 'LIKE', `%${req.body.substring}%`);
-			qb.where('keyword_type_id', '=', req.body.keyword_type);
-			qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
+	// Verify / retrieve the provided KeywordType
+	let keywordTypePromise;
+	if (req.query.keyword_scope) {
+		keywordTypePromise = KeywordType.where({name: req.query.keyword_scope}).fetch({require: true});
+	} else {
+		keywordTypePromise = Promise.resolve(null);
+	}
+
+	keywordTypePromise
+		.then(keywordType => {
+			return Keyword.query(qb => {
+				if (keywordType) {
+					qb.where('keyword_type_id', '=', keywordType.get('id'));
+				}
+				qb.where('name', 'LIKE', `%${req.query.substring}%`);
+				qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
+			})
+			.fetchAll();
 		})
-		.fetchAll()
-		.then(results => {
-			return response.ok(res, results.toJSON());
-		})
+		.then(results => response.ok(res, results))
 		.catch(err => {
-			return response.defaultServerError(res, err);
+			// This error happens if we can't find a KeywordType matching the provided scope
+			if (err.message.includes('EmptyResponse')) {
+				return response.badRequest(res, `Invalid keyword_scope ${req.query.keyword_scope}`);
+			}
+
+			response.defaultServerError(res, err)
 		});
 }
 
