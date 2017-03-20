@@ -4,7 +4,7 @@ const Keyword = require('../models/keyword');
 
 const response = require('../lib/responses');
 
-const KEYWORD_SUBSTRING_MIN_LENGTH = 5;
+const KEYWORD_SUBSTRING_MIN_LENGTH = 3;
 const KEYWORD_SEARCH_LIMIT = 20;
 const KEYWORD_SUBSTRING_REGEX = /^[\w ]+$/;
 

@@ -28,7 +28,7 @@ describe('Keyword Controller', function() {
 			chai.request(server)
 				.post('/api/keyword/search')
 				.send({
-					substring: 'abcd',
+					substring: 'ab',
 					keyword_type: testKeywordTypeID
 				})
 				.end((err, res) => {
