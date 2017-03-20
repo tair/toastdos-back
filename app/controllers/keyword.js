@@ -41,12 +41,8 @@ function partialKeywordMatch(req, res, next) {
 			qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
 		})
 		.fetchAll()
-		.then(results => {
-			return response.ok(res, results.toJSON());
-		})
-		.catch(err => {
-			return response.defaultServerError(res, err);
-		});
+		.then(results => response.ok(res, results))
+		.catch(err => response.defaultServerError(res, err));
 }
 
 
