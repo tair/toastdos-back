@@ -13,7 +13,6 @@ exports.up = function(knex, Promise) {
 		.createTable('role', table => {
 			table.increments('id');
 			table.string('name').unique().notNullable();
-			table.timestamp('created_at').defaultTo(knex.fn.now());
 		})
 		.createTable('user_role', table => {
 			table.integer('user_id').references('user.id').notNullable();
@@ -41,6 +40,7 @@ exports.up = function(knex, Promise) {
 			table.timestamp('created_at').defaultTo(knex.fn.now());
 
 			table.index('external_id');
+			table.index('name');
 		})
 		.createTable('synonym', table => {
 			table.increments('id');
@@ -70,20 +70,26 @@ exports.up = function(knex, Promise) {
 			table.integer('status_id').references('annotation_status.id');
 			table.integer('submitter_id').references('user.id');
 			table.integer('locus_id').references('locus.id').notNullable();
+			table.integer('locus_symbol_id').references('gene_symbol.id').notNullable();
 			table.integer('type_id').references('annotation_type.id').notNullable();
 			table.integer('annotation_id').notNullable();
 			table.integer('annotation_format').notNullable();
 			table.timestamps(true, true); // Use Javascript Date format, default to knex.fn.now()
+
+			table.index('publication_id');
+			table.index('submitter_id');
 		})
 		.createTable('gene_term_annotation', table => {
 			table.increments('id');
 			table.integer('method_id').references('keyword.id');
 			table.integer('keyword_id').references('keyword.id');
 			table.integer('evidence_id').references('locus.id');
+			table.integer('evidence_symbol_id').references('gene_symbol.id');
 		})
 		.createTable('gene_gene_annotation', table => {
 			table.increments('id');
 			table.integer('locus2_id').references('locus.id').notNullable();
+			table.integer('locus2_symbol_id').references('gene_symbol.id').notNullable();
 			table.integer('method_id').references('keyword.id');
 		})
 		.createTable('comment_annotation', table => {
@@ -120,11 +126,12 @@ exports.up = function(knex, Promise) {
 			table.integer('taxon_id').unique().notNullable();
 			table.string('name').notNullable();
 			table.timestamp('created_at').defaultTo(knex.fn.now());
+
+			table.index('taxon_id');
 		})
 		.createTable('external_source', table => {
 			table.increments('id');
 			table.string('name').unique().notNullable();
-			table.timestamp('created_at').defaultTo(knex.fn.now());
 		});
 };
 
