@@ -3,7 +3,7 @@
 const chai = require('chai');
 
 const knex        = require('../../app/lib/bookshelf').knex;
-const oboImporter = require('../../app/services/gene_ontology_importer');
+const oboImporter = require('../../app/services/obo_importer/gene_ontology_importer');
 
 const KeywordType = require('../../app/models/keyword_type');
 const Keyword     = require('../../app/models/keyword');
