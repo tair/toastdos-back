@@ -20,17 +20,14 @@ describe('Keyword Controller', function() {
 		return knex.seed.run();
 	});
 
-	describe('POST /api/keyword/search', function() {
+	describe('GET /api/keyword/search', function() {
 
 		it('Search is not performed with too few characters', function(done) {
 			const testKeywordTypeID = testdata.keyword_types[0].id;
+			const shortSubstr = 'ab';
 
 			chai.request(server)
-				.post('/api/keyword/search')
-				.send({
-					substring: 'ab',
-					keyword_type: testKeywordTypeID
-				})
+				.get(`/api/keyword/search?substring=${shortSubstr}&keyword_type=${testKeywordTypeID}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
 					chai.expect(res.text).to.equal('Keyword search string too short');
@@ -39,15 +36,11 @@ describe('Keyword Controller', function() {
 		});
 
 		it('Only alphanumeric queries are accepted', function(done) {
-			const testSubstring = 'abcdefg-/@#';
+			const testSubstring = 'abcdefg-/@';
 			const testKeywordTypeID = testdata.keyword_types[0].id;
 
 			chai.request(server)
-				.post('/api/keyword/search')
-				.send({
-					substring: testSubstring,
-					keyword_type: testKeywordTypeID
-				})
+				.get(`/api/keyword/search?substring=${testSubstring}&keyword_type=${testKeywordTypeID}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
 					chai.expect(res.text).to.equal(`Invalid Keyword search string ${testSubstring}`);
@@ -75,11 +68,7 @@ describe('Keyword Controller', function() {
 			// Now do the test with the added Keywords
 			Promise.all(keywordPromises).then(() => {
 				chai.request(server)
-					.post('/api/keyword/search')
-					.send({
-						substring: testSubstring,
-						keyword_type: testKeywordTypeID
-					})
+					.get(`/api/keyword/search?substring=${testSubstring}&keyword_type=${testKeywordTypeID}`)
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
 						chai.expect(res.body).to.have.length(searchLimit);
@@ -93,11 +82,7 @@ describe('Keyword Controller', function() {
 			const expectedKeyword = testdata.keywords[2];
 
 			chai.request(server)
-				.post('/api/keyword/search')
-				.send({
-					substring: 'Test Term',
-					keyword_type: testKeywordTypeID
-				})
+				.get(`/api/keyword/search?substring=${expectedKeyword.name}&keyword_type=${testKeywordTypeID}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.have.length(1);
@@ -108,17 +93,14 @@ describe('Keyword Controller', function() {
 
 		it('Well-formed search responds with correct data', function(done) {
 			const testKeywordTypeID = testdata.keyword_types[0].id;
+			const testSubstr = 'Test Term 00';
 			const expectedKeywords = [
 				testdata.keywords[0],
 				testdata.keywords[1]
 			];
 
 			chai.request(server)
-				.post('/api/keyword/search')
-				.send({
-					substring: 'Test Term 00',
-					keyword_type: testKeywordTypeID
-				})
+				.get(`/api/keyword/search?substring=${testSubstr}&keyword_type=${testKeywordTypeID}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.have.length(2);
@@ -131,10 +113,7 @@ describe('Keyword Controller', function() {
 			const testKeywordTypeID = testdata.keyword_types[0].id;
 
 			chai.request(server)
-				.post('/api/keyword/search')
-				.send({
-					keyword_type: testKeywordTypeID
-				})
+				.get(`/api/keyword/search?keyword_type=${testKeywordTypeID}`)
 				.end((err,res) => {
 					chai.expect(res.status).to.equal(400);
 					chai.expect(res.text).to.equal(`'substring' is a required field`);
