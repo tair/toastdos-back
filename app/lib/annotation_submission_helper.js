@@ -122,6 +122,7 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 					type_id: type.attributes.id,
 					submitter_id: annotation.data.submitterId,
 					locus_id: locusMap[annotation.data.locusName].attributes.locus_id,
+					locus_symbol_id: 1, //FIXME: This is to keep the module working. We will fix this in another story
 					annotation_id: subAnnotation.attributes.id,
 					annotation_format: strategy.format.name
 				}).save(null, {transacting: transaction});
@@ -333,6 +334,7 @@ function createGeneTermRecords(annotation, locusMap, keywordScope, transaction) 
 			// 'evidence' is an optional field
 			if (annotation.data.evidence) {
 				subAnnotation.evidence_id = locusMap[annotation.data.evidence].attributes.locus_id;
+				subAnnotation.evidence_symbol_id = 1; //FIXME: This is to keep the module working. We will fix this in another story
 			}
 
 			return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
@@ -352,7 +354,8 @@ function createGeneGeneRecords(annotation, locusMap, keywordScope, transaction) 
 	return methodPromise.then(methodId => {
 		return GeneGeneAnnotation.forge({
 			method_id: methodId,
-			locus2_id: locusMap[annotation.data.locusName2].attributes.locus_id
+			locus2_id: locusMap[annotation.data.locusName2].attributes.locus_id,
+			locus2_symbol_id: 1, //FIXME: This is to keep the module working. We will fix this in another story
 		}).save(null, {transacting: transaction});
 	});
 }
