@@ -3,6 +3,7 @@
 const chai = require('chai');
 chai.use(require('chai-http'));
 chai.use(require('chai-subset'));
+const _ = require('lodash');
 
 const server = require('../../app/index');
 const knex    = require('../../app/lib/bookshelf').knex;
@@ -54,16 +55,11 @@ describe('Keyword Controller', function() {
 			const testSubstring = 'Added Term';
 
 			// Need to add more Keywords than the expected limit
-			let keywordPromises = [];
-			for (let i = 0; i < searchLimit * 2; i++) {
-				keywordPromises.push(
-					Keyword.forge({
-						name : `${testSubstring} ${i}`,
-						external_id : `T${i}`,
-						keyword_type_id : testKeywordTypeID
-					}).save()
-				);
-			}
+			let keywordPromises = _.range(searchLimit * 2).map(i => Keyword.forge({
+				name : `${testSubstring} ${i}`,
+				external_id : `T${i}`,
+				keyword_type_id : testKeywordTypeID
+			}).save());
 
 			// Now do the test with the added Keywords
 			Promise.all(keywordPromises).then(() => {
