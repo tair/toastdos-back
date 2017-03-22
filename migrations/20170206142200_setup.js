@@ -64,6 +64,34 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.string('name').unique().notNullable();
 		})
+		.createTable('taxon', table => {
+			table.increments('id');
+			table.integer('taxon_id').unique().notNullable();
+			table.string('name').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
+
+			table.index('taxon_id');
+		})
+		.createTable('locus', table => {
+			table.increments('id');
+			table.integer('taxon_id').references('taxon.id').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
+		})
+		.createTable('external_source', table => {
+			table.increments('id');
+			table.string('name').unique().notNullable();
+		})
+		.createTable('gene_symbol', table => {
+			table.increments('id');
+			table.integer('locus_id').references('locus.id').notNullable();
+			table.string('symbol').notNullable();
+			table.string('full_name').notNullable();
+			table.integer('source_id').references('external_source.id');
+			table.integer('submitter_id').references('user.id').notNullable();
+			table.timestamp('created_at').defaultTo(knex.fn.now());
+
+			table.index('locus_id');
+		})
 		.createTable('annotation', table => {
 			table.increments('id');
 			table.integer('publication_id').references('publication.id');
@@ -96,11 +124,6 @@ exports.up = function(knex, Promise) {
 			table.increments('id');
 			table.string('text').notNullable();
 		})
-		.createTable('locus', table => {
-			table.increments('id');
-			table.integer('taxon_id').references('taxon.id').notNullable();
-			table.timestamp('created_at').defaultTo(knex.fn.now());
-		})
 		.createTable('locus_name', table => {
 			table.increments('id');
 			table.integer('locus_id').references('locus.id').notNullable();
@@ -109,30 +132,8 @@ exports.up = function(knex, Promise) {
 			table.timestamp('created_at').defaultTo(knex.fn.now());
 
 			table.index('locus_id');
-		})
-		.createTable('gene_symbol', table => {
-			table.increments('id');
-			table.integer('locus_id').references('locus.id').notNullable();
-			table.string('symbol').notNullable();
-			table.string('full_name').notNullable();
-			table.integer('source_id').references('external_source.id');
-			table.integer('submitter_id').references('user.id').notNullable();
-			table.timestamp('created_at').defaultTo(knex.fn.now());
-
-			table.index('locus_id');
-		})
-		.createTable('taxon', table => {
-			table.increments('id');
-			table.integer('taxon_id').unique().notNullable();
-			table.string('name').notNullable();
-			table.timestamp('created_at').defaultTo(knex.fn.now());
-
-			table.index('taxon_id');
-		})
-		.createTable('external_source', table => {
-			table.increments('id');
-			table.string('name').unique().notNullable();
 		});
+		
 };
 
 exports.down = function(knex, Promise) {
