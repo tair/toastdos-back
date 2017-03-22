@@ -36,15 +36,16 @@ describe('Keyword Controller', function() {
 				});
 		});
 
-		it('Only alphanumeric queries are accepted', function(done) {
-			const testSubstring = 'abcdefg-/@';
-			const testKeywordScope = testdata.keyword_types[0].name;
+		it('Queries with symbols are accepted', function(done) {
+			const testSubstring = 'Name-with';
+			const testKeywordScope = testdata.keyword_types[1].name;
+			const expectedKeyword = testdata.keywords[3];
 
 			chai.request(server)
 				.get(`/api/keyword/search?substring=${testSubstring}&keyword_scope=${testKeywordScope}`)
 				.end((err, res) => {
-					chai.expect(res.status).to.equal(400);
-					chai.expect(res.text).to.equal(`Invalid Keyword search string ${testSubstring}`);
+					chai.expect(res.status).to.equal(200);
+					chai.expect(res.body[0]).to.contain(expectedKeyword);
 					done();
 				});
 		});

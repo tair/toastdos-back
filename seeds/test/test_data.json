@@ -28,6 +28,12 @@
       "name" : "Test Term 003",
       "external_id" : "T003",
       "keyword_type_id" : 2
+    },
+    {
+      "id" : 4,
+      "name" : "Name-with-hyphen",
+      "external_id" : "NWH",
+      "keyword_type_id" : 2
     }
   ],
 
