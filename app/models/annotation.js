@@ -8,6 +8,7 @@ require('./annotation_type');
 require('./user');
 require('./keyword');
 require('./locus');
+require('./gene_symbol');
 require('./gene_term_annotation');
 require('./gene_gene_annotation');
 require('./comment_annotation');
@@ -28,6 +29,9 @@ const Annotation = bookshelf.model('Annotation', {
 	},
 	locus: function() {
 		return this.belongsTo('Locus', 'locus_id');
+	},
+	locusSymbol: function() {
+		return this.belongsTo('GeneSymbol', 'locus_symbol_id');
 	},
 	childData: function() {
 		return this.morphTo('annotation', ['annotation_format', 'annotation_id'], 'GeneTermAnnotation', 'GeneGeneAnnotation', 'CommentAnnotation');
