@@ -44,7 +44,7 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 			withRelated: ['locus', 'source']
 		})
 		.then(existingLocusName => {
-			if (existingLocusName) {
+			if (existingLocusName && (fullName || symbol)) {
 				/* Even if this locus exists in our system,
 				 * we may still need to add a new alias for it (i.e. symbol and fullname) */
 				return GeneSymbol.where({
@@ -85,15 +85,20 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 								locus_name: locusData.locus_name
 							}).save(null, {transacting: transaction});
 
-							let symbolPromise = GeneSymbol.forge({
-								source_id: source.attributes.id,
-								locus_id: locus.attributes.id,
-								submitter_id: submitter,
-								symbol: symbol,
-								full_name: fullName
-							}).save(null, {transacting: transaction});
+							// Optionally add a fullname / symbol pair
+							if (fullName || symbol) {
+								let symbolPromise = GeneSymbol.forge({
+									source_id: source.attributes.id,
+									locus_id: locus.attributes.id,
+									submitter_id: submitter,
+									symbol: symbol,
+									full_name: fullName
+								}).save(null, {transacting: transaction});
 
-							return Promise.all([namePromise, symbolPromise]);
+								return Promise.all([namePromise, symbolPromise]);
+							} else {
+								return namePromise;
+							}
 						})
 						.then(() => {
 							/* Fetch the records we just added so our return data is consistent
