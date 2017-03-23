@@ -35,11 +35,12 @@ function submitGenesAndAnnotations(req, res, next) {
 		return response.badRequest(res, 'No annotations specified');
 	}
 
-	// Ensure the top level fields for each element all exist
-	if (req.body.genes.some(gene => (!gene.locusName || !gene.geneSymbol || !gene.fullName) )) {
+	// Ensure each locus provides a name
+	if (req.body.genes.some(gene => !gene.locusName)) {
 		return response.badRequest(res, 'Body contained malformed Gene data');
 	}
 
+	// Ensure each annotation supplies type information and data
 	if (req.body.annotations.some(ann => (!ann.type || !ann.data) )) {
 		return response.badRequest(res, 'Body contained malformed Annotation data');
 	}
