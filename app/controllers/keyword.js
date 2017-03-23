@@ -7,7 +7,6 @@ const response = require('../lib/responses');
 
 const KEYWORD_SUBSTRING_MIN_LENGTH = 3;
 const KEYWORD_SEARCH_LIMIT = 20;
-const KEYWORD_SUBSTRING_REGEX = /^[\w ]+$/;
 
 /**
  * Returns a list of keywords that match the given string.
@@ -27,10 +26,6 @@ function partialKeywordMatch(req, res, next) {
 
 	if (req.query.substring.length < KEYWORD_SUBSTRING_MIN_LENGTH) {
 		return response.badRequest(res, 'Keyword search string too short');
-	}
-
-	if (!req.query.substring.match(KEYWORD_SUBSTRING_REGEX)) {
-		return response.badRequest(res, `Invalid Keyword search string ${req.query.substring}`);
 	}
 
 	// Verify / retrieve the provided KeywordType
