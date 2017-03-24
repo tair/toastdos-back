@@ -80,14 +80,13 @@ function submitGenesAndAnnotations(req, res, next) {
 			.then(([publication, locusArray]) => {
 
 				// Create a map of the locuses / symbols we added so we can quickly look them up by name
-				let locusMap = locusArray.map(([locus, symbol]) => {
-					return {
-						[locus.attributes.locus_name]: {
-							locus: locus,
-							symbol: symbol
-						}
+				let locusMap = locusArray.reduce((acc, [locus, symbol]) => {
+					acc[locus.attributes.locus_name] = {
+						locus: locus,
+						symbol: symbol
 					};
-				}).reduce((accumulator, curValue) => Object.assign(accumulator, curValue));
+					return acc;
+				}, {});
 
 				let annotationPromises = req.body.annotations.map(annotation => {
 					// Every Annotation needs a reference to Publication and User ID
