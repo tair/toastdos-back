@@ -53,16 +53,26 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 				})
 					.fetch({transacting: transaction})
 					.then(existingAlias => {
-						if (existingAlias) return Promise.resolve(existingLocusName);
-						else return GeneSymbol.forge({
-							locus_id: existingLocusName.related('locus').attributes.id,
-							source_id: existingLocusName.related('source').attributes.id,
-							submitter_id: submitter,
-							full_name: fullName,
-							symbol: symbol
-						})
-							.save(null, {transacting: transaction})
-							.then(() => Promise.resolve(existingLocusName));
+						if (existingAlias) {
+							return Promise.all([
+								Promise.resolve(existingLocusName),
+								Promise.resolve(existingAlias)
+							]);
+						}
+						else {
+							let symbolPromise = GeneSymbol.forge({
+								locus_id: existingLocusName.related('locus').attributes.id,
+								source_id: existingLocusName.related('source').attributes.id,
+								submitter_id: submitter,
+								full_name: fullName,
+								symbol: symbol
+							}).save(null, {transacting: transaction});
+
+							return Promise.all([
+								Promise.resolve(existingLocusName),
+								symbolPromise
+							]);
+						}
 					});
 			}
 			else {
@@ -98,10 +108,14 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 						.then(() => {
 							/* Fetch the records we just added so our return data is consistent
 							 * with what we return when the Locus already exists. */
-							return LocusName.where({locus_name: name}).fetch({
+							let locusPromise = LocusName.where({locus_name: name}).fetch({
 								transacting: transaction,
 								withRelated: ['locus', 'source']
 							});
+
+							let symbolPromise = GeneSymbol.where({symbol: symbol, full_name: fullName}).fetch({transacting: transaction});
+
+							return Promise.all([locusPromise, symbolPromise]);
 						});
 				});
 			}

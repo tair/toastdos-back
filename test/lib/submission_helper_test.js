@@ -84,8 +84,8 @@ describe('Submission helper', function() {
 			};
 
 			return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
-				.then(createdLocusName => {
-					let createdLocusId = createdLocusName.related('locus').attributes.id;
+				.then(([createdLocus, createdSymbol]) => {
+					let createdLocusId = createdLocus.related('locus').get('id');
 
 					return Locus.where({id: createdLocusId})
 						.fetch({withRelated: ['taxon', 'names', 'symbols']})
@@ -111,11 +111,12 @@ describe('Submission helper', function() {
 			const submitterId = 1;
 
 			return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
-				.then(addedLocus => locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
-					.then(modifiedLocus => {
-						chai.expect(addedLocus.toJSON()).to.deep.equal(modifiedLocus.toJSON());
-					})
-				);
+				.then(([addedLocus, addedSymbol]) => {
+					return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
+						.then(([sameLocus, unusedSymbol]) => {
+							chai.expect(addedLocus.toJSON()).to.deep.equal(sameLocus.toJSON());
+						})
+					});
 		});
 
 		it('New symbols for existing loci are created', function() {
@@ -134,7 +135,7 @@ describe('Submission helper', function() {
 			];
 
 			return locusHelper.addLocusRecords(existingLocusName.locus_name, newFullName, newSymbol, newSubmitter.id)
-				.then(modifiedLocus => {
+				.then(([modifiedLocus, createdSymbol]) => {
 					return Locus.where({id: modifiedLocus.related('locus').attributes.id})
 						.fetch({withRelated: 'symbols'})
 						.then(res => {
