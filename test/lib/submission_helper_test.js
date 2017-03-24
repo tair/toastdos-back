@@ -8,9 +8,10 @@ const rewire = require('rewire'); // To access private functions in modules
 const locusHelper      = require('../../app/lib/locus_submission_helper');
 const annotationHelper = rewire('../../app/lib/annotation_submission_helper');
 
-const Locus     = require('../../app/models/locus');
-const LocusName = require('../../app/models/locus_name');
-const Keyword   = require('../../app/models/keyword');
+const Locus      = require('../../app/models/locus');
+const LocusName  = require('../../app/models/locus_name');
+const GeneSymbol = require('../../app/models/gene_symbol');
+const Keyword    = require('../../app/models/keyword');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -175,9 +176,18 @@ describe('Submission helper', function() {
 
 		beforeEach('Build locus map from test data', function () {
 			return LocusName.fetchAll({withRelated: 'locus'}).then(locusNames => {
-				this.currentTest.locusMap = locusNames
-					.map(locus => ({[locus.attributes.locus_name]: locus}))
-					.reduce((curMap, curVal) => Object.assign(curMap, curVal));
+				return GeneSymbol.fetchAll().then(geneSymbols => {
+					this.currentTest.locusMap = locusNames.map(locus => {
+
+						let matchingSymbol = geneSymbols.find(symbol => symbol.get('locus_id') === locus.related('locus').get('id'));
+						return {
+							[locus.attributes.locus_name]: {
+								locus: locus,
+								symbol: matchingSymbol
+							}
+						};
+					}).reduce((curMap, curVal) => Object.assign(curMap, curVal));
+				});
 			});
 		});
 
@@ -534,6 +544,9 @@ describe('Submission helper', function() {
 			const expectedKeyword = testdata.keywords[0];
 			const expectedEvidenceLocus = testdata.locus[1];
 
+			// Loci can have multiple symbols, so we assume the map generator picks the first one it sees
+			const expectedEvidenceSymbol = testdata.gene_symbol[2];
+
 			const partialGTAnnotation = {
 				data: {
 					locusName: testdata.locus_name[0].locus_name,
@@ -544,13 +557,14 @@ describe('Submission helper', function() {
 			};
 
 			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, unusedKeywordScope).then(gtAnn => {
-				return gtAnn.fetch({withRelated: ['method', 'keyword', 'evidence']});
+				return gtAnn.fetch({withRelated: ['method', 'keyword', 'evidence', 'evidenceSymbol']});
 			}).then(fullGTAnnotation => {
 				let fullGTObj = fullGTAnnotation.toJSON();
 
 				chai.expect(fullGTObj.method).to.contain(expectedMethod);
 				chai.expect(fullGTObj.keyword).to.contain(expectedKeyword);
 				chai.expect(fullGTObj.evidence).to.contain(expectedEvidenceLocus);
+				chai.expect(fullGTObj.evidenceSymbol).to.contain(expectedEvidenceSymbol);
 			});
 		});
 
@@ -582,6 +596,9 @@ describe('Submission helper', function() {
 			const expectedMethod = testdata.keywords[2];
 			const expectedLocus2 = testdata.locus[1];
 
+			// Loci can have multiple symbols, so we assume the map generator picks the first one it sees
+			const expectedLocus2Symbol = testdata.gene_symbol[2];
+
 			const partialGGAnnotation = {
 				data: {
 					locusName: testdata.locus_name[0].locus_name,
@@ -591,12 +608,13 @@ describe('Submission helper', function() {
 			};
 
 			return createGeneGeneRecords(partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
-				return ggAnn.fetch({withRelated: ['method', 'locus2']});
+				return ggAnn.fetch({withRelated: ['method', 'locus2', 'locus2Symbol']});
 			}).then(fullGGAnnotation => {
 				let fullGGObj = fullGGAnnotation.toJSON();
 
 				chai.expect(fullGGObj.method).to.contain(expectedMethod);
 				chai.expect(fullGGObj.locus2).to.contain(expectedLocus2);
+				chai.expect(fullGGObj.locus2Symbol).to.contain(expectedLocus2Symbol);
 			});
 		});
 
@@ -639,6 +657,9 @@ describe('Submission helper', function() {
 			const expectedStatus = 'pending';
 			const expectedType = 'Temporal Expression';
 
+			// Loci can have multiple symbols, so we assume the map generator picks the first one it sees
+			const expectedEvidenceSymbol = testdata.gene_symbol[0];
+
 			const annotation = {
 				type: 'TEMPORAL_EXPRESSION',
 				data: {
@@ -652,12 +673,13 @@ describe('Submission helper', function() {
 			};
 
 			return annotationHelper.addAnnotationRecords(annotation, this.test.locusMap).then(addedAnnotation => {
-				return addedAnnotation.fetch({withRelated: ['status', 'type', 'publication', 'submitter', 'locus']});
+				return addedAnnotation.fetch({withRelated: ['status', 'type', 'publication', 'submitter', 'locus', 'locusSymbol']});
 			}).then(loadedAnnotation => {
 				let la = loadedAnnotation.toJSON();
 				chai.expect(la.publication).to.contain(expectedPublication);
 				chai.expect(la.submitter).to.contain(expectedSubmitter);
 				chai.expect(la.locus).to.contain(expectedLocus);
+				chai.expect(la.locusSymbol).to.contain(expectedEvidenceSymbol);
 				chai.expect(la.type).to.contain({name: expectedType});
 				chai.expect(la.status).to.contain({name: expectedStatus});
 			});
