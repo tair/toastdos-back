@@ -210,13 +210,13 @@ describe('Submission Controller', function() {
 
 					// Use a combination of fields to uniquely identify an annotation we just created
 					Annotation
-						.where({annotation_format: 'comment'})
+						.where({annotation_format: 'comment_annotation'})
 						.orderBy('created_at', 'DESC')
-						.fetchOne({withRelated: 'locusSymbol'})
+						.fetch({withRelated: 'locusSymbol'})
 						.then(createdAnnotation => {
 							let geneSymbol = createdAnnotation.related('locusSymbol');
 							chai.expect(geneSymbol.get('symbol')).to.equal(testGene.geneSymbol);
-							chai.expect(geneSymbol.get('fullname')).to.equal(testGene.fullName);
+							chai.expect(geneSymbol.get('full_name')).to.equal(testGene.fullName);
 							done();
 						});
 				});
