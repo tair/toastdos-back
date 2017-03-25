@@ -121,8 +121,8 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 					status_id: status.attributes.id,
 					type_id: type.attributes.id,
 					submitter_id: annotation.data.submitterId,
-					locus_id: locusMap[annotation.data.locusName].attributes.locus_id,
-					locus_symbol_id: 1, //FIXME: This is to keep the module working. We will fix this in another story
+					locus_id: locusMap[annotation.data.locusName].locus.get('locus_id'),
+					locus_symbol_id: locusMap[annotation.data.locusName].symbol.get('id'),
 					annotation_id: subAnnotation.attributes.id,
 					annotation_format: strategy.format.name
 				}).save(null, {transacting: transaction});
@@ -214,7 +214,7 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
 		);
 	}
 
-	// Evidence Locus is optional
+	// Evidence Locus is optional, but needs to exist if specified
 	if (annotation.data.evidence && !locusMap[annotation.data.evidence]) {
 		verificationPromises.push(
 			Promise.reject(new Error(`Locus ${annotation.data.evidence} not present in submission`))
@@ -333,8 +333,8 @@ function createGeneTermRecords(annotation, locusMap, keywordScope, transaction) 
 
 			// 'evidence' is an optional field
 			if (annotation.data.evidence) {
-				subAnnotation.evidence_id = locusMap[annotation.data.evidence].attributes.locus_id;
-				subAnnotation.evidence_symbol_id = 1; //FIXME: This is to keep the module working. We will fix this in another story
+				subAnnotation.evidence_id = locusMap[annotation.data.evidence].locus.get('locus_id');
+				subAnnotation.evidence_symbol_id = locusMap[annotation.data.evidence].symbol.get('id');
 			}
 
 			return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
@@ -354,8 +354,8 @@ function createGeneGeneRecords(annotation, locusMap, keywordScope, transaction) 
 	return methodPromise.then(methodId => {
 		return GeneGeneAnnotation.forge({
 			method_id: methodId,
-			locus2_id: locusMap[annotation.data.locusName2].attributes.locus_id,
-			locus2_symbol_id: 1, //FIXME: This is to keep the module working. We will fix this in another story
+			locus2_id: locusMap[annotation.data.locusName2].locus.get('locus_id'),
+			locus2_symbol_id: locusMap[annotation.data.locusName2].symbol.get('id'),
 		}).save(null, {transacting: transaction});
 	});
 }

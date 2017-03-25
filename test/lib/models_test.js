@@ -255,6 +255,19 @@ describe('Models', function() {
 				});
 		});
 
+		it('GeneSymbol for the Locus the Annotation refers to can be retrieved', function() {
+			let testAnnotation = testdata.annotations[0];
+			let expectedSymbol = testdata.gene_symbol[0];
+
+			return Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'locusSymbol'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.locusSymbol).to.contain(expectedSymbol);
+				});
+		});
+
 		it('Gene to Term information can be retrieved', function() {
 			let testAnnotation = testdata.annotations[0];
 			let expectedGTAnnotationPart = testdata.gene_term_annotations[0];
@@ -337,6 +350,19 @@ describe('Models', function() {
 				});
 		});
 
+		it('GeneSymbol for evidence Locus of Annotation can be retrieved', function() {
+			let testAnnotation = testdata.gene_term_annotations[0];
+			let expectedSymbol = testdata.gene_symbol[0];
+
+			return GeneTermAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'evidenceSymbol'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.evidenceSymbol).to.contain(expectedSymbol);
+				});
+		});
+
 		it('Parent Annotation information can be retrieved', function() {
 			let testAnnotation = testdata.gene_term_annotations[0];
 			let expectedParent = testdata.annotations[0];
@@ -377,6 +403,19 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.locus2).to.contain(expectedLocus2);
+				});
+		});
+
+		it('GeneSymbol for locus2 Locus of Annotation can be retrieved', function() {
+			let testAnnotation = testdata.gene_gene_annotations[0];
+			let expectedSymbol = testdata.gene_symbol[0];
+
+			return GeneGeneAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'locus2Symbol'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.locus2Symbol).to.contain(expectedSymbol);
 				});
 		});
 
