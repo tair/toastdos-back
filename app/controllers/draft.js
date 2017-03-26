@@ -50,7 +50,37 @@ function createDraft(req, res, next){
 	.catch(err => response.defaultServerError(res, err));
 }
 
+/**
+ * Deletes a draft by it's internal ID.
+ *
+ * Responses:
+ * 200 on successful delete.
+ * 400 if the draft with the given ID didn't exist.
+ * 403 if deleted draft doesn't belong to requesting user.
+ * 500 on internal error.
+ */
+function deleteDraft(req, res, next) {
+	Draft.where({id: req.params.id})
+		.fetch({require: true})
+		.then(draft => {
+			if (draft.get('submitter_id') !== req.user.get('id')) {
+				return response.unauthorized(res, 'Unauthorized to delete this draft');
+			}
+
+			return draft.destroy();
+		})
+		.then(deletedDraft => response.ok(res, deletedDraft))
+		.catch(err => {
+			if (err.message === 'EmptyResponse') {
+				return response.notFound(res, `No draft with id ${req.params.id} found`);
+			}
+
+			return response.defaultServerError(res, err);
+		});
+}
+
 module.exports={
 	getDraftsForUser,
-	createDraft
+	createDraft,
+	deleteDraft
 };

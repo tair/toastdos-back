@@ -21,4 +21,11 @@ router.post(
 	draftController.createDraft
 );
 
+// DELETE draft
+router.delete(
+	'/:id',
+	authenticationMiddleware.validateAuthentication,
+	draftController.deleteDraft
+);
+
 module.exports = router;
