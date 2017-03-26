@@ -10,7 +10,7 @@ const knex    = require('../../app/lib/bookshelf').knex;
 
 const testdata = require('../../seeds/test/test_data.json');
 
-describe.only('Draft Controller', function() {
+describe('Draft Controller', function() {
 
 	let testToken = '';
 
@@ -50,7 +50,9 @@ describe.only('Draft Controller', function() {
 	describe('POST /api/draft/', function() {
 
 		it('Draft was successfully created', function(done) {
-			const testDraft = testdata.draft[0];
+			// Make a copy we can modify
+			const testDraft = Object.assign({}, testdata.draft[0]);
+			delete testDraft.id;
 
 			chai.request(server)
 				.post('/api/draft')
@@ -68,13 +70,50 @@ describe.only('Draft Controller', function() {
 		});
 
 		it('wip_state is missing', function(done) {
-
 			chai.request(server)
 				.post('/api/draft')
 				.set({Authorization: `Bearer ${testToken}`})
-				.end((err,res) => {
+				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
 					chai.expect(res.text).to.equal('Draft (wip state) is missing or invalid');
+					done();
+				});
+		});
+
+	});
+
+	describe('DELETE /api/draft/:id', function() {
+
+		it('Successfully deletes draft', function(done) {
+			const testDraft = testdata.draft[0];
+			chai.request(server)
+				.delete(`/api/draft/${testDraft.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					done();
+				});
+		});
+
+		it('Responds with error when trying to delete non-existing draft', function(done) {
+			const badId = 999;
+			chai.request(server)
+				.delete(`/api/draft/${badId}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(404);
+					done();
+				});
+		});
+
+		it('Users cannot delete drafts for other users', function(done) {
+			const otherUserDraft = testdata.draft[1];
+			chai.request(server)
+				.delete(`/api/draft/${otherUserDraft.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(403);
+					chai.expect(res.text).to.equal('Unauthorized to delete this draft');
 					done();
 				});
 		});

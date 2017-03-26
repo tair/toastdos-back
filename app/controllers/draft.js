@@ -64,12 +64,12 @@ function deleteDraft(req, res, next) {
 		.fetch({require: true})
 		.then(draft => {
 			if (draft.get('submitter_id') !== req.user.get('id')) {
-				return response.unauthorized(res, 'Unauthorized to delete this draft');
+				return response.forbidden(res, 'Unauthorized to delete this draft');
 			}
 
-			return draft.destroy();
+			return draft.destroy()
+				.then(deletedDraft => response.ok(res, deletedDraft));
 		})
-		.then(deletedDraft => response.ok(res, deletedDraft))
 		.catch(err => {
 			if (err.message === 'EmptyResponse') {
 				return response.notFound(res, `No draft with id ${req.params.id} found`);
