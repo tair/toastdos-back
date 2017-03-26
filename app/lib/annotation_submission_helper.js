@@ -285,6 +285,7 @@ function createKeywordRecord(keywordName, keywordTypeName, transaction) {
 			 * The trick here is that if a keyword with the given name already exists
 			 * in the database, the desired value for the "name" field will evaluate
 			 * to null, causing a NOT NULL constraint violation.
+			 * See: http://stackoverflow.com/a/16636779
 			 */
 			// Promise resolves to ID of created keyword
 			return knex('keyword')
@@ -294,7 +295,22 @@ function createKeywordRecord(keywordName, keywordTypeName, transaction) {
 					name: knex('keyword')
 						.select(keywordName)
 						.whereNotIn(keywordName, knex('keyword').select('name'))
-				});
+				})
+				// Keyword ID (annoyingly) is returned as a single element in an array.
+				.then(idArray => Promise.resolve(idArray[0]));
+		})
+		.catch(err => {
+			// Catch NOT NULL constraint violations for SQLite3 and PostgreSQL
+			// and return the existing keyword
+			if (err.message.includes('NOT NULL constraint failed') ||
+				err.message.includes('23502')) {
+				return Keyword
+					.where({name: keywordName})
+					.fetch({transacting: transaction})
+					.then(keyword => Promise.resolve(keyword.get('id')));
+			}
+
+			throw err;
 		});
 }
 
