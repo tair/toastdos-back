@@ -11,6 +11,7 @@ const AnnotationType     = require('../models/annotation_type');
 const Keyword            = require('../models/keyword');
 const KeywordType        = require('../models/keyword_type');
 
+const knex = require('../lib/bookshelf').knex;
 
 const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'];
 
@@ -265,34 +266,35 @@ function verifyCommentFields(annotation, locusMap) {
  * @return {Promise.<TResult>}
  */
 function createKeywordRecord(keywordName, keywordTypeName, transaction) {
-	// Retrieve the KeywordType id (either via query or our cache)
-	let keywordTypePromise;
-	if (KEYWORD_TYPES[keywordTypeName]) {
-		keywordTypePromise = Promise.resolve(KEYWORD_TYPES[keywordTypeName]);
-	} else {
-		keywordTypePromise = KeywordType.where({name: keywordTypeName}).fetch({require: true, transacting: transaction});
-	}
-
-	return keywordTypePromise.then(keywordType => {
-		// Cache this for subsequent requests
-		if (!KEYWORD_TYPES[keywordTypeName]) KEYWORD_TYPES[keywordTypeName] = keywordType;
-
-		return Keyword.forge({
-			name: keywordName,
-			keyword_type_id: keywordType.attributes.id
-		}).save(null, {transacting: transaction});
-	})
-		.then(addedKeyword => Promise.resolve(addedKeyword.attributes.id))
-		.catch(err => {
-			// In case two annotations are trying to create the same new Keyword.
-			// Should match unique errors for SQLite and PostgreSQL.
-			if (err.message.includes('UNIQUE constraint failed') || err.message.includes('unique_violation')) {
-				return Keyword.where({name: keywordName})
-					.fetch({require: true, transacting: transaction})
-					.then(existingKeyword => Promise.resolve(existingKeyword.attributes.id));
-			}
-
-			throw err;
+	// Retrieve the KeywordType id
+	return KeywordType
+		.where({name: keywordTypeName})
+		.fetch({require: true, transacting: transaction})
+		.then(keywordType => {
+			/*
+			 * Prevents duplicate keyword records by inserting a conditionally
+			 * null keyword name into a field with a NOT NULL constraint.
+			 * The query boils down to the following:
+			 *
+			 * INSERT INTO keyword (keyword_type_id, name)
+			 * VALUES (<keyword type id>,
+			 *      SELECT <new keyword name> FROM keyword
+			 *      WHERE <new keyword name> NOT IN (SELECT name FROM keyword)
+			 * )
+			 *
+			 * The trick here is that if a keyword with the given name already exists
+			 * in the database, the desired value for the "name" field will evaluate
+			 * to null, causing a NOT NULL constraint violation.
+			 */
+			// Promise resolves to ID of created keyword
+			return knex('keyword')
+				.transacting(transaction)
+				.insert({
+					keyword_type_id: keywordType.attributes.id,
+					name: knex('keyword')
+						.select(keywordName)
+						.whereNotIn(keywordName, knex('keyword').select('name'))
+				});
 		});
 }
 
