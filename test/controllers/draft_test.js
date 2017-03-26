@@ -6,7 +6,9 @@ chai.use(require('chai-subset'));
 
 const server = require('../../app/index');
 const auth   = require('../../app/lib/authentication');
-const knex    = require('../../app/lib/bookshelf').knex;
+const knex   = require('../../app/lib/bookshelf').knex;
+
+const Draft = require('../../app/models/draft');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -42,6 +44,24 @@ describe('Draft Controller', function() {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.containSubset(testDraft);
 					done();
+				});
+		});
+
+		it('Responds with error when attempting to get drafts for a user who has none', function(done) {
+			const testUser = testdata.users[0];
+
+			// Remove test draft for authenticated user
+			Draft.where({submitter_id: testUser.id})
+				.destroy()
+				.then(() => {
+					chai.request(server)
+						.get('/api/draft/')
+						.set({Authorization: `Bearer ${testToken}`})
+						.end((err, res) => {
+							chai.expect(res.status).to.equal(404);
+							chai.expect(res.text).to.equal('No drafts found for user');
+							done();
+						});
 				});
 		});
 

@@ -9,18 +9,19 @@ const response = require('../lib/responses');
  *
  * Responses:
  * 200 on successful retrieval.
+ * 404 if user has no drafts.
  * 500 on internal error.
  */
 function getDraftsForUser(req, res, next) {
 	return Draft.where('submitter_id', req.user.get('id'))
-		.fetch()
+		.fetch({require: true})
 		.then(draft => {
 			draft.set('wip_state', JSON.parse(draft.get('wip_state')));
 			return response.ok(res, draft);
 		})
 		.catch(err => {
 			if (err.message === 'EmptyResponse') {
-				return response.notFound(res, 'Draft not found');
+				return response.notFound(res, 'No drafts found for user');
 			}
 
 			return response.defaultServerError(res, err);
