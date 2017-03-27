@@ -47,6 +47,11 @@ function submitGenesAndAnnotations(req, res, next) {
 		return response.badRequest(res, 'Body contained malformed Annotation data');
 	}
 
+	// Validate Annotation type
+	let foundBadAnnType = req.body.annotations.find(ann => !annotationHelper.AnnotationTypeData[ann.type]);
+	if (foundBadAnnType) {
+		return response.badRequest(res, `Invalid annotation type ${foundBadAnnType.type}`);
+	}
 
 	// Publication ID validation / type detection
 	let publicationType;

@@ -176,6 +176,21 @@ describe('Submission Controller', function() {
 				});
 		});
 
+		it('Annotation with invalid type is rejected', function(done) {
+			const badType = 'Bad Type Name';
+			this.test.submission.annotations[0].type = badType;
+
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal(`Invalid annotation type ${badType}`);
+					done();
+				});
+		});
+
 		it('An error in the submission process rolls back entire transaction', function(done) {
 			this.test.submission.annotations[1].data.locusName = 'Bad thing';
 
