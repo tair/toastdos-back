@@ -247,6 +247,7 @@
 
   "draft" : [
     {
+      "id" : 1,
       "submitter_id" : 1,
       "wip_state" : {
         "id" : 1,
@@ -259,6 +260,7 @@
       }
     },
     {
+      "id" : 2,
       "submitter_id" : 2,
       "wip_state" : {
         "id" : 2,

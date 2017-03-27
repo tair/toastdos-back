@@ -244,6 +244,32 @@ describe('Submission Controller', function() {
 				});
 		});
 
+		it('Annotations created in submission reference created gene symbols', function(done) {
+			this.timeout(5000);
+
+			const testGene = this.test.submission.genes[0];
+
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(err).to.not.exist;
+
+					// Use a combination of fields to uniquely identify an annotation we just created
+					Annotation
+						.where({annotation_format: 'comment_annotation'})
+						.orderBy('created_at', 'DESC')
+						.fetch({withRelated: 'locusSymbol'})
+						.then(createdAnnotation => {
+							let geneSymbol = createdAnnotation.related('locusSymbol');
+							chai.expect(geneSymbol.get('symbol')).to.equal(testGene.geneSymbol);
+							chai.expect(geneSymbol.get('full_name')).to.equal(testGene.fullName);
+							done();
+						});
+				});
+		});
+
 	});
 
 	describe('GET /api/submission/', function() {
