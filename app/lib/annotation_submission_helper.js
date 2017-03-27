@@ -100,8 +100,8 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 
 	// Step 2: Verify the data
 	return strategy.format.verifyReferences(annotation, locusMap, transaction)
-		// Step 3: Create sub-annotation and any new Keywords
-		.then(() => strategy.format.createRecords(annotation, locusMap, strategy.keywordScope, transaction))
+		// Step 3: Create sub-annotation
+		.then(() => strategy.format.createRecords(annotation, locusMap, transaction))
 		// Step 4: With dependencies created, now add the Annotation itself
 		.then(subAnnotation => {
 
@@ -245,12 +245,11 @@ function verifyCommentFields(annotation, locusMap) {
 
 /**
  * These functions add the records needed for creating the main Annotation.
- * Currently that includes only the specialized Annotation type information
- * and any newly created Keywords.
+ * Currently that includes only the specialized Annotation type information.
  *
  * Returns a Promise that resolves to new sub-annotation.
  */
-function createGeneTermRecords(annotation, locusMap, keywordScope, transaction) {
+function createGeneTermRecords(annotation, locusMap, transaction) {
 	let subAnnotation = {
 		method_id: annotation.data.method.id,
 		keyword_id: annotation.data.keyword.id
@@ -265,8 +264,7 @@ function createGeneTermRecords(annotation, locusMap, keywordScope, transaction) 
 	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
 }
 
-function createGeneGeneRecords(annotation, locusMap, keywordScope, transaction) {
-	// keywordScope unused, but needed to keep function signature consistent
+function createGeneGeneRecords(annotation, locusMap, transaction) {
 
 	return GeneGeneAnnotation.forge({
 		method_id: annotation.data.method.id,
@@ -275,8 +273,8 @@ function createGeneGeneRecords(annotation, locusMap, keywordScope, transaction) 
 	}).save(null, {transacting: transaction});
 }
 
-function createCommentRecords(annotation, locusMap, keywordScope, transaction) {
-	// locusMap and keywordScope unused, but needed to keep function signature consistent
+function createCommentRecords(annotation, locusMap, transaction) {
+	// locusMap unused, but needed to keep function signature consistent
 	return CommentAnnotation.forge({text: annotation.data.text}).save(null, {transacting: transaction});
 }
 
