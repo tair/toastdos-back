@@ -317,28 +317,6 @@ describe('Submission helper', function() {
 			});
 		});
 
-		it('Keyword keywords must specify an id XOR name', function() {
-			const testType = 'SUBCELLULAR_LOCATION'; // Yet another GT annotation type
-			const badKeyword = { id: 'something', name: 'New Keyword Name' };
-			const testGTAnnotation = {
-				type: testType,
-				data: {
-					internalPublicationId: testdata.publications[0].id,
-					submitterId: testdata.users[0].id,
-					locusName: testdata.locus_name[0].locus_name,
-					method: { id: testdata.keywords[0].id },
-					keyword: badKeyword,
-					evidence: testdata.locus_name[1].locus_name
-				}
-			};
-
-			return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(res => {
-				throw new Error('Invalid fields were not rejected');
-			}).catch(err => {
-				chai.expect(err.message).to.equal('id xor name required for Keywords');
-			});
-		});
-
 		it('GT verification rejects for invalid locus', function() {
 			const verifyGeneTermFields = annotationHelper.__get__('verifyGeneTermFields');
 			const badLocusName = 'Bad Locus Name';
@@ -486,45 +464,6 @@ describe('Submission helper', function() {
 			});
 		});
 
-		it('GT creator adds new method keywords with eco KeywordType', function() {
-			const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
-			const unusedKeywordScope = testdata.keyword_types[0].name;
-			const testKeywordName = 'New Test Keyword';
-			const partialGTAnnotation = {
-				data: {
-					locusName: testdata.locus_name[0].locus_name,
-					method: { name: testKeywordName },
-					keyword: { id: testdata.keywords[0].id }
-				}
-			};
-			const expectedKeywordName = 'eco';
-
-			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, unusedKeywordScope).then(gtAnn => {
-				return Keyword.where({id: gtAnn.attributes.method_id}).fetch({withRelated: 'keywordType'});
-			}).then(methodKeyword => {
-				chai.expect(methodKeyword.related('keywordType').attributes.name).to.equal(expectedKeywordName);
-			});
-		});
-
-		it('GT creator adds new keyword keywords KeywordType matching scope', function() {
-			const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
-			const testKeywordScope = testdata.keyword_types[0].name;
-			const testKeywordName = 'New Test Keyword';
-			const partialGTAnnotation = {
-				data: {
-					locusName: testdata.locus_name[0].locus_name,
-					method: { id: testdata.keywords[2].id },
-					keyword: { name: testKeywordName }
-				}
-			};
-
-			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, testKeywordScope).then(gtAnn => {
-				return Keyword.where({id: gtAnn.attributes.keyword_id}).fetch({withRelated: 'keywordType'});
-			}).then(keywordKeyword => {
-				chai.expect(keywordKeyword.related('keywordType').attributes.name).to.equal(testKeywordScope);
-			});
-		});
-
 		it('GT sub-annotation is properly added', function() {
 			const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
 			const unusedKeywordScope = testdata.keyword_types[0].name;
@@ -550,27 +489,6 @@ describe('Submission helper', function() {
 				chai.expect(fullGTObj.method).to.contain(expectedMethod);
 				chai.expect(fullGTObj.keyword).to.contain(expectedKeyword);
 				chai.expect(fullGTObj.evidence).to.contain(expectedEvidenceLocus);
-			});
-		});
-
-		it('GG creator adds new method keywords with eco KeywordType', function() {
-			const createGeneGeneRecords = annotationHelper.__get__('createGeneGeneRecords');
-			const unusedKeywordScope = testdata.keyword_types[0].name;
-
-			const expectedKeywordName = 'eco';
-			const testKeywordName = 'New Test Keyword';
-			const partialGGAnnotation = {
-				data: {
-					locusName: testdata.locus_name[0].locus_name,
-					method: { name: testKeywordName },
-					locusName2: testdata.locus_name[1].locus_name
-				}
-			};
-
-			return createGeneGeneRecords(partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
-				return Keyword.where({id: ggAnn.attributes.method_id}).fetch({withRelated: 'keywordType'});
-			}).then(methodKeyword => {
-				chai.expect(methodKeyword.related('keywordType').attributes.name).to.equal(expectedKeywordName);
 			});
 		});
 
@@ -613,52 +531,6 @@ describe('Submission helper', function() {
 			return createCommentRecords(partialCAnnotation, this.test.locusMap, unusedKeywordScope).then(cAnn => {
 				chai.expect(cAnn.attributes.id).to.exist;
 				chai.expect(cAnn.attributes.text).to.be.a('string');
-			});
-		});
-
-		it('Only one Keyword record is created when two annotations try to add the same new Keyword', function() {
-			const createKeywordRecord = annotationHelper.__get__('createKeywordRecord');
-			const testKeywordType = testdata.keyword_types[0];
-			const testKeywordName = 'New Test Keyword';
-
-			let keywordPromise1 = createKeywordRecord(testKeywordName, testKeywordType.name);
-			let keywordPromise2 = createKeywordRecord(testKeywordName, testKeywordType.name);
-
-			return Promise.all([keywordPromise1, keywordPromise2]).then(([newKWID1, newKWID2]) => {
-				chai.expect(newKWID1).to.equal(newKWID2);
-			});
-		});
-
-		it('Parent annotation added with all proper fields', function() {
-			const expectedPublication = testdata.publications[0];
-			const expectedSubmitter = testdata.users[0];
-			const expectedLocus = testdata.locus[0];
-			const expectedMethod = testdata.keywords[2];
-			const newKeyword = 'New Test Keyword';
-			const expectedStatus = 'pending';
-			const expectedType = 'Temporal Expression';
-
-			const annotation = {
-				type: 'TEMPORAL_EXPRESSION',
-				data: {
-					internalPublicationId: expectedPublication.id,
-					submitterId: expectedSubmitter.id,
-					locusName: testdata.locus_name[0].locus_name,
-					method: { id: expectedMethod.id },
-					keyword: { name: newKeyword },
-					evidence: testdata.locus_name[1].locus_name
-				}
-			};
-
-			return annotationHelper.addAnnotationRecords(annotation, this.test.locusMap).then(addedAnnotation => {
-				return addedAnnotation.fetch({withRelated: ['status', 'type', 'publication', 'submitter', 'locus']});
-			}).then(loadedAnnotation => {
-				let la = loadedAnnotation.toJSON();
-				chai.expect(la.publication).to.contain(expectedPublication);
-				chai.expect(la.submitter).to.contain(expectedSubmitter);
-				chai.expect(la.locus).to.contain(expectedLocus);
-				chai.expect(la.type).to.contain({name: expectedType});
-				chai.expect(la.status).to.contain({name: expectedStatus});
 			});
 		});
 

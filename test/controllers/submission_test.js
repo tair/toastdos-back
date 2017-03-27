@@ -15,6 +15,7 @@ const Role             = require('../../app/models/role');
 const User             = require('../../app/models/user');
 const Annotation       = require('../../app/models/annotation');
 const AnnotationStatus = require('../../app/models/annotation_status');
+const Keyword          = require('../../app/models/keyword');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -84,6 +85,19 @@ describe('Submission Controller', function() {
 						evidence: 'URS00000EF184'
 					}
 				},
+				{
+					type: 'MOLECULAR_FUNCTION',
+					data: {
+						locusName: 'AT1G10000',
+						method: {
+							name: 'New keyword 2'
+						},
+						keyword: {
+							name: 'New keyword'
+						},
+						evidence: 'URS00000EF184'
+					}
+				}
 			]
 		};
 		return knex.seed.run();
@@ -181,6 +195,25 @@ describe('Submission Controller', function() {
 						resultArray.forEach(result => chai.expect(result).to.not.exist);
 						done();
 					});
+				});
+		});
+
+		it('Only one Keyword record is created when two annotations try to add the same new Keyword', function(done) {
+			this.timeout(5000);
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(201);
+
+					Keyword
+						.where({name: this.test.submission.annotations[2].data.keyword.name})
+						.fetchAll()
+						.then(keyword => {
+							chai.expect(keyword).to.have.length(1);
+							done();
+						});
 				});
 		});
 

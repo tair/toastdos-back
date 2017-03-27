@@ -9,7 +9,6 @@ const Annotation         = require('../models/annotation');
 const AnnotationStatus   = require('../models/annotation_status');
 const AnnotationType     = require('../models/annotation_type');
 const Keyword            = require('../models/keyword');
-const KeywordType        = require('../models/keyword_type');
 
 const knex = require('../lib/bookshelf').knex;
 
@@ -77,10 +76,8 @@ const AnnotationTypeData = {
 	}
 };
 
-// There are very few keyword types, so we cache them.
 const METHOD_KEYWORD_TYPE_NAME = 'eco';
 const NEW_ANNOTATION_STATUS = 'pending';
-let KEYWORD_TYPES = {};
 
 
 /**
@@ -93,10 +90,6 @@ let KEYWORD_TYPES = {};
  */
 function addAnnotationRecords(annotation, locusMap, transaction) {
 	let strategy = AnnotationTypeData[annotation.type];
-
-	if (!strategy) {
-		return Promise.reject(new Error(`Invalid annotation type ${annotation.type}`));
-	}
 
 	// Step 1: Ensure annotation request all required fields and nothing extra
 	try {
@@ -152,14 +145,14 @@ function validateFields(annotation, validFields, optionalFields) {
 		throw new Error(`Missing ${annotation.type} fields: ${missingFields}`);
 	}
 
-	// Make sure keyword fields have a name or an ID
+	// Make sure keyword fields have an ID (new keywords will have a name field too. This is ok.)
 	let method = annotation.data.method;
-	if (method && !((method.id && !method.name) || (!method.id && method.name)) ) {
+	if (method && !method.id) {
 		throw new Error('id xor name required for Keywords');
 	}
 
 	let keyword = annotation.data.keyword;
-	if (keyword && !((keyword.id && !keyword.name) || (!keyword.id && keyword.name)) ) {
+	if (keyword && !keyword.id) {
 		throw new Error('id xor name required for Keywords');
 	}
 }
@@ -193,27 +186,23 @@ function verifyGenericFields(annotation, locusMap) {
 function verifyGeneTermFields(annotation, locusMap, transaction) {
 	let verificationPromises = verifyGenericFields(annotation, locusMap);
 
-	// A new method Keyword can be created with an Annotation, so we just verify existing ones
-	if (annotation.data.method.id) {
-		verificationPromises.push(
-			redefinePromiseError({
-				promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true, transacting: transaction}),
-				message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
-				pattern: 'EmptyResponse'
-			})
-		);
-	}
+	// Verify method Keywords exist
+	verificationPromises.push(
+		redefinePromiseError({
+			promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true, transacting: transaction}),
+			message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
+			pattern: 'EmptyResponse'
+		})
+	);
 
-	// A new keyword Keyword can be created with an Annotation, so we just verify existing ones
-	if (annotation.data.keyword.id) {
-		verificationPromises.push(
-			redefinePromiseError({
-				promise: Keyword.where({id: annotation.data.keyword.id}).fetch({require: true, transacting: transaction}),
-				message: `Keyword id ${annotation.data.keyword.id} does not reference an existing Keyword`,
-				pattern: 'EmptyResponse'
-			})
-		);
-	}
+	// Verify keyword Keywords exist
+	verificationPromises.push(
+		redefinePromiseError({
+			promise: Keyword.where({id: annotation.data.keyword.id}).fetch({require: true, transacting: transaction}),
+			message: `Keyword id ${annotation.data.keyword.id} does not reference an existing Keyword`,
+			pattern: 'EmptyResponse'
+		})
+	);
 
 	// Evidence Locus is optional
 	if (annotation.data.evidence && !locusMap[annotation.data.evidence]) {
@@ -228,16 +217,14 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
 function verifyGeneGeneFields(annotation, locusMap, transaction) {
 	let verificationPromises = verifyGenericFields(annotation, locusMap);
 
-	// A new method Keyword can be created with an Annotation, so we just verify existing ones
-	if (annotation.data.method.id) {
-		verificationPromises.push(
-			redefinePromiseError({
-				promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true, transacting: transaction}),
-				message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
-				pattern: 'EmptyResponse'
-			})
-		);
-	}
+	// Verify method Keywords exist
+	verificationPromises.push(
+		redefinePromiseError({
+			promise: Keyword.where({id: annotation.data.method.id}).fetch({require: true, transacting: transaction}),
+			message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
+			pattern: 'EmptyResponse'
+		})
+	);
 
 	// Verify locus2 Locus
 	if (!locusMap[annotation.data.locusName2]) {
@@ -256,64 +243,6 @@ function verifyCommentFields(annotation, locusMap) {
 	return Promise.all(verificationPromises);
 }
 
-
-/**
- * Adds a new Keyword.
- * Returned promise resolves to the raw ID of the added Keyword.
- * This is to stay consistent with the case where we already have
- * the ID (for annotation record creation).
- *
- * @return {Promise.<TResult>}
- */
-function createKeywordRecord(keywordName, keywordTypeName, transaction) {
-	// Retrieve the KeywordType id
-	return KeywordType
-		.where({name: keywordTypeName})
-		.fetch({require: true, transacting: transaction})
-		.then(keywordType => {
-			/*
-			 * Prevents duplicate keyword records by inserting a conditionally
-			 * null keyword name into a field with a NOT NULL constraint.
-			 * The query boils down to the following:
-			 *
-			 * INSERT INTO keyword (keyword_type_id, name)
-			 * VALUES (<keyword type id>,
-			 *      SELECT <new keyword name> FROM keyword
-			 *      WHERE <new keyword name> NOT IN (SELECT name FROM keyword)
-			 * )
-			 *
-			 * The trick here is that if a keyword with the given name already exists
-			 * in the database, the desired value for the "name" field will evaluate
-			 * to null, causing a NOT NULL constraint violation.
-			 * See: http://stackoverflow.com/a/16636779
-			 */
-			// Promise resolves to ID of created keyword
-			return knex('keyword')
-				.transacting(transaction)
-				.insert({
-					keyword_type_id: keywordType.attributes.id,
-					name: knex('keyword')
-						.select(keywordName)
-						.whereNotIn(keywordName, knex('keyword').select('name'))
-				})
-				// Keyword ID (annoyingly) is returned as a single element in an array.
-				.then(idArray => Promise.resolve(idArray[0]));
-		})
-		.catch(err => {
-			// Catch NOT NULL constraint violations for SQLite3 and PostgreSQL
-			// and return the existing keyword
-			if (err.message.includes('NOT NULL constraint failed') ||
-				err.message.includes('23502')) {
-				return Keyword
-					.where({name: keywordName})
-					.fetch({transacting: transaction})
-					.then(keyword => Promise.resolve(keyword.get('id')));
-			}
-
-			throw err;
-		});
-}
-
 /**
  * These functions add the records needed for creating the main Annotation.
  * Currently that includes only the specialized Annotation type information
@@ -322,60 +251,28 @@ function createKeywordRecord(keywordName, keywordTypeName, transaction) {
  * Returns a Promise that resolves to new sub-annotation.
  */
 function createGeneTermRecords(annotation, locusMap, keywordScope, transaction) {
+	let subAnnotation = {
+		method_id: annotation.data.method.id,
+		keyword_id: annotation.data.keyword.id
+	};
 
-	/* Make promises that resolve to the id of a keyword.
-
-	 * I'm sorry for this. This kind of nonsense is the only way to handle adding
-	 * new Keywords without duplicating big chunks of code.
-	 */
-	let methodPromise;
-	if (!annotation.data.method.id) {
-		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME, transaction);
-	} else {
-		methodPromise = Promise.resolve(annotation.data.method.id);
+	// 'evidence' is an optional field
+	if (annotation.data.evidence) {
+		subAnnotation.evidence_id = locusMap[annotation.data.evidence].attributes.locus_id;
+		subAnnotation.evidence_symbol_id = 1; //FIXME: This is to keep the module working. We will fix this in another story
 	}
 
-	let keywordPromise;
-	if (!annotation.data.keyword.id) {
-		keywordPromise = createKeywordRecord(annotation.data.keyword.name, keywordScope, transaction);
-	} else {
-		keywordPromise = Promise.resolve(annotation.data.keyword.id);
-	}
-
-	return Promise.all([methodPromise, keywordPromise])
-		.then(([methodId, keywordId]) => {
-			let subAnnotation = {
-				method_id: methodId,
-				keyword_id: keywordId
-			};
-
-			// 'evidence' is an optional field
-			if (annotation.data.evidence) {
-				subAnnotation.evidence_id = locusMap[annotation.data.evidence].attributes.locus_id;
-				subAnnotation.evidence_symbol_id = 1; //FIXME: This is to keep the module working. We will fix this in another story
-			}
-
-			return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
-		});
+	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
 }
 
 function createGeneGeneRecords(annotation, locusMap, keywordScope, transaction) {
 	// keywordScope unused, but needed to keep function signature consistent
 
-	let methodPromise;
-	if (!annotation.data.method.id) {
-		methodPromise = createKeywordRecord(annotation.data.method.name, METHOD_KEYWORD_TYPE_NAME, transaction);
-	} else {
-		methodPromise = Promise.resolve(annotation.data.method.id);
-	}
-
-	return methodPromise.then(methodId => {
-		return GeneGeneAnnotation.forge({
-			method_id: methodId,
-			locus2_id: locusMap[annotation.data.locusName2].attributes.locus_id,
-			locus2_symbol_id: 1, //FIXME: This is to keep the module working. We will fix this in another story
-		}).save(null, {transacting: transaction});
-	});
+	return GeneGeneAnnotation.forge({
+		method_id: annotation.data.method.id,
+		locus2_id: locusMap[annotation.data.locusName2].attributes.locus_id,
+		locus2_symbol_id: 1, //FIXME: This is to keep the module working. We will fix this in another story
+	}).save(null, {transacting: transaction});
 }
 
 function createCommentRecords(annotation, locusMap, keywordScope, transaction) {
@@ -409,5 +306,6 @@ function redefinePromiseError(params) {
 }
 
 module.exports = {
-	addAnnotationRecords
+	addAnnotationRecords,
+	AnnotationTypeData
 };
