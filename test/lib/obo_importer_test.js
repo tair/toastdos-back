@@ -78,4 +78,50 @@ describe('OBO Data Importer', function() {
 			.then(synonyms => chai.expect(synonyms).to.have.lengthOf(0));
 	});
 
+	describe('Updating', function() {
+
+		beforeEach('Clear DB, run importer, then run update', function() {
+			return knex('synonym').truncate().then(() => {
+				return knex('keyword').truncate();
+			}).then(() => {
+				return knex('keyword_type').truncate();
+			}).then(() => {
+				return oboImporter.loadOboIntoDB('./test/lib/test_terms.obo');
+			});
+		});
+
+		it('Newly obsoleted Keywords are properly updated', function() {
+			const expectedKeyword = {
+				external_id: 'GO:0000004',
+				name: 'test keyword 4',
+				is_obsolete: true
+			};
+
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo').then(() => {
+				return Keyword.where({external_id: 'GO:0000004'}).fetch();
+			}).then(keyword => {
+				let actual = keyword.toJSON();
+				actual.is_obsolete = !!actual.is_obsolete; // Cooerce into boolean
+				chai.expect(actual).to.contain(expectedKeyword);
+			});
+		});
+
+		it('Non-obsolete keywords are not marked obsolete', function() {
+			const expectedKeyword = {
+				external_id: 'GO:0000001',
+				name: 'test keyword 1',
+				is_obsolete: false
+			};
+
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo').then(() => {
+				return Keyword.where({external_id: 'GO:0000001'}).fetch();
+			}).then(keyword => {
+				let actual = keyword.toJSON();
+				actual.is_obsolete = !!actual.is_obsolete; // Cooerce into boolean
+				chai.expect(actual).to.contain(expectedKeyword);
+			});
+		});
+
+	});
+
 });

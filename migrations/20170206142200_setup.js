@@ -37,6 +37,7 @@ exports.up = function(knex, Promise) {
 			table.integer('keyword_type_id').references('keyword_type.id').notNullable();
 			table.string('name').notNullable();
 			table.string('external_id').unique();
+			table.boolean('is_obsolete').defaultTo(false);
 			table.timestamp('created_at').defaultTo(knex.fn.now());
 
 			table.index('external_id');
