@@ -106,6 +106,22 @@ describe('OBO Data Importer', function() {
 			});
 		});
 
+		it('Non-obsolete keywords are not marked obsolete', function() {
+			const expectedKeyword = {
+				external_id: 'GO:0000001',
+				name: 'test keyword 1',
+				is_obsolete: false
+			};
+
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo').then(() => {
+				return Keyword.where({external_id: 'GO:0000001'}).fetch();
+			}).then(keyword => {
+				let actual = keyword.toJSON();
+				actual.is_obsolete = !!actual.is_obsolete; // Cooerce into boolean
+				chai.expect(actual).to.contain(expectedKeyword);
+			});
+		});
+
 	});
 
 });
