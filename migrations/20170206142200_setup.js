@@ -35,7 +35,7 @@ exports.up = function(knex, Promise) {
 		.createTable('keyword', table => {
 			table.increments('id');
 			table.integer('keyword_type_id').references('keyword_type.id').notNullable();
-			table.string('name').unique().notNullable();
+			table.string('name').notNullable();
 			table.string('external_id').unique();
 			table.timestamp('created_at').defaultTo(knex.fn.now());
 
