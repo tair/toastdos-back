@@ -67,6 +67,9 @@ class DataImporter extends stream.Writable {
 	_write(chunk, enc, next) {
 		let term = JSON.parse(chunk.toString());
 
+		// Parse is_obsolete into a proper true or false
+		term.is_obsolete = (term.is_obsolete === 'true');
+
 		// Use default KeywordType if no KeywordType is specified
 		let keywordTypePromise;
 		if (term.namespace) {
@@ -76,7 +79,7 @@ class DataImporter extends stream.Writable {
 		}
 
 		keywordTypePromise
-			.then(keywordType => this._addKeyword(term.name, term.id, keywordType.get('id')))
+			.then(keywordType => this._addKeyword(term.name, term.id, keywordType.get('id'), term.is_obsolete))
 			.then(keyword => this._addSynonyms(term.synonym, keyword.get('id')))
 			.then(() => next());
 	}
@@ -110,19 +113,25 @@ class DataImporter extends stream.Writable {
 	 * @param name - Plain text name
 	 * @param externalId - ID from external DB
 	 * @param keywordTypeId - Foreign key ID for KeywordType
-	 * @returns {Promise.<Keyword>}
+	 * @param isObsolete - Whether or not this keyword is obsolete
+	 * @returns {Promise.<Keyword>} Created or existing keyword
 	 */
-	_addKeyword(name, externalId, keywordTypeId) {
+	_addKeyword(name, externalId, keywordTypeId, isObsolete) {
 		return Keyword.where({external_id: externalId})
 			.fetch()
 			.then(keyword => {
 				if (keyword) {
-					return Promise.resolve(keyword);
+					if (isObsolete) {
+						return keyword.set({is_obsolete: isObsolete}).save();
+					} else {
+						return Promise.resolve(keyword);
+					}
 				} else {
 					return Keyword.forge({
 						name: name,
 						external_id: externalId,
-						keyword_type_id: keywordTypeId
+						keyword_type_id: keywordTypeId,
+						is_obsolete: isObsolete
 					}).save();
 				}
 			});
