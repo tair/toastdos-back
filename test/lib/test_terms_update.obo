@@ -1,0 +1,45 @@
+format-version: 1.2
+default-namespace: default_keyword_type
+
+[Term]
+id: GO:0000001
+name: test keyword 1
+namespace: basic_keyword_type
+def: "This term has not changes, and thus should be the same" [GOC:mah]
+synonym: "a synonym" RELATED []
+synonym: "another synonym" RELATED [GOC:mah]
+synonym: "yet another synonym" RELATED [GOC:mah]
+is_a: GO:0004520 ! term not in this file
+is_a: GO:0048311 ! another term not in this file
+
+[Term]
+id: GO:0000003
+name: test keyword 3
+namespace: overide_keyword_type
+def: "This term's name has been updated and a new synonym has been added" [GOC:mcc]
+synonym: "yet another synonym" EXACT []
+synonym: "New update synonym"
+is_a: GO:0048308 ! term not in this file
+
+[NotATerm]
+id: NT:0000001
+name: should not appear
+def: "I am not a term, and thus I should be ignored entirely during parsing"
+
+[Term]
+id: GO:0000004
+name: test keyword 4
+namespace: basic_keyword_type
+def: "This term has been obsoleted and should be marked as such" [GOC:mcc]
+synonym: "Name conflict synonym" EXACT []
+synonym: "New synonym for obsolete keyword"
+is_a: GO:0048308 ! term not in this file
+is_obsolete: true
+
+[Term]
+id: GO:0000005
+name: test keyword 5
+namespace: basic_keyword_type
+def: "This is a brand new keyword that should be added in the update" [GOC:mcc]
+synonym: "Name conflict synonym" EXACT []
+is_a: GO:0048308 ! term not in this file
