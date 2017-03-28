@@ -169,6 +169,12 @@ class DataImporter extends stream.Writable {
 	 */
 	_addSynonym(synonymString, keywordId) {
 		let name = synonymString.split('"')[1];
+
+		// PostgreSQL has an issue with names longer than 255 characters
+		if (name.length > 255) {
+			name = name.substring(0, 252) + '...';
+		}
+
 		return Synonym.where({keyword_id: keywordId, name: name})
 			.fetch()
 			.then(synonym => {

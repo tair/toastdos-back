@@ -54,6 +54,19 @@ describe('OBO Data Importer', function() {
 			.then(synonyms => chai.expect(synonyms).to.have.lengthOf(1));
 	});
 
+	it('Long synonym names are truncated', function() {
+		// 252 characters plus an ellipsis
+		const truncatedName = 'This is a really long synonym that\'s too big for ' +
+			'the database, so the name will be truncated to something smaller than ' +
+			'this. That\'s it, really. The rest of this description is just redundant, ' +
+			'verbose nonsense to hit the character limit for truncation, ...';
+
+		return Synonym.where('name', 'LIKE', '%really long synonym%').fetch().then(synonym => {
+			chai.expect(synonym.get('name')).to.equal(truncatedName);
+			chai.expect(synonym.get('name')).to.have.lengthOf(255);
+		});
+	});
+
 	it('Keyword with no KeywordType uses default KeywordType', function() {
 		return Keyword.where({external_id: 'GO:0000002'})
 			.fetch({withRelated: 'keywordType'})

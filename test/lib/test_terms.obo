@@ -9,6 +9,7 @@ def: "This is the general case for what a term will look like" [GOC:mah]
 synonym: "a synonym" RELATED []
 synonym: "another synonym" RELATED [GOC:mah]
 synonym: "yet another synonym" RELATED [GOC:mah]
+synonym: "This is a really long synonym that's too big for the database, so the name will be truncated to something smaller than this. That's it, really. The rest of this description is just redundant, verbose nonsense to hit the character limit for truncation, so yeah."
 is_a: GO:0004520 ! term not in this file
 is_a: GO:0048311 ! another term not in this file
 
