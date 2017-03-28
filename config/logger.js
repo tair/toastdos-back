@@ -1,5 +1,7 @@
 'use strict';
 
+const config = require('../../config')
+
 const winston = require('winston');
 
 const tsFormat = () => (new Date()).toLocaleTimeString();

@@ -1,7 +1,5 @@
 'use strict';
 
-const logger = require("../services/logger");
-
 const response    = require('../lib/responses');
 const locusHelper = require('../lib/locus_submission_helper');
 

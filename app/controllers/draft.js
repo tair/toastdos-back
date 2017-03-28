@@ -1,7 +1,5 @@
 'use strict';
 
-const logger = require("../services/logger");
-
 const Draft = require('../models/draft');
 
 const response = require('../lib/responses');

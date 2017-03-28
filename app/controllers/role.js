@@ -2,7 +2,6 @@
 /**
  * @module controllers/user
  */
-const logger = require("../services/logger");
 
 const Role = require('../models/role');
 

@@ -4,8 +4,6 @@
  * @module controllers/user
  */
 
-const logger = require("../services/logger");
-
 const _              = require('lodash');
 const authentication = require('../lib/authentication');
 const bookshelf      = require('../lib/bookshelf');

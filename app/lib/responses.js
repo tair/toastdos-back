@@ -9,6 +9,8 @@ const INTERNAL_SERVER_ERROR = 500;
 
 const testing = (process.env.NODE_ENV === 'test');
 
+const logger = require("../../config/logger");
+
 function ok(res, object) {
 	return res.status(OK).json(object);
 }

@@ -5,8 +5,6 @@
  * This functionality will not be available in production.
  */
 
-const logger = require("../services/logger");
-
 const auth     = require('../lib/authentication');
 const response = require('../lib/responses');
 

@@ -1,7 +1,5 @@
 'use strict';
 
-const logger = require("../services/logger");
-
 const User     = require('../models/user');
 const auth     = require('../lib/authentication');
 const Orcid    = require('../lib/orcid_api');

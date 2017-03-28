@@ -1,7 +1,5 @@
 'use strict';
 
-const logger = require("../services/logger");
-
 const util = require('util');
 
 const user           = require('../models/user');

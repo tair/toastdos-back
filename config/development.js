@@ -2,6 +2,7 @@
 
 module.exports = {
 	// development environment configuration
+	logger: config.logger,
 	database: require('../knexfile').development,
 	jwt: {
 		algorithm: 'RS256',

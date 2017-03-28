@@ -1,7 +1,5 @@
 'use strict';
 
-const logger = require("../services/logger");
-
 const AnnotationStatus = require('../models/annotation_status');
 
 const response = require('../lib/responses');

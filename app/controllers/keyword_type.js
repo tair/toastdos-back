@@ -1,7 +1,5 @@
 'use strict';
 
-const logger = require("../services/logger");
-
 const KeywordType = require('../models/keyword_type');
 
 const response = require('../lib/responses');
