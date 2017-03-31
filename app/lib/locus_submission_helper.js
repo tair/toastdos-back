@@ -118,7 +118,17 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 								withRelated: ['locus', 'source']
 							});
 
-							let symbolPromise = GeneSymbol.where({symbol: symbol, full_name: fullName}).fetch({transacting: transaction});
+							const query = {};
+
+							if(symbol) {
+								query.symbol = symbol;
+							}
+
+							if(fullName) {
+								query.full_name = fullName;
+							}
+
+							let symbolPromise = GeneSymbol.where(query).fetch({transacting: transaction});
 
 							return Promise.all([locusPromise, symbolPromise]);
 						});
