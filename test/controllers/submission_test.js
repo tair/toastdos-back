@@ -419,6 +419,43 @@ describe('Submission Controller', function() {
 			});
 		});
 
+		it('Gene submission should succeed without geneSymbol', function(done) {
+			delete this.test.submission.genes[0].geneSymbol;
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(201);
+					// chai.expect(res.text).to.equal('Body contained malformed Gene data');
+					done();
+				});
+		});
+
+		it('Gene submission should succeed without gene fullName', function(done) {
+			delete this.test.submission.genes[0].fullName;
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(201);
+					done();
+				});
+		});
+
+		it('Gene submission should succeed without both gene fullName and geneSymbol', function(done) {
+			delete this.test.submission.genes[0].fullName;
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(201);
+					done();
+				});
+		});
+
 	});
 
 });
