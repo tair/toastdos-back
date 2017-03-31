@@ -150,6 +150,6 @@ out
 # Keys
 *.pem
 
-# Orcid info
-resources/orcid_app_info.json
+# Stuff like keys and downloaded files
+resources/*
 

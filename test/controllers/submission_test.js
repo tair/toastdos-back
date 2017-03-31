@@ -15,6 +15,7 @@ const Role             = require('../../app/models/role');
 const User             = require('../../app/models/user');
 const Annotation       = require('../../app/models/annotation');
 const AnnotationStatus = require('../../app/models/annotation_status');
+const Keyword          = require('../../app/models/keyword');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -87,6 +88,19 @@ describe('Submission Controller', function() {
 						evidence: 'URS00000EF184'
 					}
 				},
+				{
+					type: 'MOLECULAR_FUNCTION',
+					data: {
+						locusName: 'AT1G10000',
+						method: {
+							name: 'New keyword 2'
+						},
+						keyword: {
+							name: 'New keyword'
+						},
+						evidence: 'URS00000EF184'
+					}
+				}
 			]
 		};
 
@@ -171,6 +185,21 @@ describe('Submission Controller', function() {
 				});
 		});
 
+		it('Annotation with invalid type is rejected', function(done) {
+			const badType = 'Bad Type Name';
+			this.test.submission.annotations[0].type = badType;
+
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal(`Invalid annotation type ${badType}`);
+					done();
+				});
+		});
+
 		it('An error in the submission process rolls back entire transaction', function(done) {
 			this.test.submission.annotations[1].data.locusName = 'Bad thing';
 
@@ -193,6 +222,25 @@ describe('Submission Controller', function() {
 				});
 		});
 
+		it('Only one Keyword record is created when two annotations try to add the same new Keyword', function(done) {
+			this.timeout(5000);
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(201);
+
+					Keyword
+						.where({name: this.test.submission.annotations[2].data.keyword.name})
+						.fetchAll()
+						.then(keyword => {
+							chai.expect(keyword).to.have.length(1);
+							done();
+						});
+				});
+		});
+
 		it('Well-formed submission request responds with success', function(done) {
 			this.timeout(5000);
 			chai.request(server)
@@ -202,6 +250,32 @@ describe('Submission Controller', function() {
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(201);
 					done();
+				});
+		});
+
+		it('Annotations created in submission reference created gene symbols', function(done) {
+			this.timeout(5000);
+
+			const testGene = this.test.submission.genes[0];
+
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(err).to.not.exist;
+
+					// Use a combination of fields to uniquely identify an annotation we just created
+					Annotation
+						.where({annotation_format: 'comment_annotation'})
+						.orderBy('created_at', 'DESC')
+						.fetch({withRelated: 'locusSymbol'})
+						.then(createdAnnotation => {
+							let geneSymbol = createdAnnotation.related('locusSymbol');
+							chai.expect(geneSymbol.get('symbol')).to.equal(testGene.geneSymbol);
+							chai.expect(geneSymbol.get('full_name')).to.equal(testGene.fullName);
+							done();
+						});
 				});
 		});
 

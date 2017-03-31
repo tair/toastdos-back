@@ -8,7 +8,9 @@
     "docs": "jsdoc -c ./jsdoc.json -r",
     "coverage": "istanbul cover _mocha",
     "exec": "exec",
-    "migrate": "knex migrate:latest"
+    "migrate": "knex migrate:latest",
+    "daemon": "node ./app/services/obo_importer/daemon.js",
+    "import": "node ./app/services/obo_importer/cli.js"
   },
   "dependencies": {
     "bcrypt": "^0.8.7",
@@ -17,12 +19,14 @@
     "bookshelf": "^0.10.2",
     "byline": "^5.0.0",
     "cookie-parser": "~1.4.3",
+    "cron": "^1.2.1",
     "debug": "~2.2.0",
     "ejs": "~2.4.1",
     "express": "~4.13.4",
     "jsonwebtoken": "^7.1.9",
     "knex": "^0.12.6",
     "lodash": "^4.17.4",
+    "md5-file": "^3.1.1",
     "morgan": "~1.7.0",
     "pg": "^6.1.2",
     "request": "^2.75.0",

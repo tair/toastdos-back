@@ -5,26 +5,20 @@ default-namespace: default_keyword_type
 id: GO:0000001
 name: test keyword 1
 namespace: basic_keyword_type
-def: "This is the general case for what a term will look like" [GOC:mah]
+def: "This term has not changes, and thus should be the same" [GOC:mah]
 synonym: "a synonym" RELATED []
 synonym: "another synonym" RELATED [GOC:mah]
 synonym: "yet another synonym" RELATED [GOC:mah]
-synonym: "This is a really long synonym that's too big for the database, so the name will be truncated to something smaller than this. That's it, really. The rest of this description is just redundant, verbose nonsense to hit the character limit for truncation, so yeah."
 is_a: GO:0004520 ! term not in this file
 is_a: GO:0048311 ! another term not in this file
-
-[Term]
-id: GO:0000002
-name: test keyword 2
-def: "This term has no namespace, so the default namespace should be used" [GOC:mcc, PMID:10873824, PMID:11389764]
-synonym: "Name conflict synonym" EXACT []
 
 [Term]
 id: GO:0000003
 name: test keyword 3
 namespace: overide_keyword_type
-def: "This term's namespace should override the default namespace" [GOC:mcc]
+def: "This term's name has been updated and a new synonym has been added" [GOC:mcc]
 synonym: "yet another synonym" EXACT []
+synonym: "New update synonym"
 is_a: GO:0048308 ! term not in this file
 
 [NotATerm]
@@ -36,6 +30,16 @@ def: "I am not a term, and thus I should be ignored entirely during parsing"
 id: GO:0000004
 name: test keyword 4
 namespace: basic_keyword_type
-def: "This term's synonym has the same name at term 2's synonym, but it should be treated like a new synonym" [GOC:mcc]
+def: "This term has been obsoleted and should be marked as such" [GOC:mcc]
+synonym: "Name conflict synonym" EXACT []
+synonym: "New synonym for obsolete keyword"
+is_a: GO:0048308 ! term not in this file
+is_obsolete: true
+
+[Term]
+id: GO:0000005
+name: test keyword 5
+namespace: basic_keyword_type
+def: "This is a brand new keyword that should be added in the update" [GOC:mcc]
 synonym: "Name conflict synonym" EXACT []
 is_a: GO:0048308 ! term not in this file

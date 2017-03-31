@@ -28,6 +28,12 @@
       "name" : "Test Term 003",
       "external_id" : "T003",
       "keyword_type_id" : 2
+    },
+    {
+      "id" : 4,
+      "name" : "Name-with-hyphen",
+      "external_id" : "NWH",
+      "keyword_type_id" : 2
     }
   ],
 
@@ -130,6 +136,7 @@
       "status_id" : 1,
       "submitter_id" : 1,
       "locus_id" : 1,
+      "locus_symbol_id" : 1,
       "type_id" : 1,
       "annotation_id" : 1,
       "annotation_format" : "gene_term_annotation",
@@ -141,6 +148,7 @@
       "status_id" : 2,
       "submitter_id" : 1,
       "locus_id" : 1,
+      "locus_symbol_id" : 1,
       "type_id" : 2,
       "annotation_id" : 2,
       "annotation_format" : "gene_term_annotation",
@@ -152,6 +160,7 @@
       "status_id" : 1,
       "submitter_id" : 2,
       "locus_id" : 2,
+      "locus_symbol_id" : 1,
       "type_id" : 2,
       "annotation_id" : 1,
       "annotation_format" : "gene_gene_annotation",
@@ -163,6 +172,7 @@
       "status_id" : 1,
       "submitter_id" : 2,
       "locus_id" : 3,
+      "locus_symbol_id" : 1,
       "type_id" : 1,
       "annotation_id" : 2,
       "annotation_format" : "gene_gene_annotation",
@@ -174,6 +184,7 @@
       "status_id" : 2,
       "submitter_id" : 2,
       "locus_id" : 3,
+      "locus_symbol_id" : 1,
       "type_id" : 1,
       "annotation_id" : 1,
       "annotation_format" : "comment_annotation",
@@ -185,6 +196,7 @@
       "status_id" : 2,
       "submitter_id" : 2,
       "locus_id" : 4,
+      "locus_symbol_id" : 1,
       "type_id" : 1,
       "annotation_id" : 2,
       "annotation_format" : "comment_annotation",
@@ -197,7 +209,8 @@
       "id" : 1,
       "method_id" : 1,
       "keyword_id" : 2,
-      "evidence_id" : 1
+      "evidence_id" : 1,
+      "evidence_symbol_id" : 1
     },
     {
       "id" : 2,
@@ -210,11 +223,13 @@
     {
       "id" : 1,
       "locus2_id" : 1,
+      "locus2_symbol_id" : 1,
       "method_id" : 1
     },
     {
       "id" : 2,
       "locus2_id" : 2,
+      "locus2_symbol_id" : 1,
       "method_id" : 1
     }
   ],
@@ -232,6 +247,7 @@
 
   "draft" : [
     {
+      "id" : 1,
       "submitter_id" : 1,
       "wip_state" : {
         "id" : 1,
@@ -244,6 +260,7 @@
       }
     },
     {
+      "id" : 2,
       "submitter_id" : 2,
       "wip_state" : {
         "id" : 2,

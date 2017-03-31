@@ -28,6 +28,7 @@ router.use('/draft', require('./draft'));
 if (process.env.NODE_ENV === 'development') {
 	const devOnlyController = require('../controllers/dev_only');
 	router.get('/dev/token/:id', devOnlyController.makeDevToken);
+	router.post('/dev/superuser/', devOnlyController.makeSuperUser);
 }
 
 // Generate 404s

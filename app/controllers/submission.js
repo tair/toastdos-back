@@ -10,6 +10,8 @@ const publicationValidator = require('../lib/publication_id_validator');
 
 const Publication = require('../models/publication');
 const Annotation  = require('../models/annotation');
+const Keyword     = require('../models/keyword');
+const KeywordType = require('../models/keyword_type');
 
 const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 20;
@@ -35,15 +37,21 @@ function submitGenesAndAnnotations(req, res, next) {
 		return response.badRequest(res, 'No annotations specified');
 	}
 
-	// Ensure the top level fields for each element all exist
-	if (req.body.genes.some(gene => (!gene.locusName || !gene.geneSymbol || !gene.fullName) )) {
+	// Ensure each locus provides a name
+	if (req.body.genes.some(gene => !gene.locusName)) {
 		return response.badRequest(res, 'Body contained malformed Gene data');
 	}
 
+	// Ensure each annotation supplies type information and data
 	if (req.body.annotations.some(ann => (!ann.type || !ann.data) )) {
 		return response.badRequest(res, 'Body contained malformed Annotation data');
 	}
 
+	// Validate Annotation type
+	let foundBadAnnType = req.body.annotations.find(ann => !annotationHelper.AnnotationTypeData[ann.type]);
+	if (foundBadAnnType) {
+		return response.badRequest(res, `Invalid annotation type ${foundBadAnnType.type}`);
+	}
 
 	// Publication ID validation / type detection
 	let publicationType;
@@ -70,20 +78,67 @@ function submitGenesAndAnnotations(req, res, next) {
 				}
 			});
 
+		// Add all of the genes for the submission
 		let locusPromises = req.body.genes.map(gene => {
 			return locusHelper.addLocusRecords(gene.locusName, gene.fullName, gene.geneSymbol,
 				req.user.attributes.id, transaction);
 		});
 
-		// Isolate the publication promise from the locus promises
-		return Promise.all([publicationPromise, Promise.all(locusPromises)])
-			.then(([publication, locusArray]) => {
+		// Map list of new keywords to their keyword type
+		let keywordTypeMap = req.body.annotations.reduce((seenKeywords, annotation) => {
+			let method = annotation.data.method;
+			let keyword = annotation.data.keyword;
 
-				// Create a map of the locuses we added so we can quickly look them up by name
-				let locusMap = locusArray.map(locus => ({[locus.attributes.locus_name]: locus}))
-					.reduce((accumulator, curValue) => Object.assign(accumulator, curValue));
+			if (method && method.name) seenKeywords[method.name] = 'eco';
+			if (keyword && keyword.name) seenKeywords[keyword.name] = annotationHelper.AnnotationTypeData[annotation.type].keywordScope;
+
+			return seenKeywords;
+		}, {});
+
+		// Add all of the new keywords for the submission
+		let keywordPromises = Object.keys(keywordTypeMap).map(newKeywordName => {
+			return KeywordType
+				.where({name: keywordTypeMap[newKeywordName]})
+				.fetch({transacting: transaction})
+				.then(keywordType => {
+					return Keyword.forge({
+						keyword_type_id: keywordType.get('id'),
+						name: newKeywordName
+					}).save(null, {transacting: transaction});
+				});
+		});
+
+		// Isolate the publication promise from the locus promises
+		return Promise.all([publicationPromise, Promise.all(locusPromises), Promise.all(keywordPromises)])
+			.then(([publication, locusArray, keywordArray]) => {
+
+				// Create a map of the locuses / symbols we added so we can quickly look them up by name
+				let locusMap = locusArray.reduce((acc, [locus, symbol]) => {
+					acc[locus.attributes.locus_name] = {
+						locus: locus,
+						symbol: symbol
+					};
+					return acc;
+				}, {});
+
+				// Map created keywords IDs to their names
+				let newKeywordMap = keywordArray.reduce((keywordNameIdMap, newKeyword) => {
+					keywordNameIdMap[newKeyword.get('name')] = newKeyword.get('id');
+					return keywordNameIdMap;
+				}, {});
 
 				let annotationPromises = req.body.annotations.map(annotation => {
+					// Add created keyword IDs into annotation data
+					let keyword = annotation.data.keyword;
+					let method = annotation.data.method;
+
+					if (keyword && keyword.name && newKeywordMap[keyword.name]) {
+						annotation.data.keyword.id = newKeywordMap[keyword.name];
+					}
+					if (method && method.name && newKeywordMap[method.name]) {
+						annotation.data.method.id = newKeywordMap[method.name];
+					}
+
 					// Every Annotation needs a reference to Publication and User ID
 					annotation.data.internalPublicationId = publication.attributes.id;
 					annotation.data.submitterId = req.user.attributes.id;

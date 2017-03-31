@@ -8,9 +8,10 @@ const rewire = require('rewire'); // To access private functions in modules
 const locusHelper      = require('../../app/lib/locus_submission_helper');
 const annotationHelper = rewire('../../app/lib/annotation_submission_helper');
 
-const Locus     = require('../../app/models/locus');
-const LocusName = require('../../app/models/locus_name');
-const Keyword   = require('../../app/models/keyword');
+const Locus      = require('../../app/models/locus');
+const LocusName  = require('../../app/models/locus_name');
+const GeneSymbol = require('../../app/models/gene_symbol');
+const Keyword    = require('../../app/models/keyword');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -84,8 +85,8 @@ describe('Submission helper', function() {
 			};
 
 			return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
-				.then(createdLocusName => {
-					let createdLocusId = createdLocusName.related('locus').attributes.id;
+				.then(([createdLocus, createdSymbol]) => {
+					let createdLocusId = createdLocus.related('locus').get('id');
 
 					return Locus.where({id: createdLocusId})
 						.fetch({withRelated: ['taxon', 'names', 'symbols']})
@@ -111,11 +112,12 @@ describe('Submission helper', function() {
 			const submitterId = 1;
 
 			return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
-				.then(addedLocus => locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
-					.then(modifiedLocus => {
-						chai.expect(addedLocus.toJSON()).to.deep.equal(modifiedLocus.toJSON());
-					})
-				);
+				.then(([addedLocus, addedSymbol]) => {
+					return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
+						.then(([sameLocus, unusedSymbol]) => {
+							chai.expect(addedLocus.toJSON()).to.deep.equal(sameLocus.toJSON());
+						})
+					});
 		});
 
 		it('New symbols for existing loci are created', function() {
@@ -134,7 +136,7 @@ describe('Submission helper', function() {
 			];
 
 			return locusHelper.addLocusRecords(existingLocusName.locus_name, newFullName, newSymbol, newSubmitter.id)
-				.then(modifiedLocus => {
+				.then(([modifiedLocus, createdSymbol]) => {
 					return Locus.where({id: modifiedLocus.related('locus').attributes.id})
 						.fetch({withRelated: 'symbols'})
 						.then(res => {
@@ -174,9 +176,18 @@ describe('Submission helper', function() {
 
 		beforeEach('Build locus map from test data', function () {
 			return LocusName.fetchAll({withRelated: 'locus'}).then(locusNames => {
-				this.currentTest.locusMap = locusNames
-					.map(locus => ({[locus.attributes.locus_name]: locus}))
-					.reduce((curMap, curVal) => Object.assign(curMap, curVal));
+				return GeneSymbol.fetchAll().then(geneSymbols => {
+					this.currentTest.locusMap = locusNames.map(locus => {
+
+						let matchingSymbol = geneSymbols.find(symbol => symbol.get('locus_id') === locus.related('locus').get('id'));
+						return {
+							[locus.attributes.locus_name]: {
+								locus: locus,
+								symbol: matchingSymbol
+							}
+						};
+					}).reduce((curMap, curVal) => Object.assign(curMap, curVal));
+				});
 			});
 		});
 
@@ -311,28 +322,6 @@ describe('Submission helper', function() {
 			};
 
 			return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(res => {
-				throw new Error('Invalid fields were not rejected');
-			}).catch(err => {
-				chai.expect(err.message).to.equal('id xor name required for Keywords');
-			});
-		});
-
-		it('Keyword keywords must specify an id XOR name', function() {
-			const testType = 'SUBCELLULAR_LOCATION'; // Yet another GT annotation type
-			const badKeyword = { id: 'something', name: 'New Keyword Name' };
-			const testGTAnnotation = {
-				type: testType,
-				data: {
-					internalPublicationId: testdata.publications[0].id,
-					submitterId: testdata.users[0].id,
-					locusName: testdata.locus_name[0].locus_name,
-					method: { id: testdata.keywords[0].id },
-					keyword: badKeyword,
-					evidence: testdata.locus_name[1].locus_name
-				}
-			};
-
-			return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(res => {
 				throw new Error('Invalid fields were not rejected');
 			}).catch(err => {
 				chai.expect(err.message).to.equal('id xor name required for Keywords');
@@ -486,45 +475,6 @@ describe('Submission helper', function() {
 			});
 		});
 
-		it('GT creator adds new method keywords with eco KeywordType', function() {
-			const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
-			const unusedKeywordScope = testdata.keyword_types[0].name;
-			const testKeywordName = 'New Test Keyword';
-			const partialGTAnnotation = {
-				data: {
-					locusName: testdata.locus_name[0].locus_name,
-					method: { name: testKeywordName },
-					keyword: { id: testdata.keywords[0].id }
-				}
-			};
-			const expectedKeywordName = 'eco';
-
-			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, unusedKeywordScope).then(gtAnn => {
-				return Keyword.where({id: gtAnn.attributes.method_id}).fetch({withRelated: 'keywordType'});
-			}).then(methodKeyword => {
-				chai.expect(methodKeyword.related('keywordType').attributes.name).to.equal(expectedKeywordName);
-			});
-		});
-
-		it('GT creator adds new keyword keywords KeywordType matching scope', function() {
-			const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
-			const testKeywordScope = testdata.keyword_types[0].name;
-			const testKeywordName = 'New Test Keyword';
-			const partialGTAnnotation = {
-				data: {
-					locusName: testdata.locus_name[0].locus_name,
-					method: { id: testdata.keywords[2].id },
-					keyword: { name: testKeywordName }
-				}
-			};
-
-			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, testKeywordScope).then(gtAnn => {
-				return Keyword.where({id: gtAnn.attributes.keyword_id}).fetch({withRelated: 'keywordType'});
-			}).then(keywordKeyword => {
-				chai.expect(keywordKeyword.related('keywordType').attributes.name).to.equal(testKeywordScope);
-			});
-		});
-
 		it('GT sub-annotation is properly added', function() {
 			const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
 			const unusedKeywordScope = testdata.keyword_types[0].name;
@@ -532,6 +482,9 @@ describe('Submission helper', function() {
 			const expectedMethod = testdata.keywords[2];
 			const expectedKeyword = testdata.keywords[0];
 			const expectedEvidenceLocus = testdata.locus[1];
+
+			// Loci can have multiple symbols, so we assume the map generator picks the first one it sees
+			const expectedEvidenceSymbol = testdata.gene_symbol[2];
 
 			const partialGTAnnotation = {
 				data: {
@@ -543,34 +496,14 @@ describe('Submission helper', function() {
 			};
 
 			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, unusedKeywordScope).then(gtAnn => {
-				return gtAnn.fetch({withRelated: ['method', 'keyword', 'evidence']});
+				return gtAnn.fetch({withRelated: ['method', 'keyword', 'evidence', 'evidenceSymbol']});
 			}).then(fullGTAnnotation => {
 				let fullGTObj = fullGTAnnotation.toJSON();
 
 				chai.expect(fullGTObj.method).to.contain(expectedMethod);
 				chai.expect(fullGTObj.keyword).to.contain(expectedKeyword);
 				chai.expect(fullGTObj.evidence).to.contain(expectedEvidenceLocus);
-			});
-		});
-
-		it('GG creator adds new method keywords with eco KeywordType', function() {
-			const createGeneGeneRecords = annotationHelper.__get__('createGeneGeneRecords');
-			const unusedKeywordScope = testdata.keyword_types[0].name;
-
-			const expectedKeywordName = 'eco';
-			const testKeywordName = 'New Test Keyword';
-			const partialGGAnnotation = {
-				data: {
-					locusName: testdata.locus_name[0].locus_name,
-					method: { name: testKeywordName },
-					locusName2: testdata.locus_name[1].locus_name
-				}
-			};
-
-			return createGeneGeneRecords(partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
-				return Keyword.where({id: ggAnn.attributes.method_id}).fetch({withRelated: 'keywordType'});
-			}).then(methodKeyword => {
-				chai.expect(methodKeyword.related('keywordType').attributes.name).to.equal(expectedKeywordName);
+				chai.expect(fullGTObj.evidenceSymbol).to.contain(expectedEvidenceSymbol);
 			});
 		});
 
@@ -581,6 +514,9 @@ describe('Submission helper', function() {
 			const expectedMethod = testdata.keywords[2];
 			const expectedLocus2 = testdata.locus[1];
 
+			// Loci can have multiple symbols, so we assume the map generator picks the first one it sees
+			const expectedLocus2Symbol = testdata.gene_symbol[2];
+
 			const partialGGAnnotation = {
 				data: {
 					locusName: testdata.locus_name[0].locus_name,
@@ -590,12 +526,13 @@ describe('Submission helper', function() {
 			};
 
 			return createGeneGeneRecords(partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
-				return ggAnn.fetch({withRelated: ['method', 'locus2']});
+				return ggAnn.fetch({withRelated: ['method', 'locus2', 'locus2Symbol']});
 			}).then(fullGGAnnotation => {
 				let fullGGObj = fullGGAnnotation.toJSON();
 
 				chai.expect(fullGGObj.method).to.contain(expectedMethod);
 				chai.expect(fullGGObj.locus2).to.contain(expectedLocus2);
+				chai.expect(fullGGObj.locus2Symbol).to.contain(expectedLocus2Symbol);
 			});
 		});
 
@@ -613,52 +550,6 @@ describe('Submission helper', function() {
 			return createCommentRecords(partialCAnnotation, this.test.locusMap, unusedKeywordScope).then(cAnn => {
 				chai.expect(cAnn.attributes.id).to.exist;
 				chai.expect(cAnn.attributes.text).to.be.a('string');
-			});
-		});
-
-		it('Only one Keyword record is created when two annotations try to add the same new Keyword', function() {
-			const createKeywordRecord = annotationHelper.__get__('createKeywordRecord');
-			const testKeywordType = testdata.keyword_types[0];
-			const testKeywordName = 'New Test Keyword';
-
-			let keywordPromise1 = createKeywordRecord(testKeywordName, testKeywordType.name);
-			let keywordPromise2 = createKeywordRecord(testKeywordName, testKeywordType.name);
-
-			return Promise.all([keywordPromise1, keywordPromise2]).then(([newKWID1, newKWID2]) => {
-				chai.expect(newKWID1).to.equal(newKWID2);
-			});
-		});
-
-		it('Parent annotation added with all proper fields', function() {
-			const expectedPublication = testdata.publications[0];
-			const expectedSubmitter = testdata.users[0];
-			const expectedLocus = testdata.locus[0];
-			const expectedMethod = testdata.keywords[2];
-			const newKeyword = 'New Test Keyword';
-			const expectedStatus = 'pending';
-			const expectedType = 'Temporal Expression';
-
-			const annotation = {
-				type: 'TEMPORAL_EXPRESSION',
-				data: {
-					internalPublicationId: expectedPublication.id,
-					submitterId: expectedSubmitter.id,
-					locusName: testdata.locus_name[0].locus_name,
-					method: { id: expectedMethod.id },
-					keyword: { name: newKeyword },
-					evidence: testdata.locus_name[1].locus_name
-				}
-			};
-
-			return annotationHelper.addAnnotationRecords(annotation, this.test.locusMap).then(addedAnnotation => {
-				return addedAnnotation.fetch({withRelated: ['status', 'type', 'publication', 'submitter', 'locus']});
-			}).then(loadedAnnotation => {
-				let la = loadedAnnotation.toJSON();
-				chai.expect(la.publication).to.contain(expectedPublication);
-				chai.expect(la.submitter).to.contain(expectedSubmitter);
-				chai.expect(la.locus).to.contain(expectedLocus);
-				chai.expect(la.type).to.contain({name: expectedType});
-				chai.expect(la.status).to.contain({name: expectedStatus});
 			});
 		});
 

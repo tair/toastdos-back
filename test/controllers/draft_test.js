@@ -6,7 +6,9 @@ chai.use(require('chai-subset'));
 
 const server = require('../../app/index');
 const auth   = require('../../app/lib/authentication');
-const knex    = require('../../app/lib/bookshelf').knex;
+const knex   = require('../../app/lib/bookshelf').knex;
+
+const Draft = require('../../app/models/draft');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -31,34 +33,107 @@ describe('Draft Controller', function() {
 		return knex.seed.run();
 	});
 
+	describe('GET /api/draft/:id', function() {
+
+		it('Properly gets drafts for authenticated user', function(done) {
+			let testDraft = testdata.draft[0];
+			chai.request(server)
+				.get('/api/draft/')
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					chai.expect(res.body).to.containSubset(testDraft);
+					done();
+				});
+		});
+
+		it('Responds with error when attempting to get drafts for a user who has none', function(done) {
+			const testUser = testdata.users[0];
+
+			// Remove test draft for authenticated user
+			Draft.where({submitter_id: testUser.id})
+				.destroy()
+				.then(() => {
+					chai.request(server)
+						.get('/api/draft/')
+						.set({Authorization: `Bearer ${testToken}`})
+						.end((err, res) => {
+							chai.expect(res.status).to.equal(404);
+							chai.expect(res.text).to.equal('No drafts found for user');
+							done();
+						});
+				});
+		});
+
+	});
+
 	describe('POST /api/draft/', function() {
 
 		it('Draft was successfully created', function(done) {
-			const testWipState = testdata.draft[0].wip_state;
-			const expectedObj=testdata.draft[0];
+			// Make a copy we can modify
+			const testDraft = Object.assign({}, testdata.draft[0]);
+			delete testDraft.id;
 
 			chai.request(server)
 				.post('/api/draft')
 				.set({Authorization: `Bearer ${testToken}`})
-				.send({
-					wip_state: testWipState
-				})
-				.end((err,res) => {
+				.send({wip_state: testDraft.wip_state})
+				.end((err, res) => {
 					chai.expect(res.status).to.equal(201);
-					chai.expect(res.body).to.containSubset({submitter_id:1});
-					chai.expect(res.body).to.containSubset(expectedObj);
+
+					// Need to parse body to simulate GET endpoint
+					res.body.wip_state = JSON.parse(res.body.wip_state);
+
+					chai.expect(res.body).to.containSubset(testDraft);
 					done();
 				});
 		});
 
 		it('wip_state is missing', function(done) {
-
 			chai.request(server)
 				.post('/api/draft')
 				.set({Authorization: `Bearer ${testToken}`})
-				.end((err,res) => {
+				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
-					chai.expect(res.text).to.equal(`Draft (wip state) is missing or invalid`);
+					chai.expect(res.text).to.equal('Draft (wip state) is missing or invalid');
+					done();
+				});
+		});
+
+	});
+
+	describe('DELETE /api/draft/:id', function() {
+
+		it('Successfully deletes draft', function(done) {
+			const testDraft = testdata.draft[0];
+			chai.request(server)
+				.delete(`/api/draft/${testDraft.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					done();
+				});
+		});
+
+		it('Responds with error when trying to delete non-existing draft', function(done) {
+			const badId = 999;
+			chai.request(server)
+				.delete(`/api/draft/${badId}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(404);
+					done();
+				});
+		});
+
+		it('Users cannot delete drafts for other users', function(done) {
+			const otherUserDraft = testdata.draft[1];
+			chai.request(server)
+				.delete(`/api/draft/${otherUserDraft.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(403);
+					chai.expect(res.text).to.equal('Unauthorized to delete this draft');
 					done();
 				});
 		});

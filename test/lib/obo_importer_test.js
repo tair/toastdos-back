@@ -3,7 +3,7 @@
 const chai = require('chai');
 
 const knex        = require('../../app/lib/bookshelf').knex;
-const oboImporter = require('../../app/services/gene_ontology_importer');
+const oboImporter = require('../../app/services/obo_importer/gene_ontology_importer');
 
 const KeywordType = require('../../app/models/keyword_type');
 const Keyword     = require('../../app/models/keyword');
@@ -54,6 +54,19 @@ describe('OBO Data Importer', function() {
 			.then(synonyms => chai.expect(synonyms).to.have.lengthOf(1));
 	});
 
+	it('Long synonym names are truncated', function() {
+		// 252 characters plus an ellipsis
+		const truncatedName = 'This is a really long synonym that\'s too big for ' +
+			'the database, so the name will be truncated to something smaller than ' +
+			'this. That\'s it, really. The rest of this description is just redundant, ' +
+			'verbose nonsense to hit the character limit for truncation, ...';
+
+		return Synonym.where('name', 'LIKE', '%really long synonym%').fetch().then(synonym => {
+			chai.expect(synonym.get('name')).to.equal(truncatedName);
+			chai.expect(synonym.get('name')).to.have.lengthOf(255);
+		});
+	});
+
 	it('Keyword with no KeywordType uses default KeywordType', function() {
 		return Keyword.where({external_id: 'GO:0000002'})
 			.fetch({withRelated: 'keywordType'})
@@ -76,6 +89,52 @@ describe('OBO Data Importer', function() {
 		return KeywordType.where({name: null})
 			.fetchAll()
 			.then(synonyms => chai.expect(synonyms).to.have.lengthOf(0));
+	});
+
+	describe('Updating', function() {
+
+		beforeEach('Clear DB, run importer, then run update', function() {
+			return knex('synonym').truncate().then(() => {
+				return knex('keyword').truncate();
+			}).then(() => {
+				return knex('keyword_type').truncate();
+			}).then(() => {
+				return oboImporter.loadOboIntoDB('./test/lib/test_terms.obo');
+			});
+		});
+
+		it('Newly obsoleted Keywords are properly updated', function() {
+			const expectedKeyword = {
+				external_id: 'GO:0000004',
+				name: 'test keyword 4',
+				is_obsolete: true
+			};
+
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo').then(() => {
+				return Keyword.where({external_id: 'GO:0000004'}).fetch();
+			}).then(keyword => {
+				let actual = keyword.toJSON();
+				actual.is_obsolete = !!actual.is_obsolete; // Cooerce into boolean
+				chai.expect(actual).to.contain(expectedKeyword);
+			});
+		});
+
+		it('Non-obsolete keywords are not marked obsolete', function() {
+			const expectedKeyword = {
+				external_id: 'GO:0000001',
+				name: 'test keyword 1',
+				is_obsolete: false
+			};
+
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo').then(() => {
+				return Keyword.where({external_id: 'GO:0000001'}).fetch();
+			}).then(keyword => {
+				let actual = keyword.toJSON();
+				actual.is_obsolete = !!actual.is_obsolete; // Cooerce into boolean
+				chai.expect(actual).to.contain(expectedKeyword);
+			});
+		});
+
 	});
 
 });
