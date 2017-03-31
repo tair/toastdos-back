@@ -14,11 +14,9 @@ const response = require('../lib/responses');
  * @param  {Function} next - pass to next route handler
  */
 function getRoles(req, res, next) {
-	logger.info('errors for getRoles in role.js...');
 	return Role.fetchAll()
 		.then(collection => response.ok(res, collection.serialize()))
 		.catch(err => {
-			logger.debug(res,err);
 			return response.defaultServerError(res, err)
 		});
 }
@@ -30,12 +28,10 @@ function getRoles(req, res, next) {
  * @param  {Function} next - pass to next route handler
  */
 function createRole(req, res, next) {
-	logger.info('errors for createRoles in role.js...');
 	return Role.forge(req.body)
 		.save()
 		.then(role => response.ok(res, role.serialize()))
 		.catch(err => {
-			logger.debug(res,err);
 			return response.defaultServerError(res, err)
 		});
 }
@@ -47,12 +43,10 @@ function createRole(req, res, next) {
  * @param  {Function} next - pass to the next route handler
  */
 function getRoleUsers(req, res, next) {
-	logger.info('errors for getRolesUsers in role.js...');
 	return Role.forge({id: req.params.id})
 		.fetch({withRelated: 'users'})
 		.then(role => response.ok(res, role.related('users')))
 		.catch(err => {
-			logger.debug(res,err);
 			return response.defaultServerError(res, err)
 		});
 }

@@ -12,17 +12,13 @@ const response = require('../lib/responses');
  * @param  {Function} next - pass to next route handler
  */
 function login(req, res, next) {
-	logger.info('errors for login.js...');
-
 	if (!req.body.code) {
-		logger.debug(400, 'Missing field: code');
 		return response.badRequest(400, 'Missing field: code');
 	}
 
 	// First we complete the OAuth process started on the frontend
 	Orcid.getUserToken(req.body.code).then(userTokenRes => {
 		if (!userTokenRes.orcid) {
-			logger.debug(res, 'Orcid error');
 			return response.serverError(res, 'Orcid error');
 		}
 
@@ -56,11 +52,9 @@ function login(req, res, next) {
 		});
 	}).catch(err => {
 		if (err.message.includes('Unexpected token < in JSON')) {
-			logger.debug(res, 'Backend failed to authenticate with ORCID');
 			return response.serverError(res, 'Backend failed to authenticate with ORCID. Did you update the orcid_app_info resource with your ORCID ID?');
 		}
 
-		logger.debug(res,err);
 		return response.defaultServerError(res, err);
 	});
 }

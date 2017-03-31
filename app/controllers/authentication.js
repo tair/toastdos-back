@@ -13,7 +13,6 @@ const response       = require('../lib/responses');
  * @param  {Function} next - pass to next route handler
  */
 function login(req, res, next) {
-	logger.info('errors for authentication.js...');
 	let userDataPromise = user.where('username', req.body.username.toLowerCase()).fetch({
 		require: true,
 		withRelated: ['password']
@@ -23,7 +22,6 @@ function login(req, res, next) {
 		return new Promise((accept, reject) => {
 			authentication.checkPassword(req.body.password, user.related('password').attributes.password_hash, (err, success) => {
 				if(err) {
-					logger.debug(err);
 					return reject(err);
 				}
 				return accept(success);
@@ -34,7 +32,6 @@ function login(req, res, next) {
 	return Promise.all([userDataPromise, checkPasswordPromise])
 	.then(([userData, passMatch]) => {
 		if(!passMatch) {
-			logger.debug(res,'Password is incorrect for user');
 			return response.badRequest(res, 'Password is incorrect for user');
 		}
 		
@@ -46,7 +43,6 @@ function login(req, res, next) {
 		return new Promise((accept, reject) => {
 			authentication.signToken(tokenData, (err, theToken) => {
 				if(err) {
-					logger.debug(err);
 					throw err;
 				}
 
@@ -58,10 +54,8 @@ function login(req, res, next) {
 	})
 	.catch(err => {
 		if(err.message === 'EmptyResponse') {
-			logger.debug(res,'Username not found');
 			return response.badRequest(res, 'Username not found');
 		}
-		logger.debug(res,err);
 		return response.defaultServerError(res, err);
 	});
 }

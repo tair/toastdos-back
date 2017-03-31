@@ -13,7 +13,6 @@ const validator = require('../lib/publication_id_validator');
  * @param  {Function} next - pass to next route handler
  */
 function validatePublicationId(req, res, next) {
-	logger.info('errors for publication.js...');
 
 	const pubId = req.body.publication_id;
 
@@ -26,7 +25,6 @@ function validatePublicationId(req, res, next) {
 				});
 			})
 			.catch(err => {
-				logger.debug(res, err.message);
 				return response.notFound(res, err.message)
 			});
 	}
@@ -40,7 +38,6 @@ function validatePublicationId(req, res, next) {
 				});
 			})
 			.catch(err => {
-				logger.debug(res,err.message);
 				return response.notFound(res, err.message)
 			});
 	}
