@@ -8,7 +8,7 @@ require('./publication');
 const Submission = bookshelf.model('Submission', {
 	tableName: 'submission',
 	submitter: function() {
-		return this.belongsTo('User', 'user_id');
+		return this.belongsTo('User', 'submitter_id');
 	},
 	publication: function() {
 		return this.belongsTo('Publication', 'publication_id');

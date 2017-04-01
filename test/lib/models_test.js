@@ -58,7 +58,21 @@ describe('Models', function() {
 				});
 		});
 
-		it('Submissions this user created can be retrieved');
+		it('Submissions this user created can be retrieved', function() {
+			const testUser = testdata.users[1];
+			const expectedSubmissions = [
+				testdata.submission[1],
+				testdata.submission[2]
+			];
+
+			return User.where({id: testUser.id})
+				.fetch({withRelated: 'submissions'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submissions).to.containSubset(expectedSubmissions);
+				});
+		});
 
 	});
 
@@ -149,7 +163,21 @@ describe('Models', function() {
 				});
 		});
 
-		it('Get Submissions associated with Publication');
+		it('Get Submissions associated with Publication', function() {
+			const testPublication = testdata.publications[1];
+			const expectedSubmissions = [
+				testdata.submission[1],
+				testdata.submission[2]
+			];
+
+			return Publication.where({id: testPublication.id})
+				.fetch({withRelated: 'submissions'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submissions).to.containSubset(expectedSubmissions);
+				});
+		});
 
 	});
 
@@ -622,9 +650,31 @@ describe('Models', function() {
 
 	describe('Submission', function() {
 
-		it('User who created Submission can be retrieved');
+		it('User who created Submission can be retrieved', function() {
+			const testSubmission = testdata.submission[0];
+			const expectedUser = testdata.users[0];
 
-		it('Publication this Submission references can be retrieved');
+			return Submission.where({id: testSubmission.id})
+				.fetch({withRelated: 'submitter'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submitter).to.contain(expectedUser);
+				});
+		});
+
+		it('Publication this Submission references can be retrieved', function() {
+			const testSubmission = testdata.submission[0];
+			const expectedPublication = testdata.publications[0];
+
+			return Submission.where({id: testSubmission.id})
+				.fetch({withRelated: 'publication'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.publication).to.contain(expectedPublication);
+				});
+		});
 
 	});
 
