@@ -23,6 +23,7 @@ const Locus              = require('../../app/models/locus');
 const ExternalSource     = require('../../app/models/external_source');
 const GeneSymbol         = require('../../app/models/gene_symbol');
 const Draft              = require('../../app/models/draft');
+const Submission         = require('../../app/models/submission');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -56,6 +57,8 @@ describe('Models', function() {
 					chai.expect(actual.roles).to.containSubset(expectedRoles);
 				});
 		});
+
+		it('Submissions this user created can be retrieved');
 
 	});
 
@@ -145,6 +148,8 @@ describe('Models', function() {
 					chai.expect(actual.referencedBy).to.containSubset(expectedAnnotations);
 				});
 		});
+
+		it('Get Submissions associated with Publication');
 
 	});
 
@@ -612,6 +617,14 @@ describe('Models', function() {
 					chai.expect(actual.submitter).to.contain(expectedUser);
 				});
 		});
+
+	});
+
+	describe('Submission', function() {
+
+		it('User who created Submission can be retrieved');
+
+		it('Publication this Submission references can be retrieved');
 
 	});
 

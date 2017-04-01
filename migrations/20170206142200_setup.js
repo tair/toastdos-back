@@ -93,6 +93,12 @@ exports.up = function(knex, Promise) {
 
 			table.index('locus_id');
 		})
+		.createTable('submission', table => {
+			table.increments('id');
+			table.integer('submitter_id').references('user.id').notNullable();
+			table.integer('publication_id').references('publication.id').notNullable();
+			table.timestamps(true, true);
+		})
 		.createTable('annotation', table => {
 			table.increments('id');
 			table.integer('publication_id').references('publication.id');
@@ -101,6 +107,7 @@ exports.up = function(knex, Promise) {
 			table.integer('locus_id').references('locus.id').notNullable();
 			table.integer('locus_symbol_id').references('gene_symbol.id').notNullable();
 			table.integer('type_id').references('annotation_type.id').notNullable();
+			table.integer('submission_id').references('submission.id').notNullable();
 			table.integer('annotation_id').notNullable();
 			table.integer('annotation_format').notNullable();
 			table.timestamps(true, true); // Use Javascript Date format, default to knex.fn.now()
