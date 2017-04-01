@@ -155,11 +155,11 @@ describe('Models', function() {
 			];
 
 			return Publication.where({id: testPublication.id})
-				.fetch({withRelated: 'referencedBy'})
+				.fetch({withRelated: 'annotations'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.referencedBy).to.containSubset(expectedAnnotations);
+					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
 				});
 		});
 

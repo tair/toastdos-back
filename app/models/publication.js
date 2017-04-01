@@ -7,7 +7,7 @@ require('./submission');
 
 const Publication = bookshelf.model('Publication', {
 	tableName: 'publication',
-	referencedBy: function() {
+	annotations: function() {
 		return this.hasMany('Annotation', 'publication_id');
 	},
 	submissions: function() {
