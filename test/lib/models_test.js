@@ -188,6 +188,25 @@ describe('Models', function() {
 				});
 		});
 
+		it('addOrGet adds', function() {
+			const newPubName = 12345;
+			return Publication.addOrGet({pubmed_id: newPubName}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual.pubmed_id).to.equal(newPubName);
+				testdata.publications.forEach(publication => {
+					chai.expect(actual.id).to.not.equal(publication.id);
+				});
+			});
+		});
+
+		it('addOrGet gets', function() {
+			const testPub = testdata.publications[0];
+			return Publication.addOrGet({doi: testPub.doi}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(testPub);
+			});
+		});
+
 	});
 
 	describe('Annotation Status', function() {
