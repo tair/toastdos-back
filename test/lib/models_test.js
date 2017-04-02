@@ -96,6 +96,7 @@ describe('Models', function() {
 	});
 
 	describe('KeywordType', function() {
+
 		it('Get KeywordType and associated Keywords', function() {
 			let expectedKeywordType = testdata.keyword_types[0];
 			let expectedKeywords = [
@@ -111,6 +112,15 @@ describe('Models', function() {
 					chai.expect(actual.keywords).to.containSubset(expectedKeywords);
 				});
 		});
+
+		it('getByName', function() {
+			const testKeyword = testdata.keyword_types[0];
+			return KeywordType.getByName(testKeyword.name).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(testKeyword);
+			});
+		});
+
 	});
 
 	describe('Synonym', function() {
