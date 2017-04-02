@@ -66,17 +66,7 @@ function submitGenesAndAnnotations(req, res, next) {
 	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
 	bookshelf.transaction(transaction => {
 
-		// Use an existing publication record if possible
-		let publicationPromise = Publication.where({[publicationType]: req.body.publicationId})
-			.fetch({transacting: transaction})
-			.then(existingPublication => {
-				if (existingPublication) {
-					return Promise.resolve(existingPublication);
-				} else {
-					return Publication.forge({[publicationType]: req.body.publicationId})
-						.save(null, {transacting: transaction});
-				}
-			});
+		let publicationPromise = Publication.addOrGet({[publicationType]: req.body.publicationId}, transaction);
 
 		// Add all of the genes for the submission
 		let locusPromises = req.body.genes.map(gene => {
