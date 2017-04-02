@@ -93,6 +93,38 @@ describe('Models', function() {
 					chai.expect(actual.synonyms).to.containSubset(expectedSynonyms);
 				});
 		});
+
+		it('addNew', function() {
+			const testKeyword = testdata.keywords[0];
+			const newExtId = 'NEID001';
+
+			return Keyword.addNew({
+				name: testKeyword.name,
+				external_id: newExtId,
+				type_name: testdata.keyword_types[0].name
+			}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual.name).to.equal(testKeyword.name);
+				chai.expect(actual.external_id).to.equal(newExtId);
+				chai.expect(actual.id).to.not.equal(testKeyword.id);
+			});
+		});
+
+		it('addOrGet', function() {
+			const testKeyword = testdata.keywords[0];
+
+			return Keyword.addOrGet({
+				name: testKeyword.name,
+				external_id: testKeyword.external_id,
+				type_name: testdata.keyword_types[0].name
+			}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual.name).to.equal(testKeyword.name);
+				chai.expect(actual.external_id).to.equal(testKeyword.external_id);
+				chai.expect(actual.id).to.equal(testKeyword.id);
+			});
+		});
+
 	});
 
 	describe('KeywordType', function() {
