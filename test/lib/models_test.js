@@ -530,6 +530,29 @@ describe('Models', function() {
 				});
 		});
 
+		it('addOrGet adds', function() {
+			const newTaxon = {
+				name: 'Vulpes vulpes',
+				taxon_id: 9627
+			};
+
+			return Taxon.addOrGet(newTaxon).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(newTaxon);
+				testdata.taxon.forEach(taxon => {
+					chai.expect(actual.id).to.not.equal(taxon.id);
+				});
+			});
+		});
+
+		it('addOrGet gets', function() {
+			const existingTaxon = testdata.taxon[0];
+			return Taxon.addOrGet(existingTaxon).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(existingTaxon);
+			});
+		});
+
 	});
 
 	describe('Locus Name', function() {
