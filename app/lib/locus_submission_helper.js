@@ -78,7 +78,10 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 			else {
 				// Go through the whole process of adding a new Locus record
 				return verifyLocus(name).then(locusData => {
-					return addOrGetTaxon(locusData.taxon_id, locusData.taxon_name, transaction)
+					return Taxon.addOrGet({
+						taxon_id: locusData.taxon_id,
+						name: locusData.taxon_name
+					}, transaction)
 						.then(taxon => {
 							let locusPromise = Locus.forge({taxon_id: taxon.attributes.id})
 								.save(null, {transacting: transaction});
@@ -124,23 +127,6 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 						});
 				});
 			}
-		});
-}
-
-/**
- * Retrieves the existing taxon that matches the given id,
- * or creates a new taxon record with the given data.
- * Returns a promise that resolves with a Taxon object.
- */
-function addOrGetTaxon(taxonId, taxonName, transaction) {
-	return Taxon.where({taxon_id: taxonId})
-		.fetch({transacting: transaction})
-		.then(existingTaxon => {
-			if (existingTaxon) return Promise.resolve(existingTaxon);
-			else return Taxon.forge({
-				taxon_id: taxonId,
-				name: taxonName
-			}).save(null, {transacting: transaction});
 		});
 }
 
