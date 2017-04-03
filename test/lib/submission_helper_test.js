@@ -116,7 +116,7 @@ describe('Submission helper', function() {
 					return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
 						.then(([sameLocus, unusedSymbol]) => {
 							chai.expect(addedLocus.toJSON()).to.deep.equal(sameLocus.toJSON());
-						})
+						});
 					});
 		});
 
