@@ -71,8 +71,12 @@ function submitGenesAndAnnotations(req, res, next) {
 
 		// Add all of the genes for the submission
 		let locusPromises = req.body.genes.map(gene => {
-			return locusHelper.addLocusRecords(gene.locusName, gene.fullName, gene.geneSymbol,
-				req.user.attributes.id, transaction);
+			return locusHelper.addLocusRecords({
+				name: gene.locusName,
+				full_name: gene.fullName,
+				symbol: gene.geneSymbol,
+				submitter_id: req.user.attributes.id
+			}, transaction);
 		});
 
 		// Isolate the different data types

@@ -84,7 +84,12 @@ describe('Submission helper', function() {
 				taxon_id: 9627
 			};
 
-			return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
+			return locusHelper.addLocusRecords({
+					name: locusName,
+					full_name: locusFullname,
+					symbol: locusSymbol,
+					submitter_id: submitterId
+				})
 				.then(([createdLocus, createdSymbol]) => {
 					let createdLocusId = createdLocus.related('locus').get('id');
 
@@ -111,9 +116,19 @@ describe('Submission helper', function() {
 			const locusFullname = 'Jupiter the Red Fox';
 			const submitterId = 1;
 
-			return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
+			return locusHelper.addLocusRecords({
+					name: locusName,
+					full_name: locusFullname,
+					symbol: locusSymbol,
+					submitter_id: submitterId
+				})
 				.then(([addedLocus, addedSymbol]) => {
-					return locusHelper.addLocusRecords(locusName, locusFullname, locusSymbol, submitterId)
+					return locusHelper.addLocusRecords({
+							name: locusName,
+							full_name: locusFullname,
+							symbol: locusSymbol,
+							submitter_id: submitterId
+						})
 						.then(([sameLocus, unusedSymbol]) => {
 							chai.expect(addedLocus.toJSON()).to.deep.equal(sameLocus.toJSON());
 						});
@@ -135,7 +150,12 @@ describe('Submission helper', function() {
 				}
 			];
 
-			return locusHelper.addLocusRecords(existingLocusName.locus_name, newFullName, newSymbol, newSubmitter.id)
+			return locusHelper.addLocusRecords({
+					name: existingLocusName.locus_name,
+					full_name: newFullName,
+					symbol: newSymbol,
+					submitter_id: newSubmitter.id
+				})
 				.then(([modifiedLocus, createdSymbol]) => {
 					return Locus.where({id: modifiedLocus.related('locus').attributes.id})
 						.fetch({withRelated: 'symbols'})
@@ -148,7 +168,12 @@ describe('Submission helper', function() {
 
 		it('Invalid locus does not create records', function() {
 			const invalidLocusName = 'FakeLocus';
-			return locusHelper.addLocusRecords(invalidLocusName, 'ignore', 'IG', 1)
+			return locusHelper.addLocusRecords({
+					name: invalidLocusName,
+					full_name: 'ignore',
+					symbol: 'IG',
+					submitter_id: 1
+				})
 				.then(createdLocus => {
 					throw new Error('Created Locus record using a bad name');
 				})

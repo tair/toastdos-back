@@ -9,8 +9,6 @@ const TAIR      = require('../lib/tair_api');
 const Locus      = require('../models/locus');
 const LocusName  = require('../models/locus_name');
 const GeneSymbol = require('../models/gene_symbol');
-const Taxon      = require('../models/taxon');
-const Source     = require('../models/external_source');
 
 // ex: AT1G10000
 const TAIR_NAME_REGEX        = /^AT(?:\d|C|M)G\d{5}$/;
@@ -29,21 +27,22 @@ const UNIPROT_NAME_REGEX     = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][
  * When a Locus is already present in our system, we just add a
  * new record for the 'Alias' (the combination of symbol and full name).
  *
- * @param name - Name of Locus, like AT1G10001
- * @param fullName - Full name of Locus, like 'Curly Leaf'
- * @param symbol - Symbol for Locus, like 'CLF'
- * @param submitter - ID of user submitting this Locus
+ * @param locus - Hash of parameters
+ *     name - Name of Locus, like AT1G10001
+ *     full_name - Full name of Locus, like 'Curly Leaf'
+ *     symbol - Symbol for Locus, like 'CLF'
+ *     submitter_id - ID of user submitting this Locus
  * @param transaction - optional transaction for adding these records
  * @return a promise that resolves with the LocusName with related Locus.
  */
-function addLocusRecords(name, fullName, symbol, submitter, transaction) {
+function addLocusRecords(locus, transaction) {
 	// Try to find an existing record for this locus
-	return LocusName.getByNameWithRelated(name, transaction)
+	return LocusName.getByNameWithRelated(locus.name, transaction)
 		.then(existingLocusName => {
 			if (existingLocusName) {
 				return Promise.resolve(existingLocusName);
 			} else {
-				return verifyLocus(name).then(locusData => {
+				return verifyLocus(locus.name).then(locusData => {
 					return LocusName.addNew(locusData, transaction);
 				}).then(locusName => locusName.fetch({
 						withRelated: ['locus', 'source'],
@@ -55,11 +54,11 @@ function addLocusRecords(name, fullName, symbol, submitter, transaction) {
 		.then(locusName => {
 			// New GeneSymbols can be added for existing Loci
 			let symbolPromise;
-			if (fullName || symbol) {
+			if (locus.full_name || locus.symbol) {
 				symbolPromise = GeneSymbol.addOrGet({
-					full_name: fullName,
-					symbol: symbol,
-					submitter_id: submitter,
+					full_name: locus.full_name,
+					symbol: locus.symbol,
+					submitter_id: locus.submitter_id,
 					locus_id: locusName.get('locus_id'),
 					source_id: locusName.get('source_id')
 				}, transaction);
