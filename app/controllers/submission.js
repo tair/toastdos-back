@@ -14,6 +14,7 @@ const Keyword     = require('../models/keyword');
 
 const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 20;
+const METHOD_KEYWORD_TYPE_NAME = 'eco';
 
 /**
  * Creates records for all of the new Locuses and Annotations.
@@ -79,7 +80,7 @@ function submitGenesAndAnnotations(req, res, next) {
 			}, transaction);
 		});
 
-		// Isolate the different data types
+		// Group the promises by data type
 		return Promise.all([
 				publicationPromise,
 				keywordPromise,
@@ -96,7 +97,7 @@ function submitGenesAndAnnotations(req, res, next) {
 					return acc;
 				}, {});
 
-				// Map created keywords IDs to their names
+				// Create a map of the Keywords we added so we can quickly look them up by name
 				let newKeywordMap = keywordArray.reduce((keywordNameIdMap, newKeyword) => {
 					keywordNameIdMap[newKeyword.get('name')] = newKeyword.get('id');
 					return keywordNameIdMap;
@@ -157,7 +158,7 @@ function addNewKeywords(annotations, transaction) {
 		let keyword = annotation.data.keyword;
 
 		if (method && method.name) {
-			seenKeywords[method.name] = 'eco';
+			seenKeywords[method.name] = METHOD_KEYWORD_TYPE_NAME;
 		}
 
 		if (keyword && keyword.name) {
