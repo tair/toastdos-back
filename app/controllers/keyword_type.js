@@ -14,12 +14,8 @@ const response = require('../lib/responses');
 function getKeywordTypes(req, res, next) {
     return KeywordType
 	    .fetchAll()
-	    .then(keywordtypes => {
-	    	return response.ok(res, keywordtypes);
-	    })
-	    .catch(err => {
-	    	return response.defaultServerError(res, err);
-    });
+	    .then(keywordtypes => response.ok(res, keywordtypes))
+	    .catch(err => response.defaultServerError(res, err));
 }
 
 
