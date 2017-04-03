@@ -18,7 +18,7 @@ const response = require('../lib/responses');
  */
 function login(req, res, next) {
 	if (!req.body.code) {
-		return response.badRequest(400, 'Missing field: code');
+		return response.badRequest(res, 'Missing field: code');
 	}
 
 	// First we complete the OAuth process started on the frontend
