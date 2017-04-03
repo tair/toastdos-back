@@ -11,7 +11,6 @@ const publicationValidator = require('../lib/publication_id_validator');
 const Publication = require('../models/publication');
 const Annotation  = require('../models/annotation');
 const Keyword     = require('../models/keyword');
-const KeywordType = require('../models/keyword_type');
 
 const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 20;
@@ -68,39 +67,21 @@ function submitGenesAndAnnotations(req, res, next) {
 
 		let publicationPromise = Publication.addOrGet({[publicationType]: req.body.publicationId}, transaction);
 
+		let keywordPromise = addNewKeywords(req.body.annotations, transaction);
+
 		// Add all of the genes for the submission
 		let locusPromises = req.body.genes.map(gene => {
 			return locusHelper.addLocusRecords(gene.locusName, gene.fullName, gene.geneSymbol,
 				req.user.attributes.id, transaction);
 		});
 
-		// Map list of new keywords to their keyword type
-		let keywordTypeMap = req.body.annotations.reduce((seenKeywords, annotation) => {
-			let method = annotation.data.method;
-			let keyword = annotation.data.keyword;
-
-			if (method && method.name) seenKeywords[method.name] = 'eco';
-			if (keyword && keyword.name) seenKeywords[keyword.name] = annotationHelper.AnnotationTypeData[annotation.type].keywordScope;
-
-			return seenKeywords;
-		}, {});
-
-		// Add all of the new keywords for the submission
-		let keywordPromises = Object.keys(keywordTypeMap).map(newKeywordName => {
-			return KeywordType
-				.where({name: keywordTypeMap[newKeywordName]})
-				.fetch({transacting: transaction})
-				.then(keywordType => {
-					return Keyword.forge({
-						keyword_type_id: keywordType.get('id'),
-						name: newKeywordName
-					}).save(null, {transacting: transaction});
-				});
-		});
-
-		// Isolate the publication promise from the locus promises
-		return Promise.all([publicationPromise, Promise.all(locusPromises), Promise.all(keywordPromises)])
-			.then(([publication, locusArray, keywordArray]) => {
+		// Isolate the different data types
+		return Promise.all([
+				publicationPromise,
+				keywordPromise,
+				Promise.all(locusPromises)
+			])
+			.then(([publication, keywordArray, locusArray]) => {
 
 				// Create a map of the locuses / symbols we added so we can quickly look them up by name
 				let locusMap = locusArray.reduce((acc, [locus, symbol]) => {
@@ -159,6 +140,35 @@ function submitGenesAndAnnotations(req, res, next) {
 
 			response.defaultServerError(res, err);
 		});
+}
+
+/**
+ * Adds all of the new Keywords specified in the list of Annotations.
+ * Returns promise that resolves to the list of the added Keywords.
+ */
+function addNewKeywords(annotations, transaction) {
+	// Build a map of new Keyword names to KeywordType names (the map prevents duplicates)
+	let keywordTypeMap = annotations.reduce((seenKeywords, annotation) => {
+		let method = annotation.data.method;
+		let keyword = annotation.data.keyword;
+
+		if (method && method.name) {
+			seenKeywords[method.name] = 'eco';
+		}
+
+		if (keyword && keyword.name) {
+			seenKeywords[keyword.name] = annotationHelper.AnnotationTypeData[annotation.type].keywordScope;
+		}
+
+		return seenKeywords;
+	}, {});
+
+	// Now add the new Keywords
+	let keywordPromises = Object.keys(keywordTypeMap).map(newKeywordName => {
+		return Keyword.addNew({name: newKeywordName, type_name: keywordTypeMap[newKeywordName]}, transaction);
+	});
+
+	return Promise.all(keywordPromises);
 }
 
 /**
