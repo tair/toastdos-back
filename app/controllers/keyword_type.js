@@ -6,19 +6,16 @@ const response = require('../lib/responses');
 
 /**
  * Get all KeywordTypes in the database
- * @param  {Express.Request}   req  - the request object
- * @param  {Express.Response}  res  - the response object
- * @param  {Function} next - pass to next route handler
+ *
+ * Responses:
+ * 200 with list of keyword types
+ * 500 on internal server error
  */
 function getKeywordTypes(req, res, next) {
     return KeywordType
 	    .fetchAll()
-	    .then(keywordtypes => {
-	    	return response.ok(res, keywordtypes);
-	    })
-	    .catch(err => {
-	    	return response.defaultServerError(res, err);
-    });
+	    .then(keywordtypes => response.ok(res, keywordtypes))
+	    .catch(err => response.defaultServerError(res, err));
 }
 
 

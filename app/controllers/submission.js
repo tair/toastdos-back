@@ -11,10 +11,10 @@ const publicationValidator = require('../lib/publication_id_validator');
 const Publication = require('../models/publication');
 const Annotation  = require('../models/annotation');
 const Keyword     = require('../models/keyword');
-const KeywordType = require('../models/keyword_type');
 
 const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 20;
+const METHOD_KEYWORD_TYPE_NAME = 'eco';
 
 /**
  * Creates records for all of the new Locuses and Annotations.
@@ -66,51 +66,27 @@ function submitGenesAndAnnotations(req, res, next) {
 	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
 	bookshelf.transaction(transaction => {
 
-		// Use an existing publication record if possible
-		let publicationPromise = Publication.where({[publicationType]: req.body.publicationId})
-			.fetch({transacting: transaction})
-			.then(existingPublication => {
-				if (existingPublication) {
-					return Promise.resolve(existingPublication);
-				} else {
-					return Publication.forge({[publicationType]: req.body.publicationId})
-						.save(null, {transacting: transaction});
-				}
-			});
+		let publicationPromise = Publication.addOrGet({[publicationType]: req.body.publicationId}, transaction);
+
+		let keywordPromise = addNewKeywords(req.body.annotations, transaction);
 
 		// Add all of the genes for the submission
 		let locusPromises = req.body.genes.map(gene => {
-			return locusHelper.addLocusRecords(gene.locusName, gene.fullName, gene.geneSymbol,
-				req.user.attributes.id, transaction);
+			return locusHelper.addLocusRecords({
+				name: gene.locusName,
+				full_name: gene.fullName,
+				symbol: gene.geneSymbol,
+				submitter_id: req.user.attributes.id
+			}, transaction);
 		});
 
-		// Map list of new keywords to their keyword type
-		let keywordTypeMap = req.body.annotations.reduce((seenKeywords, annotation) => {
-			let method = annotation.data.method;
-			let keyword = annotation.data.keyword;
-
-			if (method && method.name) seenKeywords[method.name] = 'eco';
-			if (keyword && keyword.name) seenKeywords[keyword.name] = annotationHelper.AnnotationTypeData[annotation.type].keywordScope;
-
-			return seenKeywords;
-		}, {});
-
-		// Add all of the new keywords for the submission
-		let keywordPromises = Object.keys(keywordTypeMap).map(newKeywordName => {
-			return KeywordType
-				.where({name: keywordTypeMap[newKeywordName]})
-				.fetch({transacting: transaction})
-				.then(keywordType => {
-					return Keyword.forge({
-						keyword_type_id: keywordType.get('id'),
-						name: newKeywordName
-					}).save(null, {transacting: transaction});
-				});
-		});
-
-		// Isolate the publication promise from the locus promises
-		return Promise.all([publicationPromise, Promise.all(locusPromises), Promise.all(keywordPromises)])
-			.then(([publication, locusArray, keywordArray]) => {
+		// Group the promises by data type
+		return Promise.all([
+				publicationPromise,
+				keywordPromise,
+				Promise.all(locusPromises)
+			])
+			.then(([publication, keywordArray, locusArray]) => {
 
 				// Create a map of the locuses / symbols we added so we can quickly look them up by name
 				let locusMap = locusArray.reduce((acc, [locus, symbol]) => {
@@ -121,7 +97,7 @@ function submitGenesAndAnnotations(req, res, next) {
 					return acc;
 				}, {});
 
-				// Map created keywords IDs to their names
+				// Create a map of the Keywords we added so we can quickly look them up by name
 				let newKeywordMap = keywordArray.reduce((keywordNameIdMap, newKeyword) => {
 					keywordNameIdMap[newKeyword.get('name')] = newKeyword.get('id');
 					return keywordNameIdMap;
@@ -169,6 +145,35 @@ function submitGenesAndAnnotations(req, res, next) {
 
 			response.defaultServerError(res, err);
 		});
+}
+
+/**
+ * Adds all of the new Keywords specified in the list of Annotations.
+ * Returns promise that resolves to the list of the added Keywords.
+ */
+function addNewKeywords(annotations, transaction) {
+	// Build a map of new Keyword names to KeywordType names (the map prevents duplicates)
+	let keywordTypeMap = annotations.reduce((seenKeywords, annotation) => {
+		let method = annotation.data.method;
+		let keyword = annotation.data.keyword;
+
+		if (method && method.name) {
+			seenKeywords[method.name] = METHOD_KEYWORD_TYPE_NAME;
+		}
+
+		if (keyword && keyword.name) {
+			seenKeywords[keyword.name] = annotationHelper.AnnotationTypeData[annotation.type].keywordScope;
+		}
+
+		return seenKeywords;
+	}, {});
+
+	// Now add the new Keywords
+	let keywordPromises = Object.keys(keywordTypeMap).map(newKeywordName => {
+		return Keyword.addNew({name: newKeywordName, type_name: keywordTypeMap[newKeywordName]}, transaction);
+	});
+
+	return Promise.all(keywordPromises);
 }
 
 /**

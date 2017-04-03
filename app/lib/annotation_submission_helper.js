@@ -76,7 +76,6 @@ const AnnotationTypeData = {
 	}
 };
 
-const METHOD_KEYWORD_TYPE_NAME = 'eco';
 const NEW_ANNOTATION_STATUS = 'pending';
 
 

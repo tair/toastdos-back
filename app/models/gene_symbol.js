@@ -17,6 +17,30 @@ const GeneSymbol = bookshelf.model('GeneSymbol', {
 	submitter: function() {
 		return this.belongsTo('User', 'submitter_id');
 	}
+}, {
+	addOrGet: function(params, transaction) {
+		return bookshelf.model('GeneSymbol')
+			.where({
+				full_name: params.full_name,
+				symbol: params.symbol
+			})
+			.fetch({transacting: transaction})
+			.then(geneSymbol => {
+				if (geneSymbol) {
+					return Promise.resolve(geneSymbol);
+				} else {
+					return bookshelf.model('GeneSymbol')
+						.forge({
+							symbol: params.symbol,
+							full_name: params.full_name,
+							locus_id: params.locus_id,
+							source_id: params.source_id,
+							submitter_id: params.submitter_id
+						})
+						.save(null, {transacting: transaction});
+				}
+			})
+	}
 });
 
 module.exports = GeneSymbol;
