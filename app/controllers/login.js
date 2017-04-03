@@ -6,10 +6,15 @@ const Orcid    = require('../lib/orcid_api');
 const response = require('../lib/responses');
 
 /**
- * Controller to log in with an ORCID auth code
- * @param  {Express.request}   req  - the request object
- * @param  {Express.Response}   res  - the response object
- * @param  {Function} next - pass to next route handler
+ * Controller for logging in with an ORCID auth code.
+ * Automatically creates Users in our system on first login.
+ * Handles updated information from ORCID (name, email, etc...)
+ *
+ * Responses:
+ * 200 with JWT on successful login
+ * 201 with JWT on first login (user is created)
+ * 400 if an OAuth code is not provided
+ * 500 if there's a problem authenticating with ORCID
  */
 function login(req, res, next) {
 	if (!req.body.code) {
