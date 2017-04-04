@@ -99,7 +99,7 @@ exports.up = function(knex, Promise) {
 			table.integer('status_id').references('annotation_status.id');
 			table.integer('submitter_id').references('user.id');
 			table.integer('locus_id').references('locus.id').notNullable();
-			table.integer('locus_symbol_id').references('gene_symbol.id').notNullable();
+			table.integer('locus_symbol_id').references('gene_symbol.id');
 			table.integer('type_id').references('annotation_type.id').notNullable();
 			table.integer('annotation_id').notNullable();
 			table.integer('annotation_format').notNullable();
@@ -118,7 +118,7 @@ exports.up = function(knex, Promise) {
 		.createTable('gene_gene_annotation', table => {
 			table.increments('id');
 			table.integer('locus2_id').references('locus.id').notNullable();
-			table.integer('locus2_symbol_id').references('gene_symbol.id').notNullable();
+			table.integer('locus2_symbol_id').references('gene_symbol.id');
 			table.integer('method_id').references('keyword.id');
 		})
 		.createTable('comment_annotation', table => {

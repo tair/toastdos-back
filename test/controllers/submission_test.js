@@ -270,6 +270,42 @@ describe('Submission Controller', function() {
 				});
 		});
 
+		it('GeneSymbol should be optional', function(done) {
+			const testGene1 = this.test.submission.genes[0];
+			const testGene2 = this.test.submission.genes[1];
+
+			delete testGene1.geneSymbol;
+			delete testGene2.geneSymbol;
+			delete testGene2.fullName;
+
+			chai.request(server)
+				.post('/api/submission/')
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(201);
+
+					let locusPromise1 = LocusName
+						.where('locus_name', testGene1.locusName)
+						.fetch({withRelated: 'locus.symbols'});
+
+					let locusPromise2 = LocusName
+						.where('locus_name', testGene2.locusName)
+						.fetch({withRelated: 'locus.symbols'});
+
+					Promise.all([locusPromise1, locusPromise2]).then(([locus1, locus2]) => {
+						let symbol1 = locus1.related('locus').related('symbols').first();
+						let symbol2 = locus2.related('locus').related('symbols').first();
+
+						chai.expect(symbol1.get('full_name')).to.equal(testGene1.fullName);
+						chai.expect(symbol1.get('symbol')).to.not.exist;
+						chai.expect(symbol2).to.not.exist;
+
+						done();
+					});
+				});
+		});
+
 	});
 
 	describe('GET /api/submission/', function() {
