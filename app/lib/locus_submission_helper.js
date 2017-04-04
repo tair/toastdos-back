@@ -9,8 +9,6 @@ const TAIR      = require('../lib/tair_api');
 const Locus      = require('../models/locus');
 const LocusName  = require('../models/locus_name');
 const GeneSymbol = require('../models/gene_symbol');
-const Taxon      = require('../models/taxon');
-const Source     = require('../models/external_source');
 
 // ex: AT1G10000
 const TAIR_NAME_REGEX        = /^AT(?:\d|C|M)G\d{5}$/;
@@ -29,133 +27,46 @@ const UNIPROT_NAME_REGEX     = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][
  * When a Locus is already present in our system, we just add a
  * new record for the 'Alias' (the combination of symbol and full name).
  *
- * @param name - Name of Locus, like AT1G10001
- * @param fullName - Full name of Locus, like 'Curly Leaf'
- * @param symbol - Symbol for Locus, like 'CLF'
- * @param submitter - ID of user submitting this Locus
+ * @param locus - Hash of parameters
+ *     name - Name of Locus, like AT1G10001
+ *     full_name - Full name of Locus, like 'Curly Leaf'
+ *     symbol - Symbol for Locus, like 'CLF'
+ *     submitter_id - ID of user submitting this Locus
  * @param transaction - optional transaction for adding these records
  * @return a promise that resolves with the LocusName with related Locus.
  */
-function addLocusRecords(name, fullName, symbol, submitter, transaction) {
+function addLocusRecords(locus, transaction) {
 	// Try to find an existing record for this locus
-	return LocusName.where({locus_name: name})
-		.fetch({
-			transacting: transaction,
-			withRelated: ['locus', 'source']
-		})
+	return LocusName.getByNameWithRelated(locus.name, transaction)
 		.then(existingLocusName => {
-			if (existingLocusName && (fullName || symbol)) {
-				/* Even if this locus exists in our system,
-				 * we may still need to add a new alias for it (i.e. symbol and fullname) */
-				return GeneSymbol.where({
-					full_name: fullName,
-					symbol: symbol
-				})
-					.fetch({transacting: transaction})
-					.then(existingAlias => {
-						if (existingAlias) {
-							return Promise.all([
-								Promise.resolve(existingLocusName),
-								Promise.resolve(existingAlias)
-							]);
-						}
-						else {
-							let symbolPromise = GeneSymbol.forge({
-								locus_id: existingLocusName.related('locus').attributes.id,
-								source_id: existingLocusName.related('source').attributes.id,
-								submitter_id: submitter,
-								full_name: fullName,
-								symbol: symbol
-							}).save(null, {transacting: transaction});
-
-							return Promise.all([
-								Promise.resolve(existingLocusName),
-								symbolPromise
-							]);
-						}
-					});
+			if (existingLocusName) {
+				return Promise.resolve(existingLocusName);
+			} else {
+				return verifyLocus(locus.name).then(locusData => {
+					return LocusName.addNew(locusData, transaction);
+				}).then(locusName => locusName.fetch({
+						withRelated: ['locus', 'source'],
+						transacting: transaction
+					})
+				);
 			}
-			else {
-				// Go through the whole process of adding a new Locus record
-				return verifyLocus(name).then(locusData => {
-					return addOrGetTaxon(locusData.taxon_id, locusData.taxon_name, transaction)
-						.then(taxon => {
-							let locusPromise = Locus.forge({taxon_id: taxon.attributes.id})
-								.save(null, {transacting: transaction});
-
-							return Promise.all([
-								addOrGetSource(locusData.source, transaction),
-								locusPromise
-							]);
-						})
-						.then(([source, locus]) => {
-							let namePromise = LocusName.forge({
-								source_id: source.attributes.id,
-								locus_id: locus.attributes.id,
-								locus_name: locusData.locus_name
-							}).save(null, {transacting: transaction});
-
-							// Optionally add a fullname / symbol pair
-							if (fullName || symbol) {
-								let symbolPromise = GeneSymbol.forge({
-									source_id: source.attributes.id,
-									locus_id: locus.attributes.id,
-									submitter_id: submitter,
-									symbol: symbol,
-									full_name: fullName
-								}).save(null, {transacting: transaction});
-
-								return Promise.all([namePromise, symbolPromise]);
-							} else {
-								return namePromise;
-							}
-						})
-						.then(() => {
-							/* Fetch the records we just added so our return data is consistent
-							 * with what we return when the Locus already exists. */
-							let locusPromise = LocusName.where({locus_name: name}).fetch({
-								transacting: transaction,
-								withRelated: ['locus', 'source']
-							});
-
-							let symbolPromise = GeneSymbol.where({symbol: symbol, full_name: fullName}).fetch({transacting: transaction});
-
-							return Promise.all([locusPromise, symbolPromise]);
-						});
-				});
+		})
+		.then(locusName => {
+			// New GeneSymbols can be added for existing Loci
+			let symbolPromise;
+			if (locus.full_name || locus.symbol) {
+				symbolPromise = GeneSymbol.addOrGet({
+					full_name: locus.full_name,
+					symbol: locus.symbol,
+					submitter_id: locus.submitter_id,
+					locus_id: locusName.get('locus_id'),
+					source_id: locusName.get('source_id')
+				}, transaction);
+			} else {
+				symbolPromise = Promise.resolve(null);
 			}
-		});
-}
 
-/**
- * Retrieves the existing taxon that matches the given id,
- * or creates a new taxon record with the given data.
- * Returns a promise that resolves with a Taxon object.
- */
-function addOrGetTaxon(taxonId, taxonName, transaction) {
-	return Taxon.where({taxon_id: taxonId})
-		.fetch({transacting: transaction})
-		.then(existingTaxon => {
-			if (existingTaxon) return Promise.resolve(existingTaxon);
-			else return Taxon.forge({
-				taxon_id: taxonId,
-				name: taxonName
-			}).save(null, {transacting: transaction});
-		});
-}
-
-/**
- * Retrieves existing external source record for the given name,
- * or creates a new one.
- * Returns a promise that resolves with a Source object.
- */
-function addOrGetSource(name, transaction) {
-	return Source.where({name: name})
-		.fetch({transacting: transaction})
-		.then(existingSource => {
-			if (existingSource) return Promise.resolve(existingSource);
-			else return Source.forge({name: name})
-				.save(null, {transacting: transaction});
+			return Promise.all([Promise.resolve(locusName), symbolPromise]);
 		});
 }
 

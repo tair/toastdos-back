@@ -6,18 +6,14 @@ const response = require('../lib/responses');
 
 /**
  * Gets the list of all annotation statuses in our system
- * @param  {Express.Request}   req  - the request
- * @param  {Express.Resonse}   res  - the response
- * @param  {Function} next - pass to next route handler
+ * Responses:
+ * 200 with list of all Annotation statuses
+ * 500 on internal error
  */
 function getAnnotationStatuses(req, res, next) {
 	AnnotationStatus.fetchAll()
-		.then(statuses => {
-			response.ok(res, statuses);
-		})
-		.catch(err => {
-			response.defaultServerError(res, err);
-		});
+		.then(statuses => response.ok(res, statuses))
+		.catch(err => response.defaultServerError(res, err));
 }
 
 

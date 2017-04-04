@@ -110,9 +110,42 @@ describe('Models', function() {
 					chai.expect(actual.synonyms).to.containSubset(expectedSynonyms);
 				});
 		});
+
+		it('addNew', function() {
+			const testKeyword = testdata.keywords[0];
+			const newExtId = 'NEID001';
+
+			return Keyword.addNew({
+				name: testKeyword.name,
+				external_id: newExtId,
+				type_name: testdata.keyword_types[0].name
+			}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual.name).to.equal(testKeyword.name);
+				chai.expect(actual.external_id).to.equal(newExtId);
+				chai.expect(actual.id).to.not.equal(testKeyword.id);
+			});
+		});
+
+		it('addOrGet', function() {
+			const testKeyword = testdata.keywords[0];
+
+			return Keyword.addOrGet({
+				name: testKeyword.name,
+				external_id: testKeyword.external_id,
+				type_name: testdata.keyword_types[0].name
+			}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual.name).to.equal(testKeyword.name);
+				chai.expect(actual.external_id).to.equal(testKeyword.external_id);
+				chai.expect(actual.id).to.equal(testKeyword.id);
+			});
+		});
+
 	});
 
 	describe('KeywordType', function() {
+
 		it('Get KeywordType and associated Keywords', function() {
 			let expectedKeywordType = testdata.keyword_types[0];
 			let expectedKeywords = [
@@ -128,6 +161,15 @@ describe('Models', function() {
 					chai.expect(actual.keywords).to.containSubset(expectedKeywords);
 				});
 		});
+
+		it('getByName', function() {
+			const testKeyword = testdata.keyword_types[0];
+			return KeywordType.getByName(testKeyword.name).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(testKeyword);
+			});
+		});
+
 	});
 
 	describe('Synonym', function() {
@@ -177,6 +219,25 @@ describe('Models', function() {
 					let actual = res.toJSON();
 					chai.expect(actual.submissions).to.containSubset(expectedSubmissions);
 				});
+		});
+
+		it('addOrGet adds', function() {
+			const newPubName = 12345;
+			return Publication.addOrGet({pubmed_id: newPubName}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual.pubmed_id).to.equal(newPubName);
+				testdata.publications.forEach(publication => {
+					chai.expect(actual.id).to.not.equal(publication.id);
+				});
+			});
+		});
+
+		it('addOrGet gets', function() {
+			const testPub = testdata.publications[0];
+			return Publication.addOrGet({doi: testPub.doi}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(testPub);
+			});
 		});
 
 	});
@@ -500,6 +561,29 @@ describe('Models', function() {
 					let actual = res.toJSON();
 					chai.expect(actual.locuses).to.containSubset(expectedLocuses);
 				});
+		});
+
+		it('addOrGet adds', function() {
+			const newTaxon = {
+				name: 'Vulpes vulpes',
+				taxon_id: 9627
+			};
+
+			return Taxon.addOrGet(newTaxon).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(newTaxon);
+				testdata.taxon.forEach(taxon => {
+					chai.expect(actual.id).to.not.equal(taxon.id);
+				});
+			});
+		});
+
+		it('addOrGet gets', function() {
+			const existingTaxon = testdata.taxon[0];
+			return Taxon.addOrGet(existingTaxon).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(existingTaxon);
+			});
 		});
 
 	});

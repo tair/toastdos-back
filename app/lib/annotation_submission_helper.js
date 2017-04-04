@@ -76,7 +76,6 @@ const AnnotationTypeData = {
 	}
 };
 
-const METHOD_KEYWORD_TYPE_NAME = 'eco';
 const NEW_ANNOTATION_STATUS = 'pending';
 
 
@@ -110,16 +109,22 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 				AnnotationType.where({name: strategy.name}).fetch({require: true, transacting: transaction}),
 				AnnotationStatus.where({name: NEW_ANNOTATION_STATUS}).fetch({require: true, transacting: transaction})
 			]).then(([type, status]) => {
-				return Annotation.forge({
+				let newAnn = {
 					publication_id: annotation.data.internalPublicationId,
 					status_id: status.attributes.id,
 					type_id: type.attributes.id,
 					submitter_id: annotation.data.submitterId,
 					locus_id: locusMap[annotation.data.locusName].locus.get('locus_id'),
-					locus_symbol_id: locusMap[annotation.data.locusName].symbol.get('id'),
 					annotation_id: subAnnotation.attributes.id,
 					annotation_format: strategy.format.name
-				}).save(null, {transacting: transaction});
+				};
+
+				// GeneSymbols are optional
+				if (locusMap[annotation.data.locusName].symbol) {
+					newAnn.locus_symbol_id = locusMap[annotation.data.locusName].symbol.get('id');
+				}
+
+				return Annotation.forge(newAnn).save(null, {transacting: transaction});
 			});
 		});
 }
@@ -258,19 +263,28 @@ function createGeneTermRecords(annotation, locusMap, transaction) {
 	// 'evidence' is an optional field
 	if (annotation.data.evidence) {
 		subAnnotation.evidence_id = locusMap[annotation.data.evidence].locus.get('locus_id');
-		subAnnotation.evidence_symbol_id = locusMap[annotation.data.evidence].symbol.get('id');
+
+		// GeneSymbols are optional
+		if (locusMap[annotation.data.evidence].symbol) {
+			subAnnotation.evidence_symbol_id = locusMap[annotation.data.evidence].symbol.get('id');
+		}
 	}
 
 	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
 }
 
 function createGeneGeneRecords(annotation, locusMap, transaction) {
-
-	return GeneGeneAnnotation.forge({
+	let newGGAnn = {
 		method_id: annotation.data.method.id,
-		locus2_id: locusMap[annotation.data.locusName2].locus.get('locus_id'),
-		locus2_symbol_id: locusMap[annotation.data.locusName2].symbol.get('id'),
-	}).save(null, {transacting: transaction});
+		locus2_id: locusMap[annotation.data.locusName2].locus.get('locus_id')
+	};
+
+	// GeneSymbols are optional
+	if (locusMap[annotation.data.locusName2].symbol) {
+		newGGAnn.locus2_symbol_id = locusMap[annotation.data.locusName2].symbol.get('id');
+	}
+
+	return GeneGeneAnnotation.forge(newGGAnn).save(null, {transacting: transaction});
 }
 
 function createCommentRecords(annotation, locusMap, transaction) {

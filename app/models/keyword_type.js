@@ -9,6 +9,12 @@ const KeywordType = bookshelf.model('KeywordType', {
 	keywords: function() {
 		return this.hasMany('Keyword', 'keyword_type_id');
 	}
+}, {
+	getByName: function(name, transaction) {
+		return bookshelf.model('KeywordType')
+			.where('name', name)
+			.fetch({transacting: transaction});
+	}
 });
 
 module.exports = KeywordType;
