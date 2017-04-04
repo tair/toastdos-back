@@ -19,11 +19,13 @@ const GeneSymbol = bookshelf.model('GeneSymbol', {
 	}
 }, {
 	addOrGet: function(params, transaction) {
+		// Symbol and fullname are optional. Check them to avoid undefined binding errors
+		let query = {};
+		if (params.full_name) query.full_name = params.full_name;
+		if (params.symbol) query.symbol = params.symbol;
+
 		return bookshelf.model('GeneSymbol')
-			.where({
-				full_name: params.full_name,
-				symbol: params.symbol
-			})
+			.where(query)
 			.fetch({transacting: transaction})
 			.then(geneSymbol => {
 				if (geneSymbol) {
