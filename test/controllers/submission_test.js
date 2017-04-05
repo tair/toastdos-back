@@ -16,6 +16,7 @@ const User             = require('../../app/models/user');
 const Annotation       = require('../../app/models/annotation');
 const AnnotationStatus = require('../../app/models/annotation_status');
 const Keyword          = require('../../app/models/keyword');
+const Submission       = require('../../app/models/submission');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -232,7 +233,7 @@ describe('Submission Controller', function() {
 				});
 		});
 
-		it('Well-formed submission request responds with success', function(done) {
+		it('Well-formed submission request makes correct records', function(done) {
 			this.timeout(5000);
 			chai.request(server)
 				.post('/api/submission/')
@@ -240,7 +241,19 @@ describe('Submission Controller', function() {
 				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(201);
-					done();
+
+					// Fetch the submission we just created
+					const newSubId = testdata.submission.length + 1;
+					Submission
+						.where({id: newSubId})
+						.fetch({withRelated: ['submitter', 'publication', 'annotations']})
+						.then(submission => {
+							chai.expect(submission.related('submitter').get('id')).to.equal(testdata.users[0].id);
+							chai.expect(submission.related('publication').get('doi')).to.equal(this.test.submission.publicationId);
+							chai.expect(submission.related('annotations').size()).to.equal(this.test.submission.annotations.length);
+
+							done();
+						});
 				});
 		});
 
