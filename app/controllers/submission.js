@@ -11,6 +11,7 @@ const publicationValidator = require('../lib/publication_id_validator');
 const Publication = require('../models/publication');
 const Annotation  = require('../models/annotation');
 const Keyword     = require('../models/keyword');
+const Submission  = require('../models/submission');
 
 const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 20;
@@ -66,27 +67,37 @@ function submitGenesAndAnnotations(req, res, next) {
 	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
 	bookshelf.transaction(transaction => {
 
-		let publicationPromise = Publication.addOrGet({[publicationType]: req.body.publicationId}, transaction);
+		return Publication.addOrGet({
+				[publicationType]: req.body.publicationId
+			}, transaction)
+			.then(publication => {
 
-		let keywordPromise = addNewKeywords(req.body.annotations, transaction);
+				let submissionPromise = Submission.addNew({
+					publication_id: publication.get('id'),
+					submitter_id: req.user.get('id')
+				}, transaction);
 
-		// Add all of the genes for the submission
-		let locusPromises = req.body.genes.map(gene => {
-			return locusHelper.addLocusRecords({
-				name: gene.locusName,
-				full_name: gene.fullName,
-				symbol: gene.geneSymbol,
-				submitter_id: req.user.attributes.id
-			}, transaction);
-		});
+				let keywordPromise = addNewKeywords(req.body.annotations, transaction);
 
-		// Group the promises by data type
-		return Promise.all([
-				publicationPromise,
-				keywordPromise,
-				Promise.all(locusPromises)
-			])
-			.then(([publication, keywordArray, locusArray]) => {
+				// Add all of the genes for the submission
+				let locusPromises = req.body.genes.map(gene => {
+					return locusHelper.addLocusRecords({
+						name: gene.locusName,
+						full_name: gene.fullName,
+						symbol: gene.geneSymbol,
+						submitter_id: req.user.attributes.id
+					}, transaction);
+				});
+
+				// Group the promises by data type
+				return Promise.all([
+					Promise.resolve(publication), // Carry data into next promise
+					submissionPromise,
+					keywordPromise,
+					Promise.all(locusPromises)
+				])
+			})
+			.then(([publication, submission, keywordArray, locusArray]) => {
 
 				// Create a map of the locuses / symbols we added so we can quickly look them up by name
 				let locusMap = locusArray.reduce((acc, [locus, symbol]) => {
@@ -108,6 +119,7 @@ function submitGenesAndAnnotations(req, res, next) {
 					let keyword = annotation.data.keyword;
 					let method = annotation.data.method;
 
+					// Methods and keywords are not present in all Annotations
 					if (keyword && keyword.name && newKeywordMap[keyword.name]) {
 						annotation.data.keyword.id = newKeywordMap[keyword.name];
 					}
@@ -115,11 +127,11 @@ function submitGenesAndAnnotations(req, res, next) {
 						annotation.data.method.id = newKeywordMap[method.name];
 					}
 
-					// Every Annotation needs a reference to Publication and User ID
+					// These fields exist on all Annotations
 					annotation.data.internalPublicationId = publication.attributes.id;
 					annotation.data.submitterId = req.user.attributes.id;
 
-					return annotationHelper.addAnnotationRecords(annotation, locusMap, transaction);
+					return annotationHelper.addAnnotationRecords(annotation, locusMap, submission, transaction);
 				});
 
 				return Promise.all(annotationPromises);
