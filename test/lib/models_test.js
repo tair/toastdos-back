@@ -323,6 +323,19 @@ describe('Models', function() {
 				});
 		});
 
+		it('Submission this Annotation belongs to can be retrieved', function() {
+			const testAnnotation = testdata.annotations[0];
+			const expectedSubmission = testdata.submission[0];
+
+			return Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'submission'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submission).to.contain(expectedSubmission);
+				});
+		});
+
 		it('User who submitted the Annotation can be retrieved', function() {
 			let testAnnotation = testdata.annotations[0];
 			let expectedUser = testdata.users[0];
@@ -757,6 +770,22 @@ describe('Models', function() {
 					if (!res) throw new Error('No User was returned');
 					let actual = res.toJSON();
 					chai.expect(actual.publication).to.contain(expectedPublication);
+				});
+		});
+
+		it('All Annotations associated with a Submission can be retrieved', function() {
+			const testSubmission = testdata.submission[0];
+			const expectedAnnotations = [
+				testdata.annotations[0],
+				testdata.annotations[1]
+			];
+
+			return Submission.where({id: testSubmission.id})
+				.fetch({withRelated: 'annotations'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
 				});
 		});
 

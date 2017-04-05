@@ -4,6 +4,7 @@ const bookshelf = require('../lib/bookshelf');
 
 require('./user');
 require('./publication');
+require('./annotation');
 
 const Submission = bookshelf.model('Submission', {
 	tableName: 'submission',
@@ -12,6 +13,9 @@ const Submission = bookshelf.model('Submission', {
 	},
 	publication: function() {
 		return this.belongsTo('Publication', 'publication_id');
+	},
+	annotations: function() {
+		return this.hasMany('Annotation', 'submission_id');
 	}
 }, {
 	addNew: function(params, transaction) {
