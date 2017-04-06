@@ -204,9 +204,9 @@ function addNewKeywords(annotations, transaction) {
  */
 function generateSubmissionSummary(req, res, next) {
 
-	// Calculate pagination values
+	// Constrain / validate pagination values
 	let itemsPerPage;
-	let offset;
+	let page;
 
 	if (!req.query.limit || req.query.limit > PAGE_LIMIT) {
 		itemsPerPage = PAGE_LIMIT;
@@ -217,104 +217,27 @@ function generateSubmissionSummary(req, res, next) {
 	}
 
 	if (!req.query.page || req.query.page <= 1) {
-		offset = 0;
-	} else {
-		offset = (req.query.page - 1) * itemsPerPage;
+		page = 1;
 	}
 
-	/* Gets us a list of sub-groups of submissions, separated by status.
-	 *
-	 * The ordering in the above query guarantees that the sub-groups
-	 * for each submission are all adjacent.
-	 *
-	 * This allows us to get two different counts from a single query.
-	 */
-	bookshelf.knex
-		.with('mod_annotation',
-			bookshelf.knex.raw('SELECT id, date(created_at) as created_date FROM annotation')
-		)
-		.select(
-			'publication.doi',
-			'publication.pubmed_id',
-			'annotation.submitter_id',
-			'annotation_status.name',
-			'mod_annotation.created_date'
-		)
-		.count('* as sub_total')
-		.from('annotation')
-		.leftJoin('mod_annotation', 'annotation.id', 'mod_annotation.id')
-		.leftJoin('annotation_status', 'annotation.status_id', 'annotation_status.id')
-		.leftJoin('publication', 'annotation.publication_id', 'publication.id')
-		.groupBy(
-			'mod_annotation.created_date',
-			'annotation.submitter_id',
-			'publication.id',
-			'annotation_status.name'
-		)
-		.orderByRaw(`
-			mod_annotation.created_date DESC,
-			annotation.submitter_id,
-			publication.id
-		`)
-		.offset(offset)
-		.limit(itemsPerPage)
-		.then(submissionChunks => {
-			/* We need to manually reduce this list to get the values for 'total'
-			 * and 'pending' annotations in each submission.
-			 */
-
-			// Subdivide submission chunk list into individual arrays of chunks, grouped by submission
-			let subdividedChunkArrays = [];
-			let curSubdivisionChunks = [];
-			let curSubdivisionKey = {}; // Tells us which submission group we're on
-			submissionChunks.forEach(curChunk => {
-
-				// Is this a chunk for a different submission?
-				if (! (curSubdivisionKey.submitter_id === curChunk.submitter_id
-					&& curSubdivisionKey.created_date === curChunk.created_date
-					&& curSubdivisionKey.pubmed_id === curChunk.pubmed_id
-					&& curSubdivisionKey.doi === curChunk.doi
-					)
-				) {
-					// Store the REFERENCE to this array, which we will modify later.
-					curSubdivisionChunks = [];
-					subdividedChunkArrays.push(curSubdivisionChunks);
-
-					// Store keys from this new chunk to match subsequent chunks
-					curSubdivisionKey = _.pick(curChunk, ['doi', 'pubmed_id', 'submitter_id', 'created_date']);
-				}
-
-				curSubdivisionChunks.push(curChunk);
-			});
-
-			// Reduce all the submission groups into single objects
-			let submissions = subdividedChunkArrays.map(chunkArray => {
-				let submission = {};
-
-				// We're guaranteed to have at least one chunk in the array
-				// so use that for our submission values
-				let firstChunk = chunkArray[0];
-
-				submission.submission_date = firstChunk.created_date;
-				submission.pending = 0;
-				submission.total = 0;
-				if (firstChunk.doi) {
-					submission.document = firstChunk.doi;
-				} else if (firstChunk.pubmed_id) {
-					submission.document = firstChunk.pubmed_id;
-				} else {
-					throw new Error('Submission chunk missing valid publication');
-				}
-
-				// Sum all the annotation counts together
-				chunkArray.forEach(chunk => {
-					submission.total += chunk.sub_total;
-					if (chunk.name === PENDING_STATUS) {
-						submission.pending += chunk.sub_total;
-					}
-				});
-
-				return submission;
+	Submission
+		.query(qb => {}) // Necessary to chain into orderBy
+		.orderBy('created_at', 'DESC')
+		.fetchPage({
+			page: page,
+			pageSize: itemsPerPage,
+			withRelated: ['publication', 'submitter', 'annotations.status'],
+		})
+		.then(submissionCollection => {
+			let submissions = submissionCollection.map(submissionModel => {
+				let publication = submissionModel.related('publication');
+				let annotations = submissionModel.related('annotations');
+				return {
+					document: publication.get('doi') || publication.get('pubmed_id'),
+					total: annotations.size(),
+					pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
+					submission_date: submissionModel.get('created_at')
+				};
 			});
 
 			return response.ok(res, submissions);
