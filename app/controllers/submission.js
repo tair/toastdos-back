@@ -218,6 +218,8 @@ function generateSubmissionSummary(req, res, next) {
 
 	if (!req.query.page || req.query.page <= 1) {
 		page = 1;
+	} else {
+		page = req.query.page;
 	}
 
 	Submission
@@ -233,10 +235,11 @@ function generateSubmissionSummary(req, res, next) {
 				let publication = submissionModel.related('publication');
 				let annotations = submissionModel.related('annotations');
 				return {
+					id: submissionModel.get('id'),
 					document: publication.get('doi') || publication.get('pubmed_id'),
 					total: annotations.size(),
 					pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
-					submission_date: submissionModel.get('created_at')
+					submission_date: new Date(submissionModel.get('created_at')).toISOString()
 				};
 			});
 

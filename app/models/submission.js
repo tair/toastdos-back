@@ -22,7 +22,8 @@ const Submission = bookshelf.model('Submission', {
 		return bookshelf.model('Submission')
 			.forge({
 				submitter_id:  params.submitter_id,
-				publication_id: params.publication_id
+				publication_id: params.publication_id,
+				created_at: params.created_at
 			})
 			.save(null, {transacting: transaction});
 	}
