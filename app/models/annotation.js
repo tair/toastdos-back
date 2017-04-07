@@ -5,6 +5,7 @@ const bookshelf = require('../lib/bookshelf');
 require('./publication');
 require('./annotation_status');
 require('./annotation_type');
+require('./submission');
 require('./user');
 require('./keyword');
 require('./locus');
@@ -23,6 +24,9 @@ const Annotation = bookshelf.model('Annotation', {
 	},
 	publication: function() {
 		return this.belongsTo('Publication', 'publication_id');
+	},
+	submission: function() {
+		return this.belongsTo('Submission', 'submission_id');
 	},
 	submitter: function() {
 		return this.belongsTo('User', 'submitter_id');

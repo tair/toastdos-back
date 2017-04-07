@@ -23,6 +23,7 @@ const Locus              = require('../../app/models/locus');
 const ExternalSource     = require('../../app/models/external_source');
 const GeneSymbol         = require('../../app/models/gene_symbol');
 const Draft              = require('../../app/models/draft');
+const Submission         = require('../../app/models/submission');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -54,6 +55,22 @@ describe('Models', function() {
 				.then(res => {
 					let actual = res.toJSON();
 					chai.expect(actual.roles).to.containSubset(expectedRoles);
+				});
+		});
+
+		it('Submissions this user created can be retrieved', function() {
+			const testUser = testdata.users[1];
+			const expectedSubmissions = [
+				testdata.submission[1],
+				testdata.submission[2]
+			];
+
+			return User.where({id: testUser.id})
+				.fetch({withRelated: 'submissions'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submissions).to.containSubset(expectedSubmissions);
 				});
 		});
 
@@ -180,11 +197,27 @@ describe('Models', function() {
 			];
 
 			return Publication.where({id: testPublication.id})
-				.fetch({withRelated: 'referencedBy'})
+				.fetch({withRelated: 'annotations'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.referencedBy).to.containSubset(expectedAnnotations);
+					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
+				});
+		});
+
+		it('Get Submissions associated with Publication', function() {
+			const testPublication = testdata.publications[1];
+			const expectedSubmissions = [
+				testdata.submission[1],
+				testdata.submission[2]
+			];
+
+			return Publication.where({id: testPublication.id})
+				.fetch({withRelated: 'submissions'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submissions).to.containSubset(expectedSubmissions);
 				});
 		});
 
@@ -287,6 +320,19 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.publication).to.contain(expectedPublication);
+				});
+		});
+
+		it('Submission this Annotation belongs to can be retrieved', function() {
+			const testAnnotation = testdata.annotations[0];
+			const expectedSubmission = testdata.submission[0];
+
+			return Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'submission'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submission).to.contain(expectedSubmission);
 				});
 		});
 
@@ -694,6 +740,52 @@ describe('Models', function() {
 					if (!res) throw new Error('No User was returned');
 					let actual = res.toJSON();
 					chai.expect(actual.submitter).to.contain(expectedUser);
+				});
+		});
+
+	});
+
+	describe('Submission', function() {
+
+		it('User who created Submission can be retrieved', function() {
+			const testSubmission = testdata.submission[0];
+			const expectedUser = testdata.users[0];
+
+			return Submission.where({id: testSubmission.id})
+				.fetch({withRelated: 'submitter'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submitter).to.contain(expectedUser);
+				});
+		});
+
+		it('Publication this Submission references can be retrieved', function() {
+			const testSubmission = testdata.submission[0];
+			const expectedPublication = testdata.publications[0];
+
+			return Submission.where({id: testSubmission.id})
+				.fetch({withRelated: 'publication'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.publication).to.contain(expectedPublication);
+				});
+		});
+
+		it('All Annotations associated with a Submission can be retrieved', function() {
+			const testSubmission = testdata.submission[0];
+			const expectedAnnotations = [
+				testdata.annotations[0],
+				testdata.annotations[1]
+			];
+
+			return Submission.where({id: testSubmission.id})
+				.fetch({withRelated: 'annotations'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
 				});
 		});
 

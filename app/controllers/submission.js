@@ -11,6 +11,7 @@ const publicationValidator = require('../lib/publication_id_validator');
 const Publication = require('../models/publication');
 const Annotation  = require('../models/annotation');
 const Keyword     = require('../models/keyword');
+const Submission  = require('../models/submission');
 
 const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 20;
@@ -66,27 +67,37 @@ function submitGenesAndAnnotations(req, res, next) {
 	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
 	bookshelf.transaction(transaction => {
 
-		let publicationPromise = Publication.addOrGet({[publicationType]: req.body.publicationId}, transaction);
+		return Publication.addOrGet({
+				[publicationType]: req.body.publicationId
+			}, transaction)
+			.then(publication => {
 
-		let keywordPromise = addNewKeywords(req.body.annotations, transaction);
+				let submissionPromise = Submission.addNew({
+					publication_id: publication.get('id'),
+					submitter_id: req.user.get('id')
+				}, transaction);
 
-		// Add all of the genes for the submission
-		let locusPromises = req.body.genes.map(gene => {
-			return locusHelper.addLocusRecords({
-				name: gene.locusName,
-				full_name: gene.fullName,
-				symbol: gene.geneSymbol,
-				submitter_id: req.user.attributes.id
-			}, transaction);
-		});
+				let keywordPromise = addNewKeywords(req.body.annotations, transaction);
 
-		// Group the promises by data type
-		return Promise.all([
-				publicationPromise,
-				keywordPromise,
-				Promise.all(locusPromises)
-			])
-			.then(([publication, keywordArray, locusArray]) => {
+				// Add all of the genes for the submission
+				let locusPromises = req.body.genes.map(gene => {
+					return locusHelper.addLocusRecords({
+						name: gene.locusName,
+						full_name: gene.fullName,
+						symbol: gene.geneSymbol,
+						submitter_id: req.user.attributes.id
+					}, transaction);
+				});
+
+				// Group the promises by data type
+				return Promise.all([
+					Promise.resolve(publication), // Carry data into next promise
+					submissionPromise,
+					keywordPromise,
+					Promise.all(locusPromises)
+				])
+			})
+			.then(([publication, submission, keywordArray, locusArray]) => {
 
 				// Create a map of the locuses / symbols we added so we can quickly look them up by name
 				let locusMap = locusArray.reduce((acc, [locus, symbol]) => {
@@ -108,6 +119,7 @@ function submitGenesAndAnnotations(req, res, next) {
 					let keyword = annotation.data.keyword;
 					let method = annotation.data.method;
 
+					// Methods and keywords are not present in all Annotations
 					if (keyword && keyword.name && newKeywordMap[keyword.name]) {
 						annotation.data.keyword.id = newKeywordMap[keyword.name];
 					}
@@ -115,11 +127,11 @@ function submitGenesAndAnnotations(req, res, next) {
 						annotation.data.method.id = newKeywordMap[method.name];
 					}
 
-					// Every Annotation needs a reference to Publication and User ID
+					// These fields exist on all Annotations
 					annotation.data.internalPublicationId = publication.attributes.id;
 					annotation.data.submitterId = req.user.attributes.id;
 
-					return annotationHelper.addAnnotationRecords(annotation, locusMap, transaction);
+					return annotationHelper.addAnnotationRecords(annotation, locusMap, submission, transaction);
 				});
 
 				return Promise.all(annotationPromises);
@@ -192,9 +204,9 @@ function addNewKeywords(annotations, transaction) {
  */
 function generateSubmissionSummary(req, res, next) {
 
-	// Calculate pagination values
+	// Constrain / validate pagination values
 	let itemsPerPage;
-	let offset;
+	let page;
 
 	if (!req.query.limit || req.query.limit > PAGE_LIMIT) {
 		itemsPerPage = PAGE_LIMIT;
@@ -205,104 +217,30 @@ function generateSubmissionSummary(req, res, next) {
 	}
 
 	if (!req.query.page || req.query.page <= 1) {
-		offset = 0;
+		page = 1;
 	} else {
-		offset = (req.query.page - 1) * itemsPerPage;
+		page = req.query.page;
 	}
 
-	/* Gets us a list of sub-groups of submissions, separated by status.
-	 *
-	 * The ordering in the above query guarantees that the sub-groups
-	 * for each submission are all adjacent.
-	 *
-	 * This allows us to get two different counts from a single query.
-	 */
-	bookshelf.knex
-		.with('mod_annotation',
-			bookshelf.knex.raw('SELECT id, date(created_at) as created_date FROM annotation')
-		)
-		.select(
-			'publication.doi',
-			'publication.pubmed_id',
-			'annotation.submitter_id',
-			'annotation_status.name',
-			'mod_annotation.created_date'
-		)
-		.count('* as sub_total')
-		.from('annotation')
-		.leftJoin('mod_annotation', 'annotation.id', 'mod_annotation.id')
-		.leftJoin('annotation_status', 'annotation.status_id', 'annotation_status.id')
-		.leftJoin('publication', 'annotation.publication_id', 'publication.id')
-		.groupBy(
-			'mod_annotation.created_date',
-			'annotation.submitter_id',
-			'publication.id',
-			'annotation_status.name'
-		)
-		.orderByRaw(`
-			mod_annotation.created_date DESC,
-			annotation.submitter_id,
-			publication.id
-		`)
-		.offset(offset)
-		.limit(itemsPerPage)
-		.then(submissionChunks => {
-			/* We need to manually reduce this list to get the values for 'total'
-			 * and 'pending' annotations in each submission.
-			 */
-
-			// Subdivide submission chunk list into individual arrays of chunks, grouped by submission
-			let subdividedChunkArrays = [];
-			let curSubdivisionChunks = [];
-			let curSubdivisionKey = {}; // Tells us which submission group we're on
-			submissionChunks.forEach(curChunk => {
-
-				// Is this a chunk for a different submission?
-				if (! (curSubdivisionKey.submitter_id === curChunk.submitter_id
-					&& curSubdivisionKey.created_date === curChunk.created_date
-					&& curSubdivisionKey.pubmed_id === curChunk.pubmed_id
-					&& curSubdivisionKey.doi === curChunk.doi
-					)
-				) {
-					// Store the REFERENCE to this array, which we will modify later.
-					curSubdivisionChunks = [];
-					subdividedChunkArrays.push(curSubdivisionChunks);
-
-					// Store keys from this new chunk to match subsequent chunks
-					curSubdivisionKey = _.pick(curChunk, ['doi', 'pubmed_id', 'submitter_id', 'created_date']);
-				}
-
-				curSubdivisionChunks.push(curChunk);
-			});
-
-			// Reduce all the submission groups into single objects
-			let submissions = subdividedChunkArrays.map(chunkArray => {
-				let submission = {};
-
-				// We're guaranteed to have at least one chunk in the array
-				// so use that for our submission values
-				let firstChunk = chunkArray[0];
-
-				submission.submission_date = firstChunk.created_date;
-				submission.pending = 0;
-				submission.total = 0;
-				if (firstChunk.doi) {
-					submission.document = firstChunk.doi;
-				} else if (firstChunk.pubmed_id) {
-					submission.document = firstChunk.pubmed_id;
-				} else {
-					throw new Error('Submission chunk missing valid publication');
-				}
-
-				// Sum all the annotation counts together
-				chunkArray.forEach(chunk => {
-					submission.total += chunk.sub_total;
-					if (chunk.name === PENDING_STATUS) {
-						submission.pending += chunk.sub_total;
-					}
-				});
-
-				return submission;
+	Submission
+		.query(qb => {}) // Necessary to chain into orderBy
+		.orderBy('created_at', 'DESC')
+		.fetchPage({
+			page: page,
+			pageSize: itemsPerPage,
+			withRelated: ['publication', 'submitter', 'annotations.status'],
+		})
+		.then(submissionCollection => {
+			let submissions = submissionCollection.map(submissionModel => {
+				let publication = submissionModel.related('publication');
+				let annotations = submissionModel.related('annotations');
+				return {
+					id: submissionModel.get('id'),
+					document: publication.get('doi') || publication.get('pubmed_id'),
+					total: annotations.size(),
+					pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
+					submission_date: new Date(submissionModel.get('created_at')).toISOString()
+				};
 			});
 
 			return response.ok(res, submissions);

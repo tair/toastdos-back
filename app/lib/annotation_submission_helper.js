@@ -84,10 +84,11 @@ const NEW_ANNOTATION_STATUS = 'pending';
  *
  * @param annotation - type and data for a single annotation submission
  * @param locusMap - an optimization to help looking up genes used in an annotation
+ * @params submission - the submission this annotation is being added for
  * @param transaction - optional transaction for adding these records
  * @return {Promise.<*>}
  */
-function addAnnotationRecords(annotation, locusMap, transaction) {
+function addAnnotationRecords(annotation, locusMap, submission, transaction) {
 	let strategy = AnnotationTypeData[annotation.type];
 
 	// Step 1: Ensure annotation request all required fields and nothing extra
@@ -110,6 +111,7 @@ function addAnnotationRecords(annotation, locusMap, transaction) {
 				AnnotationStatus.where({name: NEW_ANNOTATION_STATUS}).fetch({require: true, transacting: transaction})
 			]).then(([type, status]) => {
 				let newAnn = {
+					submission_id: submission.get('id'),
 					publication_id: annotation.data.internalPublicationId,
 					status_id: status.attributes.id,
 					type_id: type.attributes.id,
