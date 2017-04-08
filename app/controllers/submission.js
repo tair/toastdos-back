@@ -17,6 +17,10 @@ const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 20;
 const METHOD_KEYWORD_TYPE_NAME = 'eco';
 
+const GENE_GENE_TYPE = 'PROTEIN_INTERACTION';
+const COMMENT_TYPE = 'COMMENT';
+
+
 /**
  * Creates records for all of the new Locuses and Annotations.
  * Performs all of the database additions inside a transaction,
@@ -259,7 +263,13 @@ function generateSubmissionSummary(req, res, next) {
 function getSingleSubmission(req, res, next) {
 	Submission
 		.where('id', req.params.id)
-		.fetch({withRelated: ['submitter', 'publication', 'annotations.locus.names', 'annotations.locusSymbol']})
+		.fetch({withRelated: [
+			'submitter',
+			'publication',
+			'annotations.childData',
+			'annotations.locus.names',
+			'annotations.locusSymbol',
+		]})
 		.then(submission => {
 
 			// Build list of loci for this submission. Use a map to prevent duplicates.
@@ -276,7 +286,29 @@ function getSingleSubmission(req, res, next) {
 				return list;
 			}, {}));
 
-			
+			// Refine array of annotations
+			let annotationList = submission.related('annotations').map(annotation => {
+				let refinedAnn = {
+					id: annotation.get('id'),
+					data: {
+						locusName: annotation.related('locus').related('names').first().get('locus_name'),
+					}
+				};
+
+				// Data changes based on annotation type
+				if (annotation.get('annotation_format') === 'gene_term_annotation') {
+
+				}
+				else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
+					refinedAnn.type = GENE_GENE_TYPE;
+				}
+				else { //if (annotation.get('annotation_format') === 'comment_annotation')
+					refinedAnn.type = COMMENT_TYPE;
+					refinedAnn.data.comment = annotation.related('childData').get('text');
+				}
+
+			});
+
 			return response.serverError(res, 'Not yet implemented');
 		})
 		.catch(err => {
