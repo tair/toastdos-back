@@ -40,7 +40,19 @@ describe('Models', function() {
 
 	describe('User', function() {
 
-		it('Drafts associated with this User are successfully retrieved');
+		it('Drafts associated with this User are successfully retrieved',function() {
+			const testUser = testdata.users[0];
+			const expectedDraft = testdata.draft[0];
+
+			return User.where({id: testUser.id})
+				.fetch({withRelated: 'drafts'})
+				.then(res => {
+					let actual = res.toJSON();
+					actual.drafts[0].wip_state=JSON.parse(actual.drafts[0].wip_state);
+					chai.expect(actual.drafts[0]).to.containSubset(expectedDraft);
+				});
+
+		});
 
 		it('Roles this User has can be retrieved', function() {
 			const testUser = testdata.users[0];
@@ -59,9 +71,19 @@ describe('Models', function() {
 
 	});
 
-	describe('Draft', function() {
+	describe.only('Draft', function() {
 
-		it('User who submitted this Draft can be retrieved');
+		it('User who submitted this Draft can be retrieved', function() {
+			let testDraft = testdata.draft[1];
+			let expectedUser = testdata.users[1];
+
+			return Draft.where({id: testDraft.id})
+				.fetch({withRelated: 'submitter'})
+				.then(res => {
+					let actual = res.toJSON();
+					chai.expect(actual.submitter).to.contain(expectedUser);
+				});
+		});
 
 	});
 
