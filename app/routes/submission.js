@@ -20,7 +20,7 @@ router.get(
 );
 
 router.get(
-	'/',
+	'/:id',
 	authenticationMiddleware.validateAuthentication,
 	authenticationMiddleware.requireCurator,
 	submissionController.getSingleSubmission
