@@ -251,18 +251,38 @@ function generateSubmissionSummary(req, res, next) {
 /**
  * Gets a single submission with all annotation / gene data.
  *
- * Query params:
- * submitter_id - ID of the user who made the submission.
- * publication_id - (Required) Our internal ID for the referenced publication.
- * submission_date - (Required) Date of submission (YYYY-MM-DD).
- *
  * Responses:
  * 200 with submission body
  * 400 if given parameters are bad
  * 500 if something goes wrong internally
  */
 function getSingleSubmission(req, res, next) {
-	return response.serverError(res, 'Not yet implemented');
+	Submission
+		.where('id', req.params.id)
+		.fetch({withRelated: ['submitter', 'publication', 'annotations.locus.names', 'annotations.locusSymbol']})
+		.then(submission => {
+
+			// Build list of loci for this submission. Use a map to prevent duplicates.
+			let locusList = _.values(submission.related('annotations').reduce((list, annotation) => {
+				let locusName = annotation.related('locus').related('names').first().get('locus_name');
+
+				list[locusName] = {
+					id: annotation.related('locus').get('id'),
+					locusName: locusName,
+					geneSynmbol: annotation.related('locusSymbol').get('symbol'),
+					fullName: annotation.related('locusSymbol').get('full_name')
+				};
+
+				return list;
+			}, {}));
+
+			
+			return response.serverError(res, 'Not yet implemented');
+		})
+		.catch(err => {
+			console.error(err);
+			response.defaultServerError(res, err)
+		});
 }
 
 
