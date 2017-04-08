@@ -8,9 +8,9 @@ const validator = require('../lib/publication_id_validator');
  * then queries the publication source to verify the
  * ID references an existing publication.
  *
- * @param  {Express.Request}   req  - the request
- * @param  {Express.Resonse}   res  - the response
- * @param  {Function} next - pass to next route handler
+ * Responses:
+ * 200 with publication information
+ * 404 if we can't find a publication
  */
 function validatePublicationId(req, res, next) {
 	const pubId = req.body.publication_id;

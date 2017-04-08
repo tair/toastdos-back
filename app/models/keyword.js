@@ -12,6 +12,34 @@ const Keyword = bookshelf.model('Keyword', {
 	synonyms: function() {
 		return this.hasMany('Synonym', 'keyword_id');
 	}
+}, {
+	addNew: function(params, transaction) {
+		return bookshelf.model('KeywordType')
+			.where('name', params.type_name)
+			.fetch({require: true, transacting: transaction})
+			.then(keywordType => {
+				return bookshelf.model('Keyword')
+					.forge({
+						name: params.name,
+						external_id: params.external_id,
+						is_obsolete: params.is_obsolete,
+						keyword_type_id: keywordType.get('id'),
+					})
+					.save(null, {transacting: transaction});
+			});
+	},
+	addOrGet: function(params, transaction) {
+		return bookshelf.model('Keyword')
+			.where('name', params.name)
+			.fetch({transacting: transaction})
+			.then(keyword => {
+				if (keyword) {
+					return Promise.resolve(keyword);
+				} else {
+					return addNew(params, transaction);
+				}
+			});
+	}
 });
 
 module.exports = Keyword;
