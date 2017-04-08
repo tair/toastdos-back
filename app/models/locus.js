@@ -17,6 +17,12 @@ const Locus = bookshelf.model('Locus', {
 	symbols: function() {
 		return this.hasMany('GeneSymbol', 'locus_id');
 	}
+}, {
+	addNew: function(params, transaction) {
+		return bookshelf.model('Locus')
+			.forge({taxon_id: params.taxon_id})
+			.save(null, {transacting: transaction});
+	}
 });
 
 module.exports = Locus;

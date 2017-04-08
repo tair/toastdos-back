@@ -28,6 +28,12 @@
       "name" : "Test Term 003",
       "external_id" : "T003",
       "keyword_type_id" : 2
+    },
+    {
+      "id" : 4,
+      "name" : "Name-with-hyphen",
+      "external_id" : "NWH",
+      "keyword_type_id" : 2
     }
   ],
 
@@ -64,6 +70,32 @@
     }
   ],
 
+  "roles" : [
+    {
+      "id" : 1,
+      "name" : "Test Role 1"
+    },
+    {
+      "id" : 2,
+      "name" : "Test Role 2"
+    }
+  ],
+
+  "user_roles" : [
+    {
+      "user_id" : 1,
+      "role_id" : 1
+    },
+    {
+      "user_id" : 1,
+      "role_id" : 2
+    },
+    {
+      "user_id" : 2,
+      "role_id" : 2
+    }
+  ],
+
   "publications" : [
     {
       "id" : 1,
@@ -71,7 +103,7 @@
     },
     {
       "id" : 2,
-      "pubmed_id" : 999999
+      "pubmed_id" : "999999"
     }
   ],
 
@@ -104,9 +136,12 @@
       "status_id" : 1,
       "submitter_id" : 1,
       "locus_id" : 1,
+      "locus_symbol_id" : 1,
       "type_id" : 1,
+      "submission_id" : 1,
       "annotation_id" : 1,
-      "annotation_format" : "gene_term_annotation"
+      "annotation_format" : "gene_term_annotation",
+      "created_at" : "2017-03-10 02:14:48"
     },
     {
       "id" : 2,
@@ -114,9 +149,12 @@
       "status_id" : 2,
       "submitter_id" : 1,
       "locus_id" : 1,
+      "locus_symbol_id" : 1,
       "type_id" : 2,
+      "submission_id" : 1,
       "annotation_id" : 2,
-      "annotation_format" : "gene_term_annotation"
+      "annotation_format" : "gene_term_annotation",
+      "created_at" : "2017-03-10 02:13:00"
     },
     {
       "id" : 3,
@@ -124,19 +162,25 @@
       "status_id" : 1,
       "submitter_id" : 2,
       "locus_id" : 2,
+      "locus_symbol_id" : 1,
       "type_id" : 2,
+      "submission_id" : 2,
       "annotation_id" : 1,
-      "annotation_format" : "gene_gene_annotation"
+      "annotation_format" : "gene_gene_annotation",
+      "created_at" : "2017-03-09 02:14:48"
     },
     {
       "id" : 4,
       "publication_id" : 2,
-      "status_id" : 2,
+      "status_id" : 1,
       "submitter_id" : 2,
       "locus_id" : 3,
+      "locus_symbol_id" : 1,
       "type_id" : 1,
+      "submission_id" : 3,
       "annotation_id" : 2,
-      "annotation_format" : "gene_gene_annotation"
+      "annotation_format" : "gene_gene_annotation",
+      "created_at" : "2017-03-10 02:20:32"
     },
     {
       "id" : 5,
@@ -144,9 +188,12 @@
       "status_id" : 2,
       "submitter_id" : 2,
       "locus_id" : 3,
+      "locus_symbol_id" : 1,
       "type_id" : 1,
+      "submission_id" : 3,
       "annotation_id" : 1,
-      "annotation_format" : "comment_annotation"
+      "annotation_format" : "comment_annotation",
+      "created_at" : "2017-03-10 02:16:10"
     },
     {
       "id" : 6,
@@ -154,9 +201,12 @@
       "status_id" : 2,
       "submitter_id" : 2,
       "locus_id" : 4,
+      "locus_symbol_id" : 1,
       "type_id" : 1,
+      "submission_id" : 3,
       "annotation_id" : 2,
-      "annotation_format" : "comment_annotation"
+      "annotation_format" : "comment_annotation",
+      "created_at" : "2017-03-10 02:15:20"
     }
   ],
 
@@ -165,7 +215,8 @@
       "id" : 1,
       "method_id" : 1,
       "keyword_id" : 2,
-      "evidence_id" : 1
+      "evidence_id" : 1,
+      "evidence_symbol_id" : 1
     },
     {
       "id" : 2,
@@ -178,11 +229,13 @@
     {
       "id" : 1,
       "locus2_id" : 1,
+      "locus2_symbol_id" : 1,
       "method_id" : 1
     },
     {
       "id" : 2,
       "locus2_id" : 2,
+      "locus2_symbol_id" : 1,
       "method_id" : 1
     }
   ],
@@ -200,6 +253,7 @@
 
   "draft" : [
     {
+      "id" : 1,
       "submitter_id" : 1,
       "wip_state" : {
         "id" : 1,
@@ -212,6 +266,7 @@
       }
     },
     {
+      "id" : 2,
       "submitter_id" : 2,
       "wip_state" : {
         "id" : 2,
@@ -222,6 +277,27 @@
         "annotation_id" : 2,
         "annotation_type" : "gene_term_annotation"
       }
+    }
+  ],
+
+  "submission" : [
+    {
+      "id" : 1,
+      "publication_id" : 1,
+      "submitter_id" : 1,
+      "created_at" : "2017-03-10 02:10:00"
+    },
+    {
+      "id" : 2,
+      "publication_id" : 2,
+      "submitter_id" : 2,
+      "created_at" : "2017-03-09 02:10:00"
+    },
+    {
+      "id" : 3,
+      "publication_id" : 2,
+      "submitter_id" : 2,
+      "created_at" : "2017-03-10 02:15:00"
     }
   ],
 

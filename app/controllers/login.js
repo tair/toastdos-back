@@ -6,14 +6,19 @@ const Orcid    = require('../lib/orcid_api');
 const response = require('../lib/responses');
 
 /**
- * Controller to log in with an ORCID auth code
- * @param  {Express.request}   req  - the request object
- * @param  {Express.Response}   res  - the response object
- * @param  {Function} next - pass to next route handler
+ * Controller for logging in with an ORCID auth code.
+ * Automatically creates Users in our system on first login.
+ * Handles updated information from ORCID (name, email, etc...)
+ *
+ * Responses:
+ * 200 with JWT on successful login
+ * 201 with JWT on first login (user is created)
+ * 400 if an OAuth code is not provided
+ * 500 if there's a problem authenticating with ORCID
  */
 function login(req, res, next) {
 	if (!req.body.code) {
-		return response.badRequest(400, 'Missing field: code');
+		return response.badRequest(res, 'Missing field: code');
 	}
 
 	// First we complete the OAuth process started on the frontend
@@ -30,9 +35,18 @@ function login(req, res, next) {
 
 			// Return that user if they exist
 			if (user) {
-				auth.signToken({user_id: user.attributes.id}, (err, userJwt) => {
-					return response.ok(res, {
-						jwt: userJwt
+				// Update the user's name if it's been changed in the ORCID system
+				let userPromise;
+				if(user.get('name') !== userName){
+					userPromise = user.set({name: userName}).save()
+				} else {
+					userPromise = Promise.resolve(user);
+				}
+				return userPromise.then(resolvedUser => {
+					auth.signToken({user_id: resolvedUser.attributes.id}, (err, userJwt) => {
+						return response.ok(res, {
+							jwt: userJwt
+						});
 					});
 				});
 			}

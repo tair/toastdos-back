@@ -9,6 +9,7 @@ const auth     = require('../lib/authentication');
 const response = require('../lib/responses');
 
 const User = require('../models/user');
+const Role = require('../models/role');
 
 /**
  * Validates that the specified user ID exists, then returns a
@@ -39,6 +40,40 @@ function makeDevToken(req, res, next) {
 		});
 }
 
+/**
+ * Makes a user with all roles.
+ * Responds with created user.
+ */
+function makeSuperUser(req, res, next) {
+	let getRolesProm = Role.fetchAll();
+
+	// Make a new user with a random Orcid ID.
+	let randId = Math.floor(Math.random() * 9999);
+	let makeUserProm = User.forge({
+			name: 'Test SuperUser',
+			orcid_id: `FAKE-ORCID-ID-${randId}`
+		})
+		.save()
+		.catch(err => {
+			if (err.message.includes('UNIQUE constraint failed: user.orcid_id')) {
+				throw new Error(
+					'Generated a test user with the same random ORCID ID as an existing test user. ' +
+					'You should clean up old test users from the database (and maybe buy a lottery ticket).'
+				);
+			}
+			throw err;
+		});
+
+	Promise.all([getRolesProm, makeUserProm]).then(([roles, user]) => {
+			return Promise.all(roles.map(role => user.roles().attach(role)))
+				.then(() => user.fetch({withRelated: 'roles'}));
+		})
+		.then(fullUser => response.created(res, fullUser))
+		.catch(err => response.serverError(res, err.message));
+
+}
+
 module.exports = {
-	makeDevToken
+	makeDevToken,
+	makeSuperUser
 };

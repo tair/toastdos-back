@@ -6,6 +6,7 @@ chai.use(require('chai-subset'));
 
 const knex = require('../../app/lib/bookshelf').knex;
 
+const User               = require('../../app/models/user');
 const KeywordType        = require('../../app/models/keyword_type');
 const Keyword            = require('../../app/models/keyword');
 const Synonym            = require('../../app/models/synonym');
@@ -21,19 +22,64 @@ const LocusName          = require('../../app/models/locus_name');
 const Locus              = require('../../app/models/locus');
 const ExternalSource     = require('../../app/models/external_source');
 const GeneSymbol         = require('../../app/models/gene_symbol');
+const Draft              = require('../../app/models/draft');
+const Submission         = require('../../app/models/submission');
 
 const testdata = require('../../seeds/test/test_data.json');
 
 describe('Models', function() {
 
 	// Make sure the database is up to date
-	before(function() {
+	before('Setup SQLite memory database', function() {
 		return knex.migrate.latest();
 	});
 
 	// Give us fresh test data in a sqlite memory database for each test
-	beforeEach(function() {
+	beforeEach('Populate SQLite memory DB with fresh test data', function() {
 		return knex.seed.run();
+	});
+
+	describe('User', function() {
+
+		it('Drafts associated with this User are successfully retrieved');
+
+		it('Roles this User has can be retrieved', function() {
+			const testUser = testdata.users[0];
+			const expectedRoles = [
+				testdata.roles[0],
+				testdata.roles[1]
+			];
+
+			return User.where({id: testUser.id})
+				.fetch({withRelated: 'roles'})
+				.then(res => {
+					let actual = res.toJSON();
+					chai.expect(actual.roles).to.containSubset(expectedRoles);
+				});
+		});
+
+		it('Submissions this user created can be retrieved', function() {
+			const testUser = testdata.users[1];
+			const expectedSubmissions = [
+				testdata.submission[1],
+				testdata.submission[2]
+			];
+
+			return User.where({id: testUser.id})
+				.fetch({withRelated: 'submissions'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submissions).to.containSubset(expectedSubmissions);
+				});
+		});
+
+	});
+
+	describe('Draft', function() {
+
+		it('User who submitted this Draft can be retrieved');
+
 	});
 
 	describe('Keyword', function() {
@@ -64,9 +110,42 @@ describe('Models', function() {
 					chai.expect(actual.synonyms).to.containSubset(expectedSynonyms);
 				});
 		});
+
+		it('addNew', function() {
+			const testKeyword = testdata.keywords[0];
+			const newExtId = 'NEID001';
+
+			return Keyword.addNew({
+				name: testKeyword.name,
+				external_id: newExtId,
+				type_name: testdata.keyword_types[0].name
+			}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual.name).to.equal(testKeyword.name);
+				chai.expect(actual.external_id).to.equal(newExtId);
+				chai.expect(actual.id).to.not.equal(testKeyword.id);
+			});
+		});
+
+		it('addOrGet', function() {
+			const testKeyword = testdata.keywords[0];
+
+			return Keyword.addOrGet({
+				name: testKeyword.name,
+				external_id: testKeyword.external_id,
+				type_name: testdata.keyword_types[0].name
+			}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual.name).to.equal(testKeyword.name);
+				chai.expect(actual.external_id).to.equal(testKeyword.external_id);
+				chai.expect(actual.id).to.equal(testKeyword.id);
+			});
+		});
+
 	});
 
 	describe('KeywordType', function() {
+
 		it('Get KeywordType and associated Keywords', function() {
 			let expectedKeywordType = testdata.keyword_types[0];
 			let expectedKeywords = [
@@ -82,6 +161,15 @@ describe('Models', function() {
 					chai.expect(actual.keywords).to.containSubset(expectedKeywords);
 				});
 		});
+
+		it('getByName', function() {
+			const testKeyword = testdata.keyword_types[0];
+			return KeywordType.getByName(testKeyword.name).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(testKeyword);
+			});
+		});
+
 	});
 
 	describe('Synonym', function() {
@@ -109,12 +197,47 @@ describe('Models', function() {
 			];
 
 			return Publication.where({id: testPublication.id})
-				.fetch({withRelated: 'referencedBy'})
+				.fetch({withRelated: 'annotations'})
 				.then(res => {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
-					chai.expect(actual.referencedBy).to.containSubset(expectedAnnotations);
+					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
 				});
+		});
+
+		it('Get Submissions associated with Publication', function() {
+			const testPublication = testdata.publications[1];
+			const expectedSubmissions = [
+				testdata.submission[1],
+				testdata.submission[2]
+			];
+
+			return Publication.where({id: testPublication.id})
+				.fetch({withRelated: 'submissions'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submissions).to.containSubset(expectedSubmissions);
+				});
+		});
+
+		it('addOrGet adds', function() {
+			const newPubName = 12345;
+			return Publication.addOrGet({pubmed_id: newPubName}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual.pubmed_id).to.equal(newPubName);
+				testdata.publications.forEach(publication => {
+					chai.expect(actual.id).to.not.equal(publication.id);
+				});
+			});
+		});
+
+		it('addOrGet gets', function() {
+			const testPub = testdata.publications[0];
+			return Publication.addOrGet({doi: testPub.doi}).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(testPub);
+			});
 		});
 
 	});
@@ -200,6 +323,19 @@ describe('Models', function() {
 				});
 		});
 
+		it('Submission this Annotation belongs to can be retrieved', function() {
+			const testAnnotation = testdata.annotations[0];
+			const expectedSubmission = testdata.submission[0];
+
+			return Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'submission'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submission).to.contain(expectedSubmission);
+				});
+		});
+
 		it('User who submitted the Annotation can be retrieved', function() {
 			let testAnnotation = testdata.annotations[0];
 			let expectedUser = testdata.users[0];
@@ -223,6 +359,19 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.locus).to.contain(expectedLocus);
+				});
+		});
+
+		it('GeneSymbol for the Locus the Annotation refers to can be retrieved', function() {
+			let testAnnotation = testdata.annotations[0];
+			let expectedSymbol = testdata.gene_symbol[0];
+
+			return Annotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'locusSymbol'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.locusSymbol).to.contain(expectedSymbol);
 				});
 		});
 
@@ -308,6 +457,19 @@ describe('Models', function() {
 				});
 		});
 
+		it('GeneSymbol for evidence Locus of Annotation can be retrieved', function() {
+			let testAnnotation = testdata.gene_term_annotations[0];
+			let expectedSymbol = testdata.gene_symbol[0];
+
+			return GeneTermAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'evidenceSymbol'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.evidenceSymbol).to.contain(expectedSymbol);
+				});
+		});
+
 		it('Parent Annotation information can be retrieved', function() {
 			let testAnnotation = testdata.gene_term_annotations[0];
 			let expectedParent = testdata.annotations[0];
@@ -348,6 +510,19 @@ describe('Models', function() {
 					if (!res) throw new Error('No models were returned');
 					let actual = res.toJSON();
 					chai.expect(actual.locus2).to.contain(expectedLocus2);
+				});
+		});
+
+		it('GeneSymbol for locus2 Locus of Annotation can be retrieved', function() {
+			let testAnnotation = testdata.gene_gene_annotations[0];
+			let expectedSymbol = testdata.gene_symbol[0];
+
+			return GeneGeneAnnotation.where({id: testAnnotation.id})
+				.fetch({withRelated: 'locus2Symbol'})
+				.then(res => {
+					if (!res) throw new Error('No models were returned');
+					let actual = res.toJSON();
+					chai.expect(actual.locus2Symbol).to.contain(expectedSymbol);
 				});
 		});
 
@@ -399,6 +574,29 @@ describe('Models', function() {
 					let actual = res.toJSON();
 					chai.expect(actual.locuses).to.containSubset(expectedLocuses);
 				});
+		});
+
+		it('addOrGet adds', function() {
+			const newTaxon = {
+				name: 'Vulpes vulpes',
+				taxon_id: 9627
+			};
+
+			return Taxon.addOrGet(newTaxon).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(newTaxon);
+				testdata.taxon.forEach(taxon => {
+					chai.expect(actual.id).to.not.equal(taxon.id);
+				});
+			});
+		});
+
+		it('addOrGet gets', function() {
+			const existingTaxon = testdata.taxon[0];
+			return Taxon.addOrGet(existingTaxon).then(res => {
+				let actual = res.toJSON();
+				chai.expect(actual).to.contain(existingTaxon);
+			});
 		});
 
 	});
@@ -542,6 +740,52 @@ describe('Models', function() {
 					if (!res) throw new Error('No User was returned');
 					let actual = res.toJSON();
 					chai.expect(actual.submitter).to.contain(expectedUser);
+				});
+		});
+
+	});
+
+	describe('Submission', function() {
+
+		it('User who created Submission can be retrieved', function() {
+			const testSubmission = testdata.submission[0];
+			const expectedUser = testdata.users[0];
+
+			return Submission.where({id: testSubmission.id})
+				.fetch({withRelated: 'submitter'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.submitter).to.contain(expectedUser);
+				});
+		});
+
+		it('Publication this Submission references can be retrieved', function() {
+			const testSubmission = testdata.submission[0];
+			const expectedPublication = testdata.publications[0];
+
+			return Submission.where({id: testSubmission.id})
+				.fetch({withRelated: 'publication'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.publication).to.contain(expectedPublication);
+				});
+		});
+
+		it('All Annotations associated with a Submission can be retrieved', function() {
+			const testSubmission = testdata.submission[0];
+			const expectedAnnotations = [
+				testdata.annotations[0],
+				testdata.annotations[1]
+			];
+
+			return Submission.where({id: testSubmission.id})
+				.fetch({withRelated: 'annotations'})
+				.then(res => {
+					if (!res) throw new Error('No User was returned');
+					let actual = res.toJSON();
+					chai.expect(actual.annotations).to.containSubset(expectedAnnotations);
 				});
 		});
 

@@ -4,6 +4,7 @@ const OK = 200;
 const CREATED = 201;
 const BAD_REQUEST = 400;
 const UNAUTHORIZED = 401;
+const FORBIDDEN = 403;
 const NOT_FOUND = 404;
 const INTERNAL_SERVER_ERROR = 500;
 
@@ -33,6 +34,11 @@ function unauthorized(res, message) {
 	return res.status(UNAUTHORIZED).send(message);
 }
 
+function forbidden(res, message) {
+	if (!testing) console.error(message);
+	return res.status(FORBIDDEN).send(message);
+}
+
 function notFound(res, message) {
 	if (!testing) console.error(message);
 	logger.debug(res,message);
@@ -56,6 +62,7 @@ module.exports ={
 	created,
 	badRequest,
 	unauthorized,
+	forbidden,
 	notFound,
 	serverError,
 	defaultServerError

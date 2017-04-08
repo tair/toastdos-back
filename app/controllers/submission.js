@@ -1,5 +1,7 @@
 'use strict';
 
+const _ = require('lodash');
+
 const bookshelf            = require('../lib/bookshelf');
 const response             = require('../lib/responses');
 const locusHelper          = require('../lib/locus_submission_helper');
@@ -7,6 +9,13 @@ const annotationHelper     = require('../lib/annotation_submission_helper');
 const publicationValidator = require('../lib/publication_id_validator');
 
 const Publication = require('../models/publication');
+const Annotation  = require('../models/annotation');
+const Keyword     = require('../models/keyword');
+const Submission  = require('../models/submission');
+
+const PENDING_STATUS = 'pending';
+const PAGE_LIMIT = 20;
+const METHOD_KEYWORD_TYPE_NAME = 'eco';
 
 /**
  * Creates records for all of the new Locuses and Annotations.
@@ -29,15 +38,21 @@ function submitGenesAndAnnotations(req, res, next) {
 		return response.badRequest(res, 'No annotations specified');
 	}
 
-	// Ensure the top level fields for each element all exist
-	if (req.body.genes.some(gene => (!gene.locusName || !gene.geneSymbol || !gene.fullName) )) {
+	// Ensure each locus provides a name
+	if (req.body.genes.some(gene => !gene.locusName)) {
 		return response.badRequest(res, 'Body contained malformed Gene data');
 	}
 
+	// Ensure each annotation supplies type information and data
 	if (req.body.annotations.some(ann => (!ann.type || !ann.data) )) {
 		return response.badRequest(res, 'Body contained malformed Annotation data');
 	}
 
+	// Validate Annotation type
+	let foundBadAnnType = req.body.annotations.find(ann => !annotationHelper.AnnotationTypeData[ann.type]);
+	if (foundBadAnnType) {
+		return response.badRequest(res, `Invalid annotation type ${foundBadAnnType.type}`);
+	}
 
 	// Publication ID validation / type detection
 	let publicationType;
@@ -49,45 +64,74 @@ function submitGenesAndAnnotations(req, res, next) {
 		return response.badRequest(res, `${req.body.publicationId} is not a DOI or Pubmed ID`);
 	}
 
-	// We bundle submitter ID in with the submission request, but it needs to match the authenticated user
-	if (req.user.attributes.id !== req.body.submitterId) {
-		return response.unauthorized(res, 'submitterId does not match authenticated user');
-	}
-
 	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
 	bookshelf.transaction(transaction => {
 
-		// Use an existing publication record if possible
-		let publicationPromise = Publication.where({[publicationType]: req.body.publicationId})
-			.fetch({transacting: transaction})
-			.then(existingPublication => {
-				if (existingPublication) {
-					return Promise.resolve(existingPublication);
-				} else {
-					return Publication.forge({[publicationType]: req.body.publicationId})
-						.save(null, {transacting: transaction});
-				}
-			});
+		return Publication.addOrGet({
+				[publicationType]: req.body.publicationId
+			}, transaction)
+			.then(publication => {
 
-		let locusPromises = req.body.genes.map(gene => {
-			return locusHelper.addLocusRecords(gene.locusName, gene.fullName, gene.geneSymbol,
-				req.user.attributes.id, transaction);
-		});
+				let submissionPromise = Submission.addNew({
+					publication_id: publication.get('id'),
+					submitter_id: req.user.get('id')
+				}, transaction);
 
-		// Isolate the publication promise from the locus promises
-		return Promise.all([publicationPromise, Promise.all(locusPromises)])
-			.then(([publication, locusArray]) => {
+				let keywordPromise = addNewKeywords(req.body.annotations, transaction);
 
-				// Create a map of the locuses we added so we can quickly look them up by name
-				let locusMap = locusArray.map(locus => ({[locus.attributes.locus_name]: locus}))
-					.reduce((accumulator, curValue) => Object.assign(accumulator, curValue));
+				// Add all of the genes for the submission
+				let locusPromises = req.body.genes.map(gene => {
+					return locusHelper.addLocusRecords({
+						name: gene.locusName,
+						full_name: gene.fullName,
+						symbol: gene.geneSymbol,
+						submitter_id: req.user.attributes.id
+					}, transaction);
+				});
+
+				// Group the promises by data type
+				return Promise.all([
+					Promise.resolve(publication), // Carry data into next promise
+					submissionPromise,
+					keywordPromise,
+					Promise.all(locusPromises)
+				])
+			})
+			.then(([publication, submission, keywordArray, locusArray]) => {
+
+				// Create a map of the locuses / symbols we added so we can quickly look them up by name
+				let locusMap = locusArray.reduce((acc, [locus, symbol]) => {
+					acc[locus.attributes.locus_name] = {
+						locus: locus,
+						symbol: symbol
+					};
+					return acc;
+				}, {});
+
+				// Create a map of the Keywords we added so we can quickly look them up by name
+				let newKeywordMap = keywordArray.reduce((keywordNameIdMap, newKeyword) => {
+					keywordNameIdMap[newKeyword.get('name')] = newKeyword.get('id');
+					return keywordNameIdMap;
+				}, {});
 
 				let annotationPromises = req.body.annotations.map(annotation => {
-					// Every Annotation needs a reference to Publication and User ID
+					// Add created keyword IDs into annotation data
+					let keyword = annotation.data.keyword;
+					let method = annotation.data.method;
+
+					// Methods and keywords are not present in all Annotations
+					if (keyword && keyword.name && newKeywordMap[keyword.name]) {
+						annotation.data.keyword.id = newKeywordMap[keyword.name];
+					}
+					if (method && method.name && newKeywordMap[method.name]) {
+						annotation.data.method.id = newKeywordMap[method.name];
+					}
+
+					// These fields exist on all Annotations
 					annotation.data.internalPublicationId = publication.attributes.id;
 					annotation.data.submitterId = req.user.attributes.id;
 
-					return annotationHelper.addAnnotationRecords(annotation, locusMap, transaction);
+					return annotationHelper.addAnnotationRecords(annotation, locusMap, submission, transaction);
 				});
 
 				return Promise.all(annotationPromises);
@@ -115,6 +159,96 @@ function submitGenesAndAnnotations(req, res, next) {
 		});
 }
 
+/**
+ * Adds all of the new Keywords specified in the list of Annotations.
+ * Returns promise that resolves to the list of the added Keywords.
+ */
+function addNewKeywords(annotations, transaction) {
+	// Build a map of new Keyword names to KeywordType names (the map prevents duplicates)
+	let keywordTypeMap = annotations.reduce((seenKeywords, annotation) => {
+		let method = annotation.data.method;
+		let keyword = annotation.data.keyword;
+
+		if (method && method.name) {
+			seenKeywords[method.name] = METHOD_KEYWORD_TYPE_NAME;
+		}
+
+		if (keyword && keyword.name) {
+			seenKeywords[keyword.name] = annotationHelper.AnnotationTypeData[annotation.type].keywordScope;
+		}
+
+		return seenKeywords;
+	}, {});
+
+	// Now add the new Keywords
+	let keywordPromises = Object.keys(keywordTypeMap).map(newKeywordName => {
+		return Keyword.addNew({name: newKeywordName, type_name: keywordTypeMap[newKeywordName]}, transaction);
+	});
+
+	return Promise.all(keywordPromises);
+}
+
+/**
+ * Gets a list of submissions.
+ * Submissions are a transient model in our system. They're represented by the
+ * list of all annotations that share a publication id, submitter id, and
+ * submission date.
+ *
+ * Query params:
+ * limit - Number of results to fetch. Defaults to / hard capped at PAGE_LIMIT.
+ * page - Page of results to start on. Defaults to 1.
+ *
+ * Responses:
+ * 200 with submission list in body
+ * 500 if something internally goes wrong
+ */
+function generateSubmissionSummary(req, res, next) {
+
+	// Constrain / validate pagination values
+	let itemsPerPage;
+	let page;
+
+	if (!req.query.limit || req.query.limit > PAGE_LIMIT) {
+		itemsPerPage = PAGE_LIMIT;
+	} else if (req.query.limit < 1) {
+		itemsPerPage = 1;
+	} else {
+		itemsPerPage = req.query.limit;
+	}
+
+	if (!req.query.page || req.query.page <= 1) {
+		page = 1;
+	} else {
+		page = req.query.page;
+	}
+
+	Submission
+		.query(qb => {}) // Necessary to chain into orderBy
+		.orderBy('created_at', 'DESC')
+		.fetchPage({
+			page: page,
+			pageSize: itemsPerPage,
+			withRelated: ['publication', 'submitter', 'annotations.status'],
+		})
+		.then(submissionCollection => {
+			let submissions = submissionCollection.map(submissionModel => {
+				let publication = submissionModel.related('publication');
+				let annotations = submissionModel.related('annotations');
+				return {
+					id: submissionModel.get('id'),
+					document: publication.get('doi') || publication.get('pubmed_id'),
+					total: annotations.size(),
+					pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
+					submission_date: new Date(submissionModel.get('created_at')).toISOString()
+				};
+			});
+
+			return response.ok(res, submissions);
+		})
+		.catch(err => response.defaultServerError(res, err));
+}
+
 module.exports = {
-	submitGenesAndAnnotations
+	submitGenesAndAnnotations,
+	generateSubmissionSummary
 };

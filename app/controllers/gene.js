@@ -6,12 +6,9 @@ const locusHelper = require('../lib/locus_submission_helper');
 /**
  * Search external resources for a Gene by its full name.
  *
- * Responds with an 200 if we get a single result.
- * Responds with a 404 if we find nothing.
- *
- * @param  {Express.Request}   req  - the request object
- * @param  {Express.Response}   res  - the response object
- * @param  {Function} next - pass to next route handler
+ * Responses:
+ * 200 if we successfully find the gene
+ * 404 if we find nothing
  */
 function getByLocusName(req, res, next) {
 	locusHelper.verifyLocus(req.params.name)

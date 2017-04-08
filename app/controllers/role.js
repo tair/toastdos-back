@@ -1,7 +1,4 @@
 'use strict';
-/**
- * @module controllers/user
- */
 
 const Role = require('../models/role');
 

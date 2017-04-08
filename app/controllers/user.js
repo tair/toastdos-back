@@ -16,9 +16,10 @@ const TERRIFYING_EMAIL_VALIDATING_REGEX = /(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.
 
 /**
  * Get all Users in the database
- * @param  {Express.Request}   req  - the request object
- * @param  {Express.Response}   res  - the response object
- * @param  {Function} next - pass to next route handler
+ *
+ * Responses:
+ * 200 with list of all users
+ * 500 on internal server error
  */
 function getUsers(req, res, next) {
 	return User.fetchAll()
@@ -30,10 +31,13 @@ function getUsers(req, res, next) {
 
 
 /**
- * Get a user by ID
- * @param  {Express.Request}   req  - the request object
- * @param  {Express.Response}   res  - the response object
- * @param  {Function} next - pass to the next route handler
+ * Get a user by ID with the specified relations
+ *
+ * Responses:
+ * 200 with fetched user
+ * 400 if an invalid relation is provided
+ * 404 if a user matching the given ID isn't found
+ * 500 on internal server error
  */
 function getUserById(req, res, next) {
 	return User.where('id', req.params.id).fetch({
@@ -57,9 +61,12 @@ function getUserById(req, res, next) {
  * Update a specific user.
  * Undefined fields are not modified.
  * Defined but null fields are unset on the user.
- * @param  {Express.Request}   	req  - the request object
- * @param  {Express.Reponse}   	res  - the response object
- * @param  {Function} 			next - pass to next handler
+ *
+ * Responses:
+ * 200 with updated user on successful update
+ * 400 if extra fields are provided, or email is invalid
+ * 404 if a user matching the ID isn't found
+ * 500 on internal server error
  */
 function updateUserById(req, res, next) {
 	let mutableFields = ['email_address'];
@@ -91,9 +98,11 @@ function updateUserById(req, res, next) {
 
 /**
  * Delete a user by its ID
- * @param  {Express.Request}   req  - the request object
- * @param  {Express.Reponse}   res  - the response object
- * @param  {Function} next - pass to next handler
+ *
+ * Responses:
+ * 200 on successful delete
+ * 404 if a user matching the ID isn't found
+ * 500 on internal server error
  */
 function deleteUserById(req, res, next) {
 	return User.where('id', req.params.id)
@@ -114,9 +123,10 @@ function deleteUserById(req, res, next) {
 
 /**
  * Assign/remove roles on a user
- * @param  {Express.Request}   	req  - the request object
- * @param  {Express.Reponse}   	res  - the response object
- * @param  {Function} 			next - pass to next handler
+ *
+ * Responses:
+ * 200 on successful add / removal
+ * 500 on internal server error
  */
 function setRoles(req, res, next) {
 	let target_user = User.forge({id: req.params.id});
@@ -140,7 +150,6 @@ function setRoles(req, res, next) {
 			return response.defaultServerError(res, err)
 		});
 }
-
 
 
 module.exports = {
