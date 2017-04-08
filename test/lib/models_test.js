@@ -71,7 +71,7 @@ describe('Models', function() {
 
 	});
 
-	describe.only('Draft', function() {
+	describe('Draft', function() {
 
 		it('User who submitted this Draft can be retrieved', function() {
 			let testDraft = testdata.draft[1];
