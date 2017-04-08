@@ -56,6 +56,7 @@ function login(req, res, next) {
 		if(err.message === 'EmptyResponse') {
 			return response.badRequest(res, 'Username not found');
 		}
+
 		return response.defaultServerError(res, err);
 	});
 }

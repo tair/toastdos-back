@@ -24,9 +24,7 @@ const TERRIFYING_EMAIL_VALIDATING_REGEX = /(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.
 function getUsers(req, res, next) {
 	return User.fetchAll()
 		.then(collection  => response.ok(res, collection.serialize()))
-		.catch(err => {
-			return response.defaultServerError(res, err)
-		});
+		.catch(err => response.defaultServerError(res, err));
 }
 
 
@@ -50,9 +48,11 @@ function getUserById(req, res, next) {
 			if (regMatch = err.message.match(/([a-zA-Z]*) is not defined on the model/)) {
 				return response.badRequest(res, `'${regMatch[1]}' is not a valid relation on this model.`);
 			}
+
 			if (err.message === 'EmptyResponse') {
 				return response.notFound(res, 'User not found');
 			}
+
 			return response.defaultServerError(res, err);
 		});
 }
@@ -92,6 +92,7 @@ function updateUserById(req, res, next) {
 			if (err.toString().includes('No Rows Updated')) {
 				return response.notFound(res, `No User exists for ID ${req.params.id}`);
 			}
+
 			return response.defaultServerError(res, err);
 		});
 }
@@ -146,9 +147,7 @@ function setRoles(req, res, next) {
 			});
 		})
 		.then(user => response.ok(res, user))
-		.catch(err => {
-			return response.defaultServerError(res, err)
-		});
+		.catch(err => response.defaultServerError(res, err));
 }
 
 

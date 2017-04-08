@@ -1,12 +1,10 @@
 'use strict';
 
-const config = require('../../config')
-
+const config = require('../../config');
 const winston = require('winston');
+const fs = require('fs');
 
 const tsFormat = () => (new Date()).toLocaleTimeString();
-
-const fs = require('fs');
 
 // Create the log directory if it does not exist
 if (!fs.existsSync('./logs')) {

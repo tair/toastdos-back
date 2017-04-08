@@ -13,9 +13,7 @@ const response = require('../lib/responses');
 function getRoles(req, res, next) {
 	return Role.fetchAll()
 		.then(collection => response.ok(res, collection.serialize()))
-		.catch(err => {
-			return response.defaultServerError(res, err)
-		});
+		.catch(err => response.defaultServerError(res, err));
 }
 
 /**
@@ -28,9 +26,7 @@ function createRole(req, res, next) {
 	return Role.forge(req.body)
 		.save()
 		.then(role => response.ok(res, role.serialize()))
-		.catch(err => {
-			return response.defaultServerError(res, err)
-		});
+		.catch(err => response.defaultServerError(res, err));
 }
 
 /**
@@ -43,9 +39,7 @@ function getRoleUsers(req, res, next) {
 	return Role.forge({id: req.params.id})
 		.fetch({withRelated: 'users'})
 		.then(role => response.ok(res, role.related('users')))
-		.catch(err => {
-			return response.defaultServerError(res, err)
-		});
+		.catch(err => response.defaultServerError(res, err));
 }
 
 

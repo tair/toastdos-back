@@ -13,7 +13,6 @@ const validator = require('../lib/publication_id_validator');
  * 404 if we can't find a publication
  */
 function validatePublicationId(req, res, next) {
-
 	const pubId = req.body.publication_id;
 
 	if (validator.isDOI(pubId)) {
@@ -24,9 +23,7 @@ function validatePublicationId(req, res, next) {
 					url: query.values[0].data.value
 				});
 			})
-			.catch(err => {
-				return response.notFound(res, err.message)
-			});
+			.catch(err => response.notFound(res, err.message));
 	}
 	else if (validator.isPubmedId(pubId)) {
 		validator.validatePubmedId(pubId)
@@ -37,9 +34,7 @@ function validatePublicationId(req, res, next) {
 					author: query.result[pubId].authors[0].name
 				});
 			})
-			.catch(err => {
-				return response.notFound(res, err.message)
-			});
+			.catch(err => response.notFound(res, err.message));
 	}
 	else {
 		return response.notFound(res, `Invalid publication ID ${pubId}`);
