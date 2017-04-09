@@ -271,7 +271,35 @@ function getSingleSubmission(req, res, next) {
 			'annotations.locusSymbol',
 		]})
 		.then(submission => {
+			// Get additional annotation data needed for submission
+			let additionalDataPromises = submission.related('annotations').map(annotation => {
 
+				if (annotation.get('annotation_format') === 'gene_term_annotation') {
+					return annotation.fetch({withRelated: [
+						'childData.method',
+						'childData.keyword',
+						'childData.evidence',
+						'childData.evidenceSymbol'
+					]});
+				}
+
+				if (annotation.get('annotation_format') === 'gene_gene_annotation') {
+					return annotation.fetch({withRelated: [
+						'childData.method',
+						'childData.locus2',
+						'childData.locus2Symbol'
+					]});
+				}
+
+				if (annotation.get('annotation_format') === 'comment_annotation') {
+					return Promise.resolve(annotation);
+				}
+			});
+
+			return Promise.all([Promise.resolve(submission), Promise.all(additionalDataPromises)])
+		})
+		.then(([submission, loadedAnnotations]) => {
+		
 			// Build list of loci for this submission. Use a map to prevent duplicates.
 			let locusList = _.values(submission.related('annotations').reduce((list, annotation) => {
 				let locusName = annotation.related('locus').related('names').first().get('locus_name');
