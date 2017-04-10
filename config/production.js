@@ -7,14 +7,14 @@ module.exports = {
 		level: 'info',
 		name: 'production-info',
 		filename: './logs/production.log',
-		json: true,
+		json: false,
 		timestamp: tsFormat
 	},
 	loggerdebug: {
 		level: 'debug',
 		name: 'production-debug',
 		filename: './logs/production.log',
-		json: true,
+		json: false,
 		timestamp: tsFormat
 	},
 	database: require('../knexfile').production,
