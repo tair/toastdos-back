@@ -1,8 +1,22 @@
 'use strict';
+const tsFormat = () => (new Date()).toLocaleTimeString();
 
 module.exports = {
 	// development environment configuration
-	logger: config.logger,
+	loggerinfo: {
+		level: 'info',
+		name: 'developer-info',
+		filename: './logs/development.log',
+		json: true,
+		timestamp: tsFormat
+	},
+	loggerdebug: {
+		level: 'debug',
+		name: 'developer-debug',
+		filename: './logs/development.log',
+		json: true,
+		timestamp: tsFormat
+	},
 	database: require('../knexfile').development,
 	jwt: {
 		algorithm: 'RS256',

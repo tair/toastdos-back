@@ -4,7 +4,7 @@ const config = require('../../config');
 const winston = require('winston');
 const fs = require('fs');
 
-const tsFormat = () => (new Date()).toLocaleTimeString();
+
 
 // Create the log directory if it does not exist
 if (!fs.existsSync('./logs')) {
@@ -13,18 +13,8 @@ if (!fs.existsSync('./logs')) {
 
 const logger = new winston.Logger({
 	transports: [
-		new winston.transports.File({
-			level: 'info',
-			name: 'info-file',
-			filename: './logs/file.log',
-			timestamp: tsFormat
-		}),
-		new (winston.transports.File)({
-			level: 'debug',
-			name: 'error-file',
-			filename: './logs/file.log',
-			timestamp: tsFormat
-		})
+		new winston.transports.File(config.loggerinfo),
+		new winston.transports.File(config.loggerdebug)
 	],
 	exitOnError: false
 });
