@@ -17,6 +17,14 @@ const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 20;
 const METHOD_KEYWORD_TYPE_NAME = 'eco';
 
+// For converting keyword scope to annotation types
+const KEYWORD_TO_TYPE = {
+	molecular_function: 'MOLECULAR_FUNCTION',
+	biological_process: 'BIOLOGICAL_PROCESS',
+	cellular_component: 'SUBCELLULAR_LOCATION',
+	plant_anatomy: 'ANATOMICAL_LOCATION',
+	plant_structure_development_stage: 'TEMPORAL_EXPRESSION'
+};
 const GENE_GENE_TYPE = 'PROTEIN_INTERACTION';
 const COMMENT_TYPE = 'COMMENT';
 
@@ -279,6 +287,7 @@ function getSingleSubmission(req, res, next) {
 					return annotation.fetch({withRelated: [
 						'childData.method',
 						'childData.keyword',
+						'childData.keyword.keywordType',
 						'childData.evidence.names',
 						'childData.evidenceSymbol'
 					]});
@@ -302,29 +311,9 @@ function getSingleSubmission(req, res, next) {
 		.then(([submission, loadedAnnotations]) => {
 
 			let locusList = getAllLociFromAnnotations(loadedAnnotations);
+			let annotationList = generateAnnotationSubmissionList(submission.related('annotations'));
 
-			// Refine array of annotations
-			let annotationList = submission.related('annotations').map(annotation => {
-				let refinedAnn = {
-					id: annotation.get('id'),
-					data: {
-						locusName: annotation.related('locus').related('names').first().get('locus_name'),
-					}
-				};
-
-				// Data changes based on annotation type
-				if (annotation.get('annotation_format') === 'gene_term_annotation') {
-
-				}
-				else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
-					refinedAnn.type = GENE_GENE_TYPE;
-				}
-				else { //if (annotation.get('annotation_format') === 'comment_annotation')
-					refinedAnn.type = COMMENT_TYPE;
-					refinedAnn.data.comment = annotation.related('childData').get('text');
-				}
-
-			});
+			console.log('annlist', JSON.stringify(annotationList, null, 2));
 
 			return response.serverError(res, 'Not yet implemented');
 		})
@@ -392,6 +381,54 @@ function getAllLociFromAnnotations(annotationList) {
 	return _.values(locusMap);
 }
 
+/**
+ * Takes in a list of annotation bookshelf models and outputs the list
+ * of annotations formatted as they would appear in a submission.
+ */
+function generateAnnotationSubmissionList(annotationList) {
+	let refinedAnnotations = annotationList.map(annotation => {
+		let refinedAnn = {
+			id: annotation.get('id'),
+			data: {
+				locusName: annotation.related('locus').related('names').first().get('locus_name'),
+			}
+		};
+
+		// Data changes based on annotation type
+		if (annotation.get('annotation_format') === 'gene_term_annotation') {
+			refinedAnn.type = KEYWORD_TO_TYPE[annotation.related('childData').related('keyword').related('keywordType').get('name')];
+			refinedAnn.data.method = {
+				id: annotation.related('childData').related('method').get('id'),
+				name: annotation.related('childData').related('method').get('name')
+			};
+
+			refinedAnn.data.keyword = {
+				id: annotation.related('childData').related('keyword').get('id'),
+				name: annotation.related('childData').related('keyword').get('name')
+			};
+
+			if (annotation.related('childData').related('evidence').get('id')) {
+				refinedAnn.data.evidence = annotation.related('childData').related('evidence').related('names').first().get('locus_name');
+			}
+		}
+		else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
+			refinedAnn.type = GENE_GENE_TYPE;
+			refinedAnn.data.locusName2 = annotation.related('childData').related('locus2').related('names').first().get('locus_name');
+			refinedAnn.data.method = {
+				id: annotation.related('childData').related('method').get('id'),
+				name: annotation.related('childData').related('method').get('name')
+			};
+		}
+		else { //if (annotation.get('annotation_format') === 'comment_annotation')
+			refinedAnn.type = COMMENT_TYPE;
+			refinedAnn.data.comment = annotation.related('childData').get('text');
+		}
+
+		return refinedAnn;
+	});
+
+	return refinedAnnotations;
+}
 
 module.exports = {
 	submitGenesAndAnnotations,
