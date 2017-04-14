@@ -271,14 +271,15 @@ function getSingleSubmission(req, res, next) {
 			'annotations.locusSymbol',
 		]})
 		.then(submission => {
-			// Get additional annotation data needed for submission
+			// Get additional annotation data needed for submission.
+			// The data we need changes slightly based on annotation format
 			let additionalDataPromises = submission.related('annotations').map(annotation => {
 
 				if (annotation.get('annotation_format') === 'gene_term_annotation') {
 					return annotation.fetch({withRelated: [
 						'childData.method',
 						'childData.keyword',
-						'childData.evidence',
+						'childData.evidence.names',
 						'childData.evidenceSymbol'
 					]});
 				}
@@ -286,7 +287,7 @@ function getSingleSubmission(req, res, next) {
 				if (annotation.get('annotation_format') === 'gene_gene_annotation') {
 					return annotation.fetch({withRelated: [
 						'childData.method',
-						'childData.locus2',
+						'childData.locus2.names',
 						'childData.locus2Symbol'
 					]});
 				}
@@ -299,20 +300,8 @@ function getSingleSubmission(req, res, next) {
 			return Promise.all([Promise.resolve(submission), Promise.all(additionalDataPromises)])
 		})
 		.then(([submission, loadedAnnotations]) => {
-		
-			// Build list of loci for this submission. Use a map to prevent duplicates.
-			let locusList = _.values(submission.related('annotations').reduce((list, annotation) => {
-				let locusName = annotation.related('locus').related('names').first().get('locus_name');
 
-				list[locusName] = {
-					id: annotation.related('locus').get('id'),
-					locusName: locusName,
-					geneSynmbol: annotation.related('locusSymbol').get('symbol'),
-					fullName: annotation.related('locusSymbol').get('full_name')
-				};
-
-				return list;
-			}, {}));
+			let locusList = getAllLociFromAnnotations(loadedAnnotations);
 
 			// Refine array of annotations
 			let annotationList = submission.related('annotations').map(annotation => {
@@ -343,6 +332,64 @@ function getSingleSubmission(req, res, next) {
 			console.error(err);
 			response.defaultServerError(res, err)
 		});
+}
+
+/**
+ * Build list of loci for this submission
+ */
+function getAllLociFromAnnotations(annotationList) {
+
+	// Use a map (from reduce) to prevent duplicate loci in the list.
+	let locusMap = annotationList.reduce((list, annotation) => {
+
+		// Use this as a raw object because Bookshelf was having some issue where
+		// the Bookshelf model was defined, but no fields on the model were set.
+		let ann = annotation.toJSON();
+
+		// All annotations reference a locus
+		let locusName = ann.locus.names[0].locus_name;
+		list[locusName] = {
+			id: ann.locus.id,
+			locusName: locusName,
+			geneSynmbol: ann.locusSymbol.symbol,
+			fullName: ann.locusSymbol.full_name
+		};
+
+		// Comment annotations don't have any child data we care about
+		if (ann.annotation_format !== 'comment_annotation') {
+
+			if (!_.isEmpty(ann.childData.evidence)) {
+				let evidenceName = ann.childData.evidence.names[0].locus_name;
+				list[evidenceName] = {
+					id: ann.childData.evidence.id,
+					locusName: evidenceName
+				};
+
+				if (!_.isEmpty(ann.childData.evidenceSymbol)) {
+					list[evidenceName].geneSymbol = ann.childData.evidenceSymbol.symbol;
+					list[evidenceName].fullName = ann.childData.evidenceSymbol.full_name;
+				}
+			}
+
+			if (!_.isEmpty(ann.childData.locus2)) {
+				let locus2Name = ann.childData.locus2.names[0].locus_name;
+				list[locus2Name] = {
+					id: ann.childData.locus2.id,
+					locusName: locus2Name
+				};
+
+				if (!_.isEmpty(ann.childData.locus2Symbol)) {
+					list[locus2Name].geneSymbol = ann.childData.locus2Symbol.symbol;
+					list[locus2Name].fullName = ann.childData.locus2Symbol.full_name;
+				}
+			}
+		}
+
+		return list;
+	}, {});
+
+	// The list of values is all of the loci in the list of annotations, with no duplicates
+	return _.values(locusMap);
 }
 
 
