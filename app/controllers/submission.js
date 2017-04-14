@@ -312,15 +312,19 @@ function getSingleSubmission(req, res, next) {
 
 			let locusList = getAllLociFromAnnotations(loadedAnnotations);
 			let annotationList = generateAnnotationSubmissionList(submission.related('annotations'));
+			let publication = submission.related('publication').get('doi') || submission.related('publication').get('pubmed_id');
 
-			console.log('annlist', JSON.stringify(annotationList, null, 2));
+			let sub = {
+				id: submission.get('id'),
+				publicationId: publication,
+				genes: locusList,
+				annotations: annotationList,
+				submitted_at: submission.get('created_at')
+			};
 
-			return response.serverError(res, 'Not yet implemented');
+			return response.ok(res, sub);
 		})
-		.catch(err => {
-			console.error(err);
-			response.defaultServerError(res, err)
-		});
+		.catch(err => response.defaultServerError(res, err));
 }
 
 /**
