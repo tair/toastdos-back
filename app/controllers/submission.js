@@ -265,19 +265,22 @@ function generateSubmissionSummary(req, res, next) {
  *
  * Responses:
  * 200 with submission body
- * 400 if given parameters are bad
+ * 404 if given ID doesn't exist
  * 500 if something goes wrong internally
  */
 function getSingleSubmission(req, res, next) {
 	Submission
 		.where('id', req.params.id)
-		.fetch({withRelated: [
-			'submitter',
-			'publication',
-			'annotations.childData',
-			'annotations.locus.names',
-			'annotations.locusSymbol',
-		]})
+		.fetch({
+			require: true,
+			withRelated: [
+				'submitter',
+				'publication',
+				'annotations.childData',
+				'annotations.locus.names',
+				'annotations.locusSymbol',
+			]
+		})
 		.then(submission => {
 			// Get additional annotation data needed for submission.
 			// The data we need changes slightly based on annotation format
@@ -324,7 +327,13 @@ function getSingleSubmission(req, res, next) {
 
 			return response.ok(res, sub);
 		})
-		.catch(err => response.defaultServerError(res, err));
+		.catch(err => {
+			if (err.message.includes('EmptyResponse')) {
+				return response.notFound(res, `No submission with ID ${req.params.id}`)
+			}
+
+			return response.defaultServerError(res, err)
+		});
 }
 
 /**

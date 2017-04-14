@@ -474,15 +474,24 @@ describe('Submission Controller', function() {
 
 	});
 
-	describe('GET /api/submission', function() {
+	describe('GET /api/submission/:id', function() {
 
-		it('Invalid submitter ID responds with error');
+		it('Invalid ID responds with error', function(done) {
+			const badId = 999;
+			chai.request(server)
+				.get(`/api/submission/${badId}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(404);
+					chai.expect(res.text).to.equal(`No submission with ID ${badId}`);
+					done();
+				});
+		});
 
-		it('Invalid publication ID responds with error');
+		it('Gene Term Annotation type is properly selected');
 
-		it('Malformed date responds with error');
 
-		it('Submission is returned with all proper data');
+
 
 	});
 
