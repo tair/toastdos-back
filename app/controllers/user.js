@@ -48,6 +48,7 @@ function getUserById(req, res, next) {
 			if (regMatch = err.message.match(/([a-zA-Z]*) is not defined on the model/)) {
 				return response.badRequest(res, `'${regMatch[1]}' is not a valid relation on this model.`);
 			}
+
 			if (err.message === 'EmptyResponse') {
 				return response.notFound(res, 'User not found');
 			}

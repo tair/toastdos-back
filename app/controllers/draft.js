@@ -37,7 +37,6 @@ function getDraftsForUser(req, res, next) {
  * 500 on internal error.
  */
 function createDraft(req, res, next){
-
 	if (!req.body.wip_state) {
 		return response.badRequest(res, `Draft (wip state) is missing or invalid`);
 	}
