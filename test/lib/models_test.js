@@ -650,8 +650,7 @@ describe('Models', function() {
 			const testLocus = testdata.locus[0];
 			const expectedLocusNames = [
 				testdata.locus_name[0],
-				testdata.locus_name[2],
-				testdata.locus_name[3]
+				testdata.locus_name[2]
 			];
 
 			return Locus.where({id: testLocus.id})
