@@ -30,7 +30,8 @@
     "morgan": "~1.7.0",
     "pg": "^6.1.2",
     "request": "^2.75.0",
-    "serve-favicon": "~2.3.0"
+    "serve-favicon": "~2.3.0",
+    "winston": "^2.3.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
