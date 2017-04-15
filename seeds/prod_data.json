@@ -34,25 +34,25 @@
 
   "annotation_types": [
     {
-      "name": "Molecular Function"
+      "name": "MOLECULAR_FUNCTION"
     },
     {
-      "name": "Biological Process"
+      "name": "BIOLOGICAL_PROCESS"
     },
     {
-      "name": "Subcellular Location"
+      "name": "SUBCELLULAR_LOCATION"
     },
     {
-      "name": "Anatomical Location"
+      "name": "ANATOMICAL_LOCATION"
     },
     {
-      "name": "Temporal Expression"
+      "name": "TEMPORAL_EXPRESSION"
     },
     {
-      "name": "Protein Interaction"
+      "name": "PROTEIN_INTERACTION"
     },
     {
-      "name": "Comment"
+      "name": "COMMENT"
     }
   ],
 

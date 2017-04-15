@@ -94,7 +94,15 @@ describe('OBO Data Importer', function() {
 	describe('Updating', function() {
 
 		beforeEach('Clear DB, run importer, then run update', function() {
-			return knex('synonym').truncate().then(() => {
+			return Promise.all([
+				knex('gene_term_annotation').truncate(),
+				knex('gene_gene_annotation').truncate(),
+				knex('comment_annotation').truncate()
+			]).then(() => {
+				return knex('annotation').truncate();
+			}).then(() => {
+				return knex('synonym').truncate();
+			}).then(() => {
 				return knex('keyword').truncate();
 			}).then(() => {
 				return knex('keyword_type').truncate();

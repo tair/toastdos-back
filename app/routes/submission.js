@@ -19,4 +19,11 @@ router.get(
 	submissionController.generateSubmissionSummary
 );
 
+router.get(
+	'/:id',
+	authenticationMiddleware.validateAuthentication,
+	authenticationMiddleware.requireCurator,
+	submissionController.getSingleSubmission
+);
+
 module.exports = router;

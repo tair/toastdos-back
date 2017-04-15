@@ -107,7 +107,7 @@ function addAnnotationRecords(annotation, locusMap, submission, transaction) {
 
 			// We need the status and type IDs
 			return Promise.all([
-				AnnotationType.where({name: strategy.name}).fetch({require: true, transacting: transaction}),
+				AnnotationType.where({name: annotation.type}).fetch({require: true, transacting: transaction}),
 				AnnotationStatus.where({name: NEW_ANNOTATION_STATUS}).fetch({require: true, transacting: transaction})
 			]).then(([type, status]) => {
 				let newAnn = {

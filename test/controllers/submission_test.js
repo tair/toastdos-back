@@ -39,7 +39,10 @@ describe('Submission Controller', function() {
 	});
 
 	beforeEach('Populate SQLite memory DB with fresh test data', function () {
+		return knex.seed.run();
+	});
 
+	beforeEach('Set up submission test data', function() {
 		// Tests will modify this as needed
 		this.currentTest.submission = {
 			publicationId: '10.1234/thing.anotherthing',
@@ -101,7 +104,13 @@ describe('Submission Controller', function() {
 				}
 			]
 		};
-		return knex.seed.run();
+
+		// Add the Curator role to the authenticated user to access this endpoint
+		return Role.where({name: 'Curator'}).fetch().then(curatorRole => {
+			return User.where({id: testdata.users[0].id}).fetch().then(user => {
+				return user.roles().attach(curatorRole);
+			});
+		});
 	});
 
 	describe('POST /api/submission/', function() {
@@ -321,16 +330,7 @@ describe('Submission Controller', function() {
 
 	});
 
-	describe('GET /api/submission/', function() {
-
-		beforeEach('Generate curator and token', function() {
-			// Add the Curator role to the authenticated user to access this endpoint
-			return Role.where({name: 'Curator'}).fetch().then(curatorRole => {
-				return User.where({id: testdata.users[0].id}).fetch().then(user => {
-					return user.roles().attach(curatorRole);
-				});
-			});
-		});
+	describe('GET /api/submission/list/', function() {
 
 		it('Default sort is by descending date', function(done) {
 			// Set some Annotation statuses to 'pending'
@@ -470,6 +470,147 @@ describe('Submission Controller', function() {
 						done();
 					});
 			});
+		});
+
+	});
+
+	describe('GET /api/submission/:id', function() {
+
+		it('Invalid ID responds with error', function(done) {
+			const badId = 999;
+			chai.request(server)
+				.get(`/api/submission/${badId}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(404);
+					chai.expect(res.text).to.equal(`No submission with ID ${badId}`);
+					done();
+				});
+		});
+
+		it('Gene Term Annotations are properly handled', function(done) {
+			const testSubmission = testdata.submission[0];
+			const expectedSubmission = {
+				id: testSubmission.id,
+				publicationId: testdata.publications[0].doi,
+				genes: [
+					{
+						id: testdata.locus[0].id,
+						locusName: testdata.locus_name[0].locus_name,
+						geneSymbol: testdata.gene_symbol[0].symbol,
+						fullName: testdata.gene_symbol[0].full_name
+					}
+				],
+				annotations: [
+					{
+						id: testdata.annotations[0].id,
+						type: testdata.annotation_types[0].name,
+						data: {
+							locusName: testdata.locus_name[0].locus_name,
+							method: {
+								id: testdata.keywords[0].id,
+								name: testdata.keywords[0].name
+							},
+							keyword: {
+								id: testdata.keywords[1].id,
+								name: testdata.keywords[1].name
+							},
+							evidence: testdata.locus_name[0].locus_name,
+						}
+					},
+					{
+						id: testdata.annotations[1].id,
+						type: testdata.annotation_types[1].name,
+						data: {
+							locusName: testdata.locus_name[0].locus_name,
+							method: {
+								id: testdata.keywords[0].id,
+								name: testdata.keywords[0].name
+							},
+							keyword: {
+								id: testdata.keywords[1].id,
+								name: testdata.keywords[1].name
+							},
+						}
+					}
+				]
+			};
+
+			chai.request(server)
+				.get(`/api/submission/${testSubmission.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					chai.expect(res.body).to.containSubset(expectedSubmission);
+					done();
+				});
+		});
+
+		it('GeneGene and Comment Annotations are properly handled', function(done) {
+			const testSubmission = testdata.submission[2];
+			const expectedSubmission = {
+				id: testSubmission.id,
+				publicationId: testdata.publications[1].pubmed_id,
+				genes: [
+					{
+						id: testdata.locus[2].id,
+						locusName: testdata.locus_name[5].locus_name,
+						geneSymbol: testdata.gene_symbol[0].symbol,
+						fullName: testdata.gene_symbol[0].full_name
+					},
+					{
+						id: testdata.locus[1].id,
+						locusName: testdata.locus_name[1].locus_name,
+						geneSymbol: testdata.gene_symbol[0].symbol,
+						fullName: testdata.gene_symbol[0].full_name
+					},
+					{
+						id: testdata.locus[3].id,
+						locusName: testdata.locus_name[4].locus_name,
+						geneSymbol: testdata.gene_symbol[0].symbol,
+						fullName: testdata.gene_symbol[0].full_name
+					}
+				],
+				annotations: [
+					{
+						id: testdata.annotations[3].id,
+						type: testdata.annotation_types[0].name,
+						data: {
+							locusName: testdata.locus_name[5].locus_name,
+							locusName2:	 testdata.locus_name[1].locus_name,
+							method: {
+								id: testdata.keywords[0].id,
+								name: testdata.keywords[0].name
+							}
+						}
+					},
+					{
+						id: testdata.annotations[4].id,
+						type: testdata.annotation_types[0].name,
+						data: {
+							locusName: testdata.locus_name[5].locus_name,
+							text: testdata.comment_annotations[0].text
+						}
+					},
+					{
+						id: testdata.annotations[5].id,
+						type: testdata.annotation_types[0].name,
+						data: {
+							locusName: testdata.locus_name[4].locus_name,
+							text: testdata.comment_annotations[1].text
+						}
+					}
+				]
+			};
+
+			chai.request(server)
+				.get(`/api/submission/${testSubmission.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					chai.expect(res.body).to.containSubset(expectedSubmission);
+					done();
+				});
 		});
 
 	});

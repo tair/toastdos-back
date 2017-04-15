@@ -17,6 +17,7 @@ const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 20;
 const METHOD_KEYWORD_TYPE_NAME = 'eco';
 
+
 /**
  * Creates records for all of the new Locuses and Annotations.
  * Performs all of the database additions inside a transaction,
@@ -248,7 +249,189 @@ function generateSubmissionSummary(req, res, next) {
 		.catch(err => response.defaultServerError(res, err));
 }
 
+/**
+ * Gets a single submission with all annotation / gene data.
+ *
+ * Responses:
+ * 200 with submission body
+ * 404 if given ID doesn't exist
+ * 500 if something goes wrong internally
+ */
+function getSingleSubmission(req, res, next) {
+	Submission
+		.where('id', req.params.id)
+		.fetch({require: true})
+		.then(submission => {
+			return submission.fetch({withRelated: [
+				'submitter',
+				'publication',
+				'annotations.type',
+				'annotations.childData',
+				'annotations.locus.names',
+				'annotations.locusSymbol',
+			]});
+		})
+		.then(submission => {
+			// Get additional annotation data needed for submission.
+			// The data we need changes slightly based on annotation format
+			let additionalDataPromises = submission.related('annotations').map(annotation => {
+
+				if (annotation.get('annotation_format') === 'gene_term_annotation') {
+					return annotation.fetch({withRelated: [
+						'childData.method',
+						'childData.keyword',
+						'childData.evidence.names',
+						'childData.evidenceSymbol'
+					]});
+				}
+
+				if (annotation.get('annotation_format') === 'gene_gene_annotation') {
+					return annotation.fetch({withRelated: [
+						'childData.method',
+						'childData.locus2.names',
+						'childData.locus2Symbol'
+					]});
+				}
+
+				if (annotation.get('annotation_format') === 'comment_annotation') {
+					return Promise.resolve(annotation);
+				}
+			});
+
+			return Promise.all([Promise.resolve(submission), Promise.all(additionalDataPromises)])
+		})
+		.then(([submission, loadedAnnotations]) => {
+
+			let locusList = getAllLociFromAnnotations(loadedAnnotations);
+			let annotationList = generateAnnotationSubmissionList(submission.related('annotations'));
+			let publication = submission.related('publication').get('doi') || submission.related('publication').get('pubmed_id');
+
+			let sub = {
+				id: submission.get('id'),
+				publicationId: publication,
+				genes: locusList,
+				annotations: annotationList,
+				submitted_at: submission.get('created_at')
+			};
+
+			return response.ok(res, sub);
+		})
+		.catch(err => {
+			if (err.message.includes('EmptyResponse')) {
+				return response.notFound(res, `No submission with ID ${req.params.id}`)
+			}
+
+			return response.defaultServerError(res, err)
+		});
+}
+
+/**
+ * Build list of loci for this submission
+ */
+function getAllLociFromAnnotations(annotationList) {
+
+	// Use a map (from reduce) to prevent duplicate loci in the list.
+	let locusMap = annotationList.reduce((list, annotation) => {
+
+		// Use this as a raw object because Bookshelf was having some issue where
+		// the Bookshelf model was defined, but no fields on the model were set.
+		let ann = annotation.toJSON();
+
+		// All annotations reference a locus
+		let locusName = ann.locus.names[0].locus_name;
+		list[locusName] = {
+			id: ann.locus.id,
+			locusName: locusName,
+			geneSymbol: ann.locusSymbol.symbol,
+			fullName: ann.locusSymbol.full_name
+		};
+
+		// Comment annotations don't have any child data we care about
+		if (ann.annotation_format !== 'comment_annotation') {
+
+			if (!_.isEmpty(ann.childData.evidence)) {
+				let evidenceName = ann.childData.evidence.names[0].locus_name;
+				list[evidenceName] = {
+					id: ann.childData.evidence.id,
+					locusName: evidenceName
+				};
+
+				if (!_.isEmpty(ann.childData.evidenceSymbol)) {
+					list[evidenceName].geneSymbol = ann.childData.evidenceSymbol.symbol;
+					list[evidenceName].fullName = ann.childData.evidenceSymbol.full_name;
+				}
+			}
+
+			if (!_.isEmpty(ann.childData.locus2)) {
+				let locus2Name = ann.childData.locus2.names[0].locus_name;
+				list[locus2Name] = {
+					id: ann.childData.locus2.id,
+					locusName: locus2Name
+				};
+
+				if (!_.isEmpty(ann.childData.locus2Symbol)) {
+					list[locus2Name].geneSymbol = ann.childData.locus2Symbol.symbol;
+					list[locus2Name].fullName = ann.childData.locus2Symbol.full_name;
+				}
+			}
+		}
+
+		return list;
+	}, {});
+
+	// The list of values is all of the loci in the list of annotations, with no duplicates
+	return _.values(locusMap);
+}
+
+/**
+ * Takes in a list of annotation bookshelf models and outputs the list
+ * of annotations formatted as they would appear in a submission.
+ */
+function generateAnnotationSubmissionList(annotationList) {
+	let refinedAnnotations = annotationList.map(annotation => {
+		let refinedAnn = {
+			id: annotation.get('id'),
+			type: annotation.related('type').get('name'),
+			data: {
+				locusName: annotation.related('locus').related('names').first().get('locus_name'),
+			}
+		};
+
+		// Data changes based on annotation type
+		if (annotation.get('annotation_format') === 'gene_term_annotation') {
+			refinedAnn.data.method = {
+				id: annotation.related('childData').related('method').get('id'),
+				name: annotation.related('childData').related('method').get('name')
+			};
+
+			refinedAnn.data.keyword = {
+				id: annotation.related('childData').related('keyword').get('id'),
+				name: annotation.related('childData').related('keyword').get('name')
+			};
+
+			if (annotation.related('childData').related('evidence').get('id')) {
+				refinedAnn.data.evidence = annotation.related('childData').related('evidence').related('names').first().get('locus_name');
+			}
+		}
+		else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
+			refinedAnn.data.locusName2 = annotation.related('childData').related('locus2').related('names').first().get('locus_name');
+			refinedAnn.data.method = {
+				id: annotation.related('childData').related('method').get('id'),
+				name: annotation.related('childData').related('method').get('name')
+			};
+		}
+		else { //if (annotation.get('annotation_format') === 'comment_annotation')
+			refinedAnn.data.text = annotation.related('childData').get('text');
+		}
+
+		return refinedAnn;
+	});
+
+	return refinedAnnotations;
+}
+
 module.exports = {
 	submitGenesAndAnnotations,
-	generateSubmissionSummary
+	generateSubmissionSummary,
+	getSingleSubmission
 };

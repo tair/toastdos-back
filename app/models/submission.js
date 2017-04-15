@@ -19,12 +19,15 @@ const Submission = bookshelf.model('Submission', {
 	}
 }, {
 	addNew: function(params, transaction) {
+		let newSub = {
+			submitter_id:  params.submitter_id,
+			publication_id: params.publication_id
+		};
+
+		if (params.created_at) newSub.created_at = params.created_at;
+
 		return bookshelf.model('Submission')
-			.forge({
-				submitter_id:  params.submitter_id,
-				publication_id: params.publication_id,
-				created_at: params.created_at
-			})
+			.forge(newSub)
 			.save(null, {transacting: transaction});
 	}
 });

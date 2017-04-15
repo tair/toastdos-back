@@ -2,11 +2,11 @@
   "keyword_types" : [
     {
       "id" : 1,
-      "name" : "Keyword 1"
+      "name" : "Keyword Type 1"
     },
     {
       "id" : 2,
-      "name" : "Keyword 2"
+      "name" : "Keyword Type 2"
     }
   ],
 
@@ -373,6 +373,12 @@
       "id" : 5,
       "locus_id" : 4,
       "locus_name" : "Test Locus 5",
+      "source_id" : 2
+    },
+    {
+      "id" : 6,
+      "locus_id" : 3,
+      "locus_name" : "Test Locus 6",
       "source_id" : 2
     }
   ],
