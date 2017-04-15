@@ -2,11 +2,11 @@
   "keyword_types" : [
     {
       "id" : 1,
-      "name" : "Keyword 1"
+      "name" : "Keyword Type 1"
     },
     {
       "id" : 2,
-      "name" : "Keyword 2"
+      "name" : "Keyword Type 2"
     }
   ],
 

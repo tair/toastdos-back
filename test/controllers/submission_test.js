@@ -490,8 +490,72 @@ describe('Submission Controller', function() {
 
 		it('Gene Term Annotation type is properly selected');
 
+		it('Submission is returned with all proper data', function(done) {
+			const testSubmission = testdata.submission[2];
+			const expectedSubmission = {
+				id: testSubmission.id,
+				publicationId: testdata.publications[1].pubmed_id,
+				genes: [
+					{
+						id: testdata.locus[2].id,
+						locusName: testdata.locus_name[3].locus_name,
+						geneSymbol: testdata.gene_symbol[0].symbol,
+						fullName: testdata.gene_symbol[0].full_name
+					},
+					{
+						id: testdata.locus[1].id,
+						locusName: testdata.locus_name[1].locus_name,
+						geneSymbol: testdata.gene_symbol[0].symbol,
+						fullName: testdata.gene_symbol[0].full_name
+					},
+					{
+						id: testdata.locus[3].id,
+						locusName: testdata.locus_name[4].locus_name,
+						geneSymbol: testdata.gene_symbol[0].symbol,
+						fullName: testdata.gene_symbol[0].full_name
+					}
+				],
+				annotations: [
+					{
+						id: testdata.annotations[3].id,
+						type: 'PROTEIN_INTERACTION',
+						data: {
+							locusName: testdata.locus_name[3].locus_name,
+							locusName2:	 testdata.locus_name[1].locus_name,
+							method: {
+								id: testdata.keywords[0].id,
+								name: testdata.keywords[0].name
+							}
+						}
+					},
+					{
+						id: testdata.annotations[4].id,
+						type: 'COMMENT',
+						data: {
+							locusName: testdata.locus_name[3].locus_name,
+							text: testdata.comment_annotations[0].text
+						}
+					},
+					{
+						id: testdata.annotations[5].id,
+						type: 'COMMENT',
+						data: {
+							locusName: testdata.locus_name[4].locus_name,
+							text: testdata.comment_annotations[1].text
+						}
+					}
+				]
+			};
 
-
+			chai.request(server)
+				.get(`/api/submission/${testSubmission.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					chai.expect(res.body).to.containSubset(expectedSubmission);
+					done();
+				});
+		});
 
 	});
 

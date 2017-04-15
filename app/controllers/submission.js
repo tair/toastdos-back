@@ -353,7 +353,7 @@ function getAllLociFromAnnotations(annotationList) {
 		list[locusName] = {
 			id: ann.locus.id,
 			locusName: locusName,
-			geneSynmbol: ann.locusSymbol.symbol,
+			geneSymbol: ann.locusSymbol.symbol,
 			fullName: ann.locusSymbol.full_name
 		};
 
@@ -434,7 +434,7 @@ function generateAnnotationSubmissionList(annotationList) {
 		}
 		else { //if (annotation.get('annotation_format') === 'comment_annotation')
 			refinedAnn.type = COMMENT_TYPE;
-			refinedAnn.data.comment = annotation.related('childData').get('text');
+			refinedAnn.data.text = annotation.related('childData').get('text');
 		}
 
 		return refinedAnn;
