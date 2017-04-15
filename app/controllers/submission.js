@@ -260,16 +260,16 @@ function generateSubmissionSummary(req, res, next) {
 function getSingleSubmission(req, res, next) {
 	Submission
 		.where('id', req.params.id)
-		.fetch({
-			require: true,
-			withRelated: [
+		.fetch({require: true})
+		.then(submission => {
+			return submission.fetch({withRelated: [
 				'submitter',
 				'publication',
 				'annotations.type',
 				'annotations.childData',
 				'annotations.locus.names',
 				'annotations.locusSymbol',
-			]
+			]});
 		})
 		.then(submission => {
 			// Get additional annotation data needed for submission.
