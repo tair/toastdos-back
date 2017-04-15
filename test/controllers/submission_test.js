@@ -554,7 +554,7 @@ describe('Submission Controller', function() {
 				genes: [
 					{
 						id: testdata.locus[2].id,
-						locusName: testdata.locus_name[3].locus_name,
+						locusName: testdata.locus_name[5].locus_name,
 						geneSymbol: testdata.gene_symbol[0].symbol,
 						fullName: testdata.gene_symbol[0].full_name
 					},
@@ -576,7 +576,7 @@ describe('Submission Controller', function() {
 						id: testdata.annotations[3].id,
 						type: testdata.annotation_types[0].name,
 						data: {
-							locusName: testdata.locus_name[3].locus_name,
+							locusName: testdata.locus_name[5].locus_name,
 							locusName2:	 testdata.locus_name[1].locus_name,
 							method: {
 								id: testdata.keywords[0].id,
@@ -588,7 +588,7 @@ describe('Submission Controller', function() {
 						id: testdata.annotations[4].id,
 						type: testdata.annotation_types[0].name,
 						data: {
-							locusName: testdata.locus_name[3].locus_name,
+							locusName: testdata.locus_name[5].locus_name,
 							text: testdata.comment_annotations[0].text
 						}
 					},

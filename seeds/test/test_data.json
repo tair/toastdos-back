@@ -365,7 +365,7 @@
     },
     {
       "id" : 4,
-      "locus_id" : 3,
+      "locus_id" : 1,
       "locus_name" : "Test Locus 4",
       "source_id" : 2
     },
@@ -373,6 +373,12 @@
       "id" : 5,
       "locus_id" : 4,
       "locus_name" : "Test Locus 5",
+      "source_id" : 2
+    },
+    {
+      "id" : 6,
+      "locus_id" : 3,
+      "locus_name" : "Test Locus 6",
       "source_id" : 2
     }
   ],
