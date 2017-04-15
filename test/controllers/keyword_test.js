@@ -100,6 +100,7 @@ describe('Keyword Controller', function() {
 					.get('/api/keyword/search?substring=Test Term')
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body).to.have.length.above(1);
 						res.body.forEach(keyword => {
 							chai.expect(keyword).to.not.contain({name: obsoleteName});
 						});
