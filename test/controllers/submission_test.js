@@ -488,9 +488,65 @@ describe('Submission Controller', function() {
 				});
 		});
 
-		it('Gene Term Annotation type is properly selected');
+		it('Gene Term Annotations are properly handled', function(done) {
+			const testSubmission = testdata.submission[0];
+			const expectedSubmission = {
+				id: testSubmission.id,
+				publicationId: testdata.publications[0].doi,
+				genes: [
+					{
+						id: testdata.locus[0].id,
+						locusName: testdata.locus_name[0].locus_name,
+						geneSymbol: testdata.gene_symbol[0].symbol,
+						fullName: testdata.gene_symbol[0].full_name
+					}
+				],
+				annotations: [
+					{
+						id: testdata.annotations[0].id,
+						type: testdata.annotation_types[0].name,
+						data: {
+							locusName: testdata.locus_name[0].locus_name,
+							method: {
+								id: testdata.keywords[0].id,
+								name: testdata.keywords[0].name
+							},
+							keyword: {
+								id: testdata.keywords[1].id,
+								name: testdata.keywords[1].name
+							},
+							evidence: testdata.locus_name[0].locus_name,
+						}
+					},
+					{
+						id: testdata.annotations[1].id,
+						type: testdata.annotation_types[1].name,
+						data: {
+							locusName: testdata.locus_name[0].locus_name,
+							method: {
+								id: testdata.keywords[0].id,
+								name: testdata.keywords[0].name
+							},
+							keyword: {
+								id: testdata.keywords[1].id,
+								name: testdata.keywords[1].name
+							},
+						}
+					}
+				]
+			};
 
-		it('Submission is returned with all proper data', function(done) {
+			chai.request(server)
+				.get(`/api/submission/${testSubmission.id}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					chai.expect(res.body).to.containSubset(expectedSubmission);
+					done();
+				});
+		});
+
+		it('GeneGene and Comment Annotations are properly handled', function(done) {
 			const testSubmission = testdata.submission[2];
 			const expectedSubmission = {
 				id: testSubmission.id,
@@ -518,7 +574,7 @@ describe('Submission Controller', function() {
 				annotations: [
 					{
 						id: testdata.annotations[3].id,
-						type: 'PROTEIN_INTERACTION',
+						type: testdata.annotation_types[0].name,
 						data: {
 							locusName: testdata.locus_name[3].locus_name,
 							locusName2:	 testdata.locus_name[1].locus_name,
@@ -530,7 +586,7 @@ describe('Submission Controller', function() {
 					},
 					{
 						id: testdata.annotations[4].id,
-						type: 'COMMENT',
+						type: testdata.annotation_types[0].name,
 						data: {
 							locusName: testdata.locus_name[3].locus_name,
 							text: testdata.comment_annotations[0].text
@@ -538,7 +594,7 @@ describe('Submission Controller', function() {
 					},
 					{
 						id: testdata.annotations[5].id,
-						type: 'COMMENT',
+						type: testdata.annotation_types[0].name,
 						data: {
 							locusName: testdata.locus_name[4].locus_name,
 							text: testdata.comment_annotations[1].text
