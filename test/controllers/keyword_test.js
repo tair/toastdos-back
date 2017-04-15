@@ -88,6 +88,26 @@ describe('Keyword Controller', function() {
 				});
 		});
 
+		it('Obsolete keywords are not shown when searching', function(done) {
+			const obsoleteName = 'Test Term Obsolete';
+			Keyword.addNew({
+				name: obsoleteName,
+				type_name: testdata.keyword_types[0].name,
+				external_id: '12345',
+				is_obsolete: true
+			}).then(() => {
+				chai.request(server)
+					.get('/api/keyword/search?substring=Test Term')
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(200);
+						res.body.forEach(keyword => {
+							chai.expect(keyword).to.not.contain({name: obsoleteName});
+						});
+						done();
+					});
+			});
+		});
+
 		it('Invalid keyword scope responds with an error', function(done) {
 			const badKeywordScope = 'Bad scope';
 			const testSubstr = 'Test Term';
