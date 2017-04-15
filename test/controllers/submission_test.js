@@ -381,7 +381,7 @@ describe('Submission Controller', function() {
 		});
 
 		it('Pagination defaults correctly if not provided', function(done) {
-			const expectedLength = 20;
+			const expectedLength = 200;
 			const expectedSubmission = {
 				pending: 0,
 				total: 3,
