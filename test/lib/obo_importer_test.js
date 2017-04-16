@@ -1,6 +1,7 @@
 'use strict';
 
 const chai = require('chai');
+chai.use(require('chai-subset'));
 
 const knex        = require('../../app/lib/bookshelf').knex;
 const oboImporter = require('../../app/services/obo_importer/gene_ontology_importer');
@@ -95,20 +96,15 @@ describe('OBO Data Importer', function() {
 
 		beforeEach('Clear DB, run importer, then run update', function() {
 			return Promise.all([
-				knex('gene_term_annotation').truncate(),
-				knex('gene_gene_annotation').truncate(),
-				knex('comment_annotation').truncate()
-			]).then(() => {
-				return knex('annotation').truncate();
-			}).then(() => {
-				return knex('synonym').truncate();
-			}).then(() => {
-				return knex('keyword').truncate();
-			}).then(() => {
-				return knex('keyword_type').truncate();
-			}).then(() => {
-				return oboImporter.loadOboIntoDB('./test/lib/test_terms.obo');
-			});
+					knex('gene_term_annotation').truncate(),
+					knex('gene_gene_annotation').truncate(),
+					knex('comment_annotation').truncate()
+				])
+				.then(() => knex('annotation').truncate())
+				.then(() => knex('synonym').truncate())
+				.then(() => knex('keyword').truncate())
+				.then(() => knex('keyword_type').truncate())
+				.then(() => oboImporter.loadOboIntoDB('./test/lib/test_terms.obo'));
 		});
 
 		it('Newly obsoleted Keywords are properly updated', function() {
@@ -118,13 +114,13 @@ describe('OBO Data Importer', function() {
 				is_obsolete: true
 			};
 
-			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo').then(() => {
-				return Keyword.where({external_id: 'GO:0000004'}).fetch();
-			}).then(keyword => {
-				let actual = keyword.toJSON();
-				actual.is_obsolete = !!actual.is_obsolete; // Cooerce into boolean
-				chai.expect(actual).to.contain(expectedKeyword);
-			});
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo')
+				.then(() => Keyword.where({external_id: 'GO:0000004'}).fetch())
+				.then(keyword => {
+					let actual = keyword.toJSON();
+					actual.is_obsolete = !!actual.is_obsolete; // Cooerce into boolean
+					chai.expect(actual).to.contain(expectedKeyword);
+				});
 		});
 
 		it('Non-obsolete keywords are not marked obsolete', function() {
@@ -134,13 +130,63 @@ describe('OBO Data Importer', function() {
 				is_obsolete: false
 			};
 
-			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo').then(() => {
-				return Keyword.where({external_id: 'GO:0000001'}).fetch();
-			}).then(keyword => {
-				let actual = keyword.toJSON();
-				actual.is_obsolete = !!actual.is_obsolete; // Cooerce into boolean
-				chai.expect(actual).to.contain(expectedKeyword);
-			});
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo')
+				.then(() => Keyword.where({external_id: 'GO:0000001'}).fetch())
+				.then(keyword => {
+					let actual = keyword.toJSON();
+					actual.is_obsolete = !!actual.is_obsolete; // Cooerce into boolean
+					chai.expect(actual).to.contain(expectedKeyword);
+				});
+		});
+
+		it('Existing term names are updated', function() {
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo')
+				.then(() => Keyword.where({external_id: 'GO:0000003'}).fetch())
+				.then(keyword => {
+					chai.expect(keyword.get('name')).to.equal('updated test keyword 3');
+				});
+		});
+
+		it('User added term is merged into new OBO term with same name', function() {
+			const newName = 'test keyword 5';
+			return Keyword.addNew({
+					name: newName,
+					type_name: 'basic_keyword_type'
+				})
+				.then(() => oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo'))
+				.then(() => Keyword.where({name: newName}).fetch({withRelated: 'synonyms'}))
+				.then(keyword => {
+					chai.expect(keyword.get('external_id')).to.equal('GO:0000005');
+
+					let synonym = keyword.related('synonyms').first();
+					chai.expect(synonym).to.exist;
+					chai.expect(synonym.get('name')).to.equal('Name conflict synonym');
+				});
+		});
+
+		it('New synonyms added for existing terms', function() {
+			const expectedSubset = [
+				{name: 'This is a new synonym'},
+				{name: 'This is another new synonym'}
+			];
+
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo')
+				.then(() => Keyword.where({name: 'test keyword 1'}).fetch({withRelated: 'synonyms'}))
+				.then(keyword => {
+					let synonyms = keyword.related('synonyms').toJSON();
+					chai.expect(synonyms).to.containSubset(expectedSubset);
+				});
+		});
+
+
+		it('Synonyms missing in new OBO should be removed', function() {
+			const expectedSubset = [{name: 'another synonym'}];
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo')
+				.then(() => Keyword.where({name: 'test keyword 1'}).fetch({withRelated: 'synonyms'}))
+				.then(keyword => {
+					let synonyms = keyword.related('synonyms').toJSON();
+					chai.expect(synonyms).to.not.containSubset(expectedSubset);
+				});
 		});
 
 	});
