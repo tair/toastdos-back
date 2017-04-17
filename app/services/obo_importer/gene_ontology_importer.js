@@ -136,7 +136,7 @@ class DataImporter extends stream.Writable {
 						return keyword.set({
 							external_id: externalId,
 							is_obsolete: isObsolete
-						});
+						}).save();
 					}
 					else {
 						// If none of the above, add the whole new keyword
