@@ -14,7 +14,7 @@ const Keyword     = require('../models/keyword');
 const Submission  = require('../models/submission');
 
 const PENDING_STATUS = 'pending';
-const PAGE_LIMIT = 20;
+const PAGE_LIMIT = 200;
 const METHOD_KEYWORD_TYPE_NAME = 'eco';
 
 
