@@ -53,7 +53,7 @@ function serverError(res, message) {
 }
 
 function defaultServerError(res, err) {
-	if (!testing) console.error(err);
+	if (testing) console.error(err);
 	logger.debug(err);
 	return res.status(INTERNAL_SERVER_ERROR).send('Internal Server Error');
 }
