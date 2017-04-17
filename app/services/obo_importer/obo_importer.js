@@ -162,6 +162,11 @@ class DataImporter extends stream.Writable {
 	 */
 	_addSynonyms(oboNameLines, keywordId) {
 		return Synonym.where('keyword_id', keywordId).fetchAll().then(synonyms => {
+			// Sometimes this line can be null, so just resolve
+			if (!oboNameLines) {
+				return Promise.resolve(null);
+			}
+
 			let existing = synonyms.map(synonym => synonym.get('name'));
 
 			// Ensure we always have an array of obo synonym lines
