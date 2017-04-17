@@ -107,8 +107,9 @@ class DataImporter extends stream.Writable {
 	}
 
 	/**
-	 * Adds a new Keyword, or returns an existing keyword
-	 * with a matching externalId.
+	 * Adds a new Keyword or updates an existing Keyword.
+	 * If a user added Keyword appears in an OBO file, the external
+	 * ID of the OBO term will be added to the existing Keyword.
 	 *
 	 * @param name - Plain text name
 	 * @param externalId - ID from external DB
@@ -117,24 +118,35 @@ class DataImporter extends stream.Writable {
 	 * @returns {Promise.<Keyword>} Created or existing keyword
 	 */
 	_addKeyword(name, externalId, keywordTypeId, isObsolete) {
-		return Keyword.where({external_id: externalId})
-			.fetch()
-			.then(keyword => {
-				if (keyword) {
-					if (isObsolete) {
-						return keyword.set({is_obsolete: isObsolete}).save();
-					} else {
-						return Promise.resolve(keyword);
+		// If this Keyword was already added from an OBO file, just update it
+		return Keyword.where('external_id', externalId).fetch().then(keyword => {
+			if (keyword) {
+				return keyword.set({
+					name: name,
+					is_obsolete: isObsolete
+				}).save();
+			}
+			else {
+				// A user may have previously added a keyword that now appears in an OBO file
+				return Keyword.where('name', name).fetch().then(keyword => {
+					if (keyword) {
+						return keyword.set({
+							external_id: externalId,
+							is_obsolete: isObsolete
+						});
 					}
-				} else {
-					return Keyword.forge({
-						name: name,
-						external_id: externalId,
-						keyword_type_id: keywordTypeId,
-						is_obsolete: isObsolete
-					}).save();
-				}
-			});
+					else {
+						// If none of the above, add the whole new keyword
+						return Keyword.forge({
+							name: name,
+							external_id: externalId,
+							keyword_type_id: keywordTypeId,
+							is_obsolete: isObsolete
+						}).save();
+					}
+				});
+			}
+		});
 	}
 
 	/**
