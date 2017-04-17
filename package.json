@@ -10,7 +10,8 @@
     "exec": "exec",
     "migrate": "knex migrate:latest",
     "daemon": "node ./app/services/obo_importer/daemon.js",
-    "import": "node ./app/services/obo_importer/cli.js"
+    "import": "node ./app/services/obo_importer/cli.js",
+    "seed": "knex seed:run"
   },
   "dependencies": {
     "bcrypt": "^0.8.7",
