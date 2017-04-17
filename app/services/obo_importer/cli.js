@@ -4,7 +4,7 @@
  * This is a small command line utility to manually trigger an obo update
  */
 
-const importer = require('./obo_importer');
+const updater = require('./obo_updater');
 
 let oboUrl = process.argv[2];
 
@@ -13,4 +13,4 @@ if (!oboUrl) {
 	process.exit(1);
 }
 
-importer.updateKeywordsUsing(oboUrl).then(() => process.exit(0));
+updater.updateKeywordsUsing(oboUrl).then(() => process.exit(0));
