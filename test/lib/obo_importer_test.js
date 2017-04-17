@@ -4,7 +4,7 @@ const chai = require('chai');
 chai.use(require('chai-subset'));
 
 const knex        = require('../../app/lib/bookshelf').knex;
-const oboImporter = require('../../app/services/obo_importer/gene_ontology_importer');
+const oboImporter = require('../../app/services/obo_importer/obo_importer');
 
 const KeywordType = require('../../app/models/keyword_type');
 const Keyword     = require('../../app/models/keyword');
