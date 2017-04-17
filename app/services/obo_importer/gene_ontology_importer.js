@@ -11,6 +11,7 @@ const stream     = require('stream');
 const fs         = require('fs');
 const OboParser  = require('../../lib/obo_parser').OboParser;
 const LineStream = require('byline').LineStream;
+const _          = require('lodash');
 
 const Keyword     = require('../../models/keyword');
 const KeywordType = require('../../models/keyword_type');
@@ -61,6 +62,8 @@ class DataImporter extends stream.Writable {
 	 * Processes a single obo "term", adding any new Keywords,
 	 * KeywordTypes, or Synonyms to the Database.
 	 *
+	 * This function is called for each chunk the stream processes.
+	 *
 	 * @param term - JSON object of ontology term from obo parser
 	 * @returns {Promise.<null>}
 	 */
@@ -107,8 +110,9 @@ class DataImporter extends stream.Writable {
 	}
 
 	/**
-	 * Adds a new Keyword, or returns an existing keyword
-	 * with a matching externalId.
+	 * Adds a new Keyword or updates an existing Keyword.
+	 * If a user added Keyword appears in an OBO file, the external
+	 * ID of the OBO term will be added to the existing Keyword.
 	 *
 	 * @param name - Plain text name
 	 * @param externalId - ID from external DB
@@ -117,76 +121,75 @@ class DataImporter extends stream.Writable {
 	 * @returns {Promise.<Keyword>} Created or existing keyword
 	 */
 	_addKeyword(name, externalId, keywordTypeId, isObsolete) {
-		return Keyword.where({external_id: externalId})
-			.fetch()
-			.then(keyword => {
-				if (keyword) {
-					if (isObsolete) {
-						return keyword.set({is_obsolete: isObsolete}).save();
-					} else {
-						return Promise.resolve(keyword);
+		// If this Keyword was already added from an OBO file, just update it
+		return Keyword.where('external_id', externalId).fetch().then(keyword => {
+			if (keyword) {
+				return keyword.set({
+					name: name,
+					is_obsolete: isObsolete
+				}).save();
+			}
+			else {
+				// A user may have previously added a keyword that now appears in an OBO file
+				return Keyword.where('name', name).fetch().then(keyword => {
+					if (keyword) {
+						return keyword.set({
+							external_id: externalId,
+							is_obsolete: isObsolete
+						}).save();
 					}
-				} else {
-					return Keyword.forge({
-						name: name,
-						external_id: externalId,
-						keyword_type_id: keywordTypeId,
-						is_obsolete: isObsolete
-					}).save();
-				}
-			});
+					else {
+						// If none of the above, add the whole new keyword
+						return Keyword.forge({
+							name: name,
+							external_id: externalId,
+							keyword_type_id: keywordTypeId,
+							is_obsolete: isObsolete
+						}).save();
+					}
+				});
+			}
+		});
 	}
 
 	/**
-	 * Handles the 3 different scenarios for the synonym field of an
-	 * obo term, adding the Synonym(s) to the DB if they exist.
+	 * Adds new synonyms present in the OBO file, and deletes
+	 * those that are not in the OBO file.
 	 *
-	 * @param synonymField - obo string for this synonym
+	 * @param oboNameLines - Synonym name line (or array of lines) from obo file
 	 * @param keywordId - Foreign key ID of Keyword this Synonym applies to
 	 * @returns {Promise.<Synonym>|Promise.<[Synonym]>}
 	 */
-	_addSynonyms(synonymField, keywordId) {
-		// Synonym comes in as an array if there's more than one
-		if (synonymField instanceof Array) {
-			return Promise.all(
-				synonymField.map(synonymLine => this._addSynonym(synonymLine, keywordId))
-			);
-		} else if (synonymField) {
-			return this._addSynonym(synonymField, keywordId);
-		} else {
-			// Return empty promise to keep return type consistent
-			return Promise.resolve(null);
-		}
-	}
+	_addSynonyms(oboNameLines, keywordId) {
+		return Synonym.where('keyword_id', keywordId).fetchAll().then(synonyms => {
+			let existing = synonyms.map(synonym => synonym.get('name'));
 
-	/**
-	 * Parses the Synonym name out of the obo synonym line format,
-	 * then adds it to the DB as a new Synonym.
-	 *
-	 * @param synonymString - obo Synonym line
-	 * @param keywordId - Foreign key ID of Keyword this Synonym applies to
-	 * @returns {Promise.<Synonym>}
-	 */
-	_addSynonym(synonymString, keywordId) {
-		let name = synonymString.split('"')[1];
+			// Ensure we always have an array of obo synonym lines
+			if (!(oboNameLines instanceof Array)) {
+				oboNameLines = [oboNameLines];
+			}
 
-		// PostgreSQL has an issue with names longer than 255 characters
-		if (name.length > 255) {
-			name = name.substring(0, 252) + '...';
-		}
+			// Process incoming synonym name strings
+			let provided = oboNameLines.map(oboLine => {
+				// Pull 'synonym name' out of 'synonym: "synonym name" RELATED [GOC:mah]'
+				let name = oboLine.split('"')[1];
 
-		return Synonym.where({keyword_id: keywordId, name: name})
-			.fetch()
-			.then(synonym => {
-				if (synonym) {
-					return Promise.resolve(synonym);
-				} else {
-					return Synonym.forge({
-						name: name,
-						keyword_id: keywordId
-					}).save();
+				// PostgreSQL has an issue with names longer than 255 characters
+				if (name.length > 255) {
+					name = name.substring(0, 252) + '...';
 				}
+
+				return name;
 			});
+
+			let staleSynonyms = _.difference(existing, provided);
+			let newSynonyms = _.difference(provided, existing).map(name => ({name: name, keyword_id: keywordId}));
+
+			return Promise.all([
+				Synonym.where('name', 'IN', staleSynonyms).destroy(),
+				Synonym.addAll(newSynonyms)
+			]);
+		});
 	}
 
 }
