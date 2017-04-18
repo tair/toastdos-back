@@ -140,6 +140,20 @@ describe('Keyword Controller', function() {
 				});
 		});
 
+		it('Keyword search is case insensitive', function(done) {
+			const sillyCaseName = 'tESt TErm 001';
+			const expectedKeyword = testdata.keywords[0];
+			chai.request(server)
+				.get(`/api/keyword/search?substring=${sillyCaseName}`)
+				.end((err, res) => {
+				console.log(res.body);
+					chai.expect(res.status).to.equal(200);
+					chai.expect(res.body).to.have.lengthOf(1);
+					chai.expect(res.body[0]).to.contain(expectedKeyword);
+					done();
+				});
+		});
+
 		it('Search throws an error when substring is not provided', function(done) {
 			const testKeywordScope = testdata.keyword_types[0].name;
 
