@@ -25,5 +25,12 @@ Promise.all([
 	if (operation === OP_ADD) return user.roles().attach(role);
 	if (operation === OP_REMOVE) return user.roles().detach(role);
 }).then(() => {
+	// Print output in proper english
+	let pastTense;
+	if (operation == OP_ADD) pastTense = 'ed to';
+	if (operation == OP_REMOVE) pastTense = 'd from';
+
+	console.log(`Role '${role}' ${operation}${pastTense} user '${userName}' (orcid id: ${orcidId})`);
+
 	process.exit(0);
 });
