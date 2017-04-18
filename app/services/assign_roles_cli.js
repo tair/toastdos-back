@@ -26,25 +26,27 @@ if (operation !== OP_ADD && operation !== OP_REMOVE) {
 Promise.all([
 	User.where('orcid_id', orcidId).fetch({withRelated: 'roles', require: true}),
 	Role.where('name', role).fetch({require: true})
-]).then(([user, role]) => {
+])
+.then(([user, role]) => {
 	userName = user.get('name');
 
 	if (operation === OP_ADD) return user.roles().attach(role);
 	if (operation === OP_REMOVE) return user.roles().detach(role);
-}).then(() => {
+})
+.then(() => {
 	// Print output in proper english
 	let pastTense;
 	if (operation == OP_ADD) pastTense = 'ed to';
 	if (operation == OP_REMOVE) pastTense = 'd from';
 
 	console.log(`Role '${role}' ${operation}${pastTense} user '${userName}' (orcid id: ${orcidId})`);
-
 	process.exit(0);
-}).catch(err => {
+})
+.catch(err => {
 	// When User already had the Role
-	if (err.message.includes('SQLITE_CONSTRAINT: UNIQUE constraint failed')
-		|| err.message.includes('duplicate key value violates unique constraint')) {
-
+	if (err.message.includes('SQLITE_CONSTRAINT: UNIQUE constraint failed') ||
+		err.message.includes('duplicate key value violates unique constraint')) {
+		
 		console.log(`User '${userName}' (orcid id: ${orcidId}) already has role '${role}'`);
 		process.exit(0);
 	}
