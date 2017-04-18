@@ -13,6 +13,8 @@ const OboParser  = require('../../lib/obo_parser').OboParser;
 const LineStream = require('byline').LineStream;
 const _          = require('lodash');
 
+const logger = require('../logger');
+
 const Keyword     = require('../../models/keyword');
 const KeywordType = require('../../models/keyword_type');
 const Synonym     = require('../../models/synonym');
@@ -89,7 +91,11 @@ class DataImporter extends stream.Writable {
 		return keywordTypePromise
 			.then(keywordType => this._addKeyword(term.name, term.id, keywordType.get('id'), term.is_obsolete))
 			.then(keyword => this._addSynonyms(term.synonym, keyword.get('id')))
-			.then(() => next());
+			.then(() => next())
+			.catch(err => {
+				logger.debug(err);
+				next();
+			});
 	}
 
 	/**
