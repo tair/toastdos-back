@@ -46,9 +46,14 @@ Promise.all([
 	// When User already had the Role
 	if (err.message.includes('SQLITE_CONSTRAINT: UNIQUE constraint failed') ||
 		err.message.includes('duplicate key value violates unique constraint')) {
-		
+
 		console.log(`User '${userName}' (orcid id: ${orcidId}) already has role '${role}'`);
 		process.exit(0);
+	}
+
+	if (err.message === 'EmptyResponse') {
+		console.error('Provided role name or user orcid id is invalid!');
+		process.exit(1);
 	}
 
 	console.error(err);
