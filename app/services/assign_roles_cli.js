@@ -33,4 +33,15 @@ Promise.all([
 	console.log(`Role '${role}' ${operation}${pastTense} user '${userName}' (orcid id: ${orcidId})`);
 
 	process.exit(0);
+}).catch(err => {
+	// When User already had the Role
+	if (err.message.includes('SQLITE_CONSTRAINT: UNIQUE constraint failed')
+		|| err.message.includes('duplicate key value violates unique constraint')) {
+
+		console.log(`User '${userName}' (orcid id: ${orcidId}) already has role '${role}'`);
+		process.exit(0);
+	}
+
+	console.error(err);
+	process.exit(1);
 });
