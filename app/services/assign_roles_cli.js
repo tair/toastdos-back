@@ -16,6 +16,13 @@ let orcidId   = process.argv[4];
 
 let userName; // Set this from retrieved user
 
+// Validate operation
+if (operation !== OP_ADD && operation !== OP_REMOVE) {
+	console.error(`Operation must be '${OP_ADD}' or '${OP_REMOVE}'`);
+	process.exit(1);
+}
+
+// Perform the role operation on the specified User
 Promise.all([
 	User.where('orcid_id', orcidId).fetch({withRelated: 'roles', require: true}),
 	Role.where('name', role).fetch({require: true})
