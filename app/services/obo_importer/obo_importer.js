@@ -70,6 +70,11 @@ class DataImporter extends stream.Writable {
 	_write(chunk, enc, next) {
 		let term = JSON.parse(chunk.toString());
 
+		// Catch empty objects from a newline at the end of the OBO
+		if (_.isEmpty(term)) {
+			return next();
+		}
+
 		// Parse is_obsolete into a proper true or false
 		term.is_obsolete = (term.is_obsolete === 'true');
 
@@ -81,7 +86,7 @@ class DataImporter extends stream.Writable {
 			keywordTypePromise = this._addKeywordType(this.defaultKeywordTypeName);
 		}
 
-		keywordTypePromise
+		return keywordTypePromise
 			.then(keywordType => this._addKeyword(term.name, term.id, keywordType.get('id'), term.is_obsolete))
 			.then(keyword => this._addSynonyms(term.synonym, keyword.get('id')))
 			.then(() => next());
