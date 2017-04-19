@@ -24,7 +24,7 @@ function login(req, res, next) {
 	// First we complete the OAuth process started on the frontend
 	Orcid.getUserToken(req.body.code).then(userTokenRes => {
 		if (!userTokenRes.orcid) {
-			return response.serverError(res, 'Orcid error');
+			return response.serverError(res, `Orcid error: "${userTokenRes.error_description}"`);
 		}
 
 		let orcidId = userTokenRes.orcid;
