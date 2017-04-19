@@ -97,6 +97,8 @@ describe('OBO Data Importer', function() {
 		// Create temporary obo file
 		const badOboName = 'test_terms_fail.obo';
 		const goodId = 'GO:0000002';
+
+		// This causes an error because the first term is missing a name
 		const oboData =
 			'default-namespace: default_keyword_type\n' +
 			'[Term]\n' +
