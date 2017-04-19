@@ -1,6 +1,7 @@
 'use strict';
 
 const User     = require('../models/user');
+const Role     = require('../models/role');
 const auth     = require('../lib/authentication');
 const Orcid    = require('../lib/orcid_api');
 const response = require('../lib/responses');
@@ -38,7 +39,7 @@ function login(req, res, next) {
 				// Update the user's name if it's been changed in the ORCID system
 				let userPromise;
 				if(user.get('name') !== userName){
-					userPromise = user.set({name: userName}).save()
+					userPromise = user.set({name: userName}).save();
 				} else {
 					userPromise = Promise.resolve(user);
 				}
@@ -56,11 +57,16 @@ function login(req, res, next) {
 					name: userName,
 					orcid_id: orcidId
 				}).save().then(newUser => {
-					auth.signToken({user_id: newUser.attributes.id}, (err, userJwt) => {
-						return response.created(res, {
-							jwt: userJwt
-						});
-					});
+					Role.forge({name: 'Researcher'}).fetch().then(
+						role => newUser.roles().attach(role)
+					).then(
+						() => 
+							auth.signToken({user_id: newUser.attributes.id}, (err, userJwt) => {
+								return response.created(res, {
+									jwt: userJwt
+								});
+							})
+					);
 				});
 			}
 		});
