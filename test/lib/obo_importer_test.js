@@ -1,5 +1,6 @@
 'use strict';
 
+const fs   = require('fs');
 const chai = require('chai');
 chai.use(require('chai-subset'));
 
@@ -90,6 +91,34 @@ describe('OBO Data Importer', function() {
 		return KeywordType.where({name: null})
 			.fetchAll()
 			.then(synonyms => chai.expect(synonyms).to.have.lengthOf(0));
+	});
+
+	it('Errors are handled gracefully and do not stop the import process', function() {
+		// Create temporary obo file
+		const badOboName = 'test_terms_fail.obo';
+		const goodId = 'GO:0000002';
+
+		// This causes an error because the first term is missing a name
+		const oboData =
+			'default-namespace: default_keyword_type\n' +
+			'[Term]\n' +
+			'id: GO:0000001\n' +
+			'\n' +
+			'[Term]\n' +
+			'id: ' + goodId + '\n' +
+			'name: test keyword 2\n';
+		fs.writeFileSync(badOboName, oboData);
+
+		// Dump test DB so the above term is the only added one
+		return oboImporter.loadOboIntoDB(badOboName)
+			.then(() => knex('synonym').truncate())
+			.then(() => knex('keyword').truncate())
+			.then(() => oboImporter.loadOboIntoDB(badOboName))
+			.then(() => Keyword.where('external_id', goodId).fetch())
+			.then(keyword => {
+				fs.unlinkSync(badOboName);
+				chai.expect(keyword).to.exist;
+			});
 	});
 
 	describe('Updating', function() {
