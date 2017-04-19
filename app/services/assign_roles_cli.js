@@ -16,6 +16,11 @@ let orcidId   = process.argv[4];
 
 let userName; // Set this from retrieved user
 
+if (!operation || !role || !orcidId) {
+	console.log('Usage: npm run assign-roles <operation> <role> <orcid id>');
+	process.exit(1);
+}
+
 // Validate operation
 if (operation !== OP_ADD && operation !== OP_REMOVE) {
 	console.error(`Operation must be '${OP_ADD}' or '${OP_REMOVE}'`);
