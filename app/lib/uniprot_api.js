@@ -5,7 +5,7 @@ const request = require('request');
 const NCBI = require('./ncbi_api');
 
 // ex: For "Vulpes vulpes (red fox)", capture "Vulpes vulpes"
-const TAXON_EXTRACTING_REGEX = /^(\b[\w ]+\b) *(?:\(.*)?$/;
+const TAXON_EXTRACTING_REGEX = /^(\b[\w. ]+\b) *(?:\(.*)?$/;
 const QUERY_RESULT_LIMIT = 10;
 const BASE_URL = 'http://www.uniprot.org/uniprot/?format=json';
 
