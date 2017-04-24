@@ -201,7 +201,7 @@ describe('OBO Data Importer', function() {
 		it('New synonyms added for existing terms', function() {
 			const expectedSubset = [
 				{name: 'This is a new synonym'},
-				{name: 'This is another new synonym'}
+				{name: 'test keyword 2'}
 			];
 
 			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo')
