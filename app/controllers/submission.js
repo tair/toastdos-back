@@ -214,13 +214,13 @@ function generateSubmissionSummary(req, res, next) {
 	} else if (req.query.limit < 1) {
 		itemsPerPage = 1;
 	} else {
-		itemsPerPage = req.query.limit;
+		itemsPerPage = parseInt(req.query.limit);
 	}
 
 	if (!req.query.page || req.query.page <= 1) {
 		page = 1;
 	} else {
-		page = req.query.page;
+		page = parseInt(req.query.page);
 	}
 
 	let countProm = Submission.query(qb => qb.count('* as count')).fetch();
