@@ -256,19 +256,16 @@ class DeletedTermHandler extends stream.Writable {
 		.catch(err => {
 			// Transaction rolls back automatically on error
 
-			// Move onto next term for these expected errors
+			// Log errors, but move onto next term
 			if (err.message === 'Skip') {
 				logger.warn(`Tried to delete Keyword with ID "${term.id}", but could not find it in our system.`);
-				return next();
-			}
-
-			if (err.message === 'NoMergeFound') {
+			} else if (err.message === 'NoMergeFound') {
 				logger.error('Found no keyword to merge into when deleting term: %j', term);
-				return next();
+			} else {
+				logger.error(err);
 			}
 
-			// Re-throw unexpected error
-			throw err;
+			next();
 		});
 	}
 }
