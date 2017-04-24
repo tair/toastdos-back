@@ -4,12 +4,16 @@ const fs   = require('fs');
 const chai = require('chai');
 chai.use(require('chai-subset'));
 
+const testdata = require('../../seeds/test/test_data.json');
+
 const knex        = require('../../app/lib/bookshelf').knex;
 const oboImporter = require('../../app/services/obo_importer/obo_importer');
 
-const KeywordType = require('../../app/models/keyword_type');
-const Keyword     = require('../../app/models/keyword');
-const Synonym     = require('../../app/models/synonym');
+const KeywordType        = require('../../app/models/keyword_type');
+const Keyword            = require('../../app/models/keyword');
+const Synonym            = require('../../app/models/synonym');
+const GeneTermAnnotation = require('../../app/models/gene_term_annotation');
+const GeneGeneAnnotation = require('../../app/models/gene_gene_annotation');
 
 describe('OBO Data Importer', function() {
 
@@ -230,7 +234,62 @@ describe('OBO Data Importer', function() {
 				});
 		});
 
-		it('Annotations referencing deleted Keywords are properly updated');
+		it('Annotations referencing deleted Keywords are properly updated', function() {
+			const deletedKeywordId = 'GO:0000002';
+			const mergedKeywordId = 'GO:0000001';
+			const testGT = testdata.gene_term_annotations[0];
+			const testGG = testdata.gene_gene_annotations[0];
+
+			// Add Annotations that reference a deleted Keyword
+			let modelProm = knex.seed.run()
+				.then(() => oboImporter.loadOboIntoDB('./test/lib/test_terms.obo'))
+				.then(() => Keyword.where('external_id', deletedKeywordId).fetch())
+				.then(keyword => {
+					let newId = keyword.get('id');
+					let newGTAnn1 = Object.assign({}, testGT);
+					let newGTAnn2 = Object.assign({}, testGT);
+					let newGGAnn  = Object.assign({}, testGG);
+
+					delete newGTAnn1.id;
+					delete newGTAnn2.id;
+					delete newGGAnn.id;
+
+					newGTAnn1.method_id = newId;
+					newGTAnn2.keyword_id = newId;
+					newGGAnn.method_id = newId;
+
+					return Promise.all([
+						GeneTermAnnotation.forge(newGTAnn1).save(),
+						GeneTermAnnotation.forge(newGTAnn2).save(),
+						GeneGeneAnnotation.forge(newGGAnn).save()
+					]);
+				});
+
+			// Run the importer and deleted term processor
+			let importProm = modelProm
+				.then(() => oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo'))
+				.then(() => oboImporter.processDeletedTerms('./test/lib/test_terms_update.obo', './test/lib/test_terms.obo'));
+
+			// Verify annotations have changed once we've run the importer
+			return Promise.all([modelProm, importProm])
+				.then(([model, importRes]) => {
+					let [gt1, gt2, gg] = model;
+
+					// Get updated versions of these annotations
+					return Promise.all([
+						gt1.refresh(),
+						gt2.refresh(),
+						gg.refresh(),
+						Keyword.where('external_id', mergedKeywordId).fetch()
+					]);
+				})
+				.then(([gt1, gt2, gg, mergedKeyword]) => {
+					let mergeId = mergedKeyword.get('id');
+					chai.expect(gt1.get('method_id')).to.equal(mergeId);
+					chai.expect(gt2.get('keyword_id')).to.equal(mergeId);
+					chai.expect(gg.get('method_id')).to.equal(mergeId);
+				});
+		});
 
 	});
 
