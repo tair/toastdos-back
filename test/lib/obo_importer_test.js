@@ -218,7 +218,17 @@ describe('OBO Data Importer', function() {
 				});
 		});
 
-		it('Deleted Keywords are removed');
+		it('Deleted Keywords are removed', function() {
+			const removeExtId = 'GO:0000002';
+			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo')
+				.then(() => Keyword.where('external_id', removeExtId).fetch({withRelated: 'synonyms'}))
+				.then((keyword) => chai.expect(keyword).to.exist)
+				.then(() => oboImporter.processDeletedTerms('./test/lib/test_terms_update.obo', './test/lib/test_terms.obo'))
+				.then(() => Keyword.where('external_id', removeExtId).fetch({withRelated: 'synonyms'}))
+				.then(keyword => {
+					chai.expect(keyword).to.not.exist;
+				});
+		});
 
 		it('Annotations referencing deleted Keywords are properly updated');
 

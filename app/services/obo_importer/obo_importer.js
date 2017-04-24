@@ -240,6 +240,7 @@ class DeletedTermHandler extends stream.Writable {
 			// Used for collection.save methods called below
 			let updateParams = {
 				method: 'update',
+				require: false,
 				patch: true,
 				transacting: transaction
 			};
@@ -269,7 +270,7 @@ class DeletedTermHandler extends stream.Writable {
 					// Update method_id on GeneTermAnnotations
 					let gtMethodProm = GeneTermAnnotation
 						.query(qb => qb.where('method_id', keywordIDs.old))
-						.save('method_id', keywordIDs.merge, null, updateParams);
+						.save({method_id: keywordIDs.merge}, updateParams);
 
 					return Promise.all([Promise.resolve(keywordIDs), gtMethodProm]);
 				})
@@ -277,7 +278,7 @@ class DeletedTermHandler extends stream.Writable {
 					// Update keyword_id on GeneTermAnnotations
 					let gtKeywordProm = GeneTermAnnotation
 						.query(qb => qb.where('keyword_id', keywordIDs.old))
-						.save('keyword_id', keywordIDs.merge, null, updateParams);
+						.save({keyword_id: keywordIDs.merge}, updateParams);
 
 					return Promise.all([Promise.resolve(keywordIDs), gtKeywordProm]);
 				})
@@ -285,7 +286,7 @@ class DeletedTermHandler extends stream.Writable {
 					// Update method_id on GeneGeneAnnotations
 					let ggMethodProm = GeneGeneAnnotation
 						.query(qb => qb.where('method_id', keywordIDs.old))
-						.save('method_id', keywordIDs.merge, null, updateParams);
+						.save({method_id: keywordIDs.merge}, updateParams);
 
 					return Promise.all([Promise.resolve(keywordIDs), ggMethodProm]);
 				})
@@ -389,7 +390,7 @@ function processDeletedTerms(newOboPath, oldOboPath) {
 
 	// Set up the processing pipeline
 	return new Promise((resolve, reject) => {
-		unixDiff.unixDiff(newOboPath, cachedPath)
+		unixDiff.unixDiff(cachedPath, newOboPath)
 			.pipe(new DeletedOboTermExtractor())
 			.pipe(new OboParser())
 			.pipe(new DeletedTermHandler())
