@@ -61,6 +61,7 @@ namespace: biological_process
 def: "The chemical reactions and pathways involving amino acids containing a branched carbon skeleton, comprising isoleucine, leucine and valine." [CHEBI:22918, GOC:ai]
 subset: gosubset_prok
 synonym: "branched chain family amino acid metabolism" EXACT [GOC:ai]
+synonym: "Do we properly parse unicode? 漢字"
 is_a: GO:0006082 ! organic acid metabolic process
 is_a: GO:1901564 ! organonitrogen compound metabolic process
 
