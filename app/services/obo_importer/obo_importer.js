@@ -22,6 +22,8 @@ const bookshelf          = require('../../lib/bookshelf');
 const Keyword            = require('../../models/keyword');
 const KeywordType        = require('../../models/keyword_type');
 const Synonym            = require('../../models/synonym');
+const GeneTermAnnotation = require('../../models/gene_term_annotation');
+const GeneGeneAnnotation = require('../../models/gene_gene_annotation');
 
 
 /**
@@ -224,9 +226,10 @@ class DeletedTermHandler extends stream.Writable {
 		let term = JSON.parse(chunk.toString());
 
 		bookshelf.transaction(transaction => {
-			// Get the Keyword we're going to delete from our system
-			// and the Keyword it will be merged into
+			// Keyword to be deleted
 			let oldKeywordProm = Keyword.getByExtId(term.id, transaction);
+
+			// Synonym whose parent Keyword will be used to replace deleted Keyword
 			let mergeSynonymProm = Synonym
 				.where('name', term.name)
 				.fetch({
@@ -234,23 +237,72 @@ class DeletedTermHandler extends stream.Writable {
 					transacting: transaction
 				});
 
+			// Used for collection.save methods called below
+			let updateParams = {
+				method: 'update',
+				patch: true,
+				transacting: transaction
+			};
+
 			return Promise.all([oldKeywordProm, mergeSynonymProm])
 				.then(([oldKeyword, mergeSynonym]) => {
 
 					// Skip Keywords we can't find in our system.
-					// We only throw an error here to break the promise chain.
-					if (!oldKeyword) throw new Error('Skip');
+					if (!oldKeyword) {
+						throw new Error('Skip');
+					}
 
 					// We need a Keyword to merge into
-					if (!mergeSynonym || !mergeSynonym.related('keyword')) throw new Error('NoMergeFound');
+					if (!mergeSynonym || !mergeSynonym.related('keyword')) {
+						throw new Error('NoMergeFound');
+					}
 
+					// Point all Annotations referencing the deleted Keyword to the merge Keyword.
+					// Do operations one-by-one to avoid race conditions with GeneTermAnnotations.
+					// Carry this hash of Keyword IDs through each promise in this chain.
+					return Promise.resolve({
+						old: oldKeyword.get('id'),
+						merge: mergeSynonym.related('keyword').get('id')
+					});
+				})
+				.then(keywordIDs => {
+					// Update method_id on GeneTermAnnotations
+					let gtMethodProm = GeneTermAnnotation
+						.query(qb => qb.where('method_id', keywordIDs.old))
+						.save('method_id', keywordIDs.merge, null, updateParams);
 
-					let mergeKeyword = mergeSynonym.related('keyword');
+					return Promise.all([Promise.resolve(keywordIDs), gtMethodProm]);
+				})
+				.then(([keywordIDs, ignore_res]) => {
+					// Update keyword_id on GeneTermAnnotations
+					let gtKeywordProm = GeneTermAnnotation
+						.query(qb => qb.where('keyword_id', keywordIDs.old))
+						.save('keyword_id', keywordIDs.merge, null, updateParams);
 
-					// Update all annotations referencing the deleted term with merged term
+					return Promise.all([Promise.resolve(keywordIDs), gtKeywordProm]);
+				})
+				.then(([keywordIDs, ignore_res]) => {
+					// Update method_id on GeneGeneAnnotations
+					let ggMethodProm = GeneGeneAnnotation
+						.query(qb => qb.where('method_id', keywordIDs.old))
+						.save('method_id', keywordIDs.merge, null, updateParams);
 
+					return Promise.all([Promise.resolve(keywordIDs), ggMethodProm]);
+				})
+				.then(([keywordIDs, ignore_res]) => {
+					// Delete removed Synonyms
+					let synProm = Synonym
+						.where('keyword_id', keywordIDs.old)
+						.destroy({transacting: transaction});
+
+					return Promise.all([Promise.resolve(keywordIDs), synProm]);
+				})
+				.then(([keywordIDs, ignore_res]) => {
+					// Delete removed Keyword
+					return Keyword
+						.where('id', keywordIDs.old)
+						.destroy({transacting: transaction});
 				});
-
 		})
 		.then(() => next()) // Transaction commits automatically
 		.catch(err => {
