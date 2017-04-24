@@ -12,9 +12,9 @@ const fs         = require('fs');
 const LineStream = require('byline').LineStream;
 const _          = require('lodash');
 
-const OboParser  = require('../../lib/obo_parser').OboParser;
-const unixDiff   = require('../diff_tool/unix_diff');
-const oboDiff    = require('../diff_tool/diff_obo');
+const OboParser               = require('../../lib/obo_parser').OboParser;
+const unixDiff                = require('../diff_tool/unix_diff');
+const DeletedOboTermExtractor = require('../diff_tool/diff_obo').DeletedOboTermExtractor;
 
 const logger = require('../logger');
 
@@ -214,6 +214,19 @@ class DataImporter extends stream.Writable {
 }
 
 /**
+ * Takes in a parsed obo term and handles the process
+ * of deleting that term from the system.
+ * See processDeletedTerms for details.
+ */
+class DeletedTermHandler extends stream.Writable {
+	_write(chunk, enc, next) {
+		let term = JSON.parse(chunk.toString());
+		next();
+	}
+}
+
+
+/**
  * Adds each term in the obo file into the DB.
  *
  * @param filepath - path of the .obo file to read in
@@ -278,11 +291,14 @@ function processDeletedTerms(newOboPath, oldOboPath) {
 	}
 
 	// Set up the processing pipeline
-	unixDiff.unixDiff(newOboPath, cachedPath)
-		.pipe(new oboDiff.DeletedOboTermExtractor())
-		.on('data', data => {
-			console.log(data.toString());
-		});
+	return new Promise((resolve, reject) => {
+		unixDiff.unixDiff(newOboPath, cachedPath)
+			.pipe(new DeletedOboTermExtractor())
+			.pipe(new OboParser())
+			.pipe(new DeletedTermHandler())
+			.on('finish', data => resolve(data))
+			.on('error', err => reject(err));
+	});
 }
 
 module.exports = {
