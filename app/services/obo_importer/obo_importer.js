@@ -18,9 +18,10 @@ const DeletedOboTermExtractor = require('../diff_tool/diff_obo').DeletedOboTermE
 
 const logger = require('../logger');
 
-const Keyword     = require('../../models/keyword');
-const KeywordType = require('../../models/keyword_type');
-const Synonym     = require('../../models/synonym');
+const bookshelf          = require('../../lib/bookshelf');
+const Keyword            = require('../../models/keyword');
+const KeywordType        = require('../../models/keyword_type');
+const Synonym            = require('../../models/synonym');
 
 
 /**
@@ -221,7 +222,54 @@ class DataImporter extends stream.Writable {
 class DeletedTermHandler extends stream.Writable {
 	_write(chunk, enc, next) {
 		let term = JSON.parse(chunk.toString());
-		next();
+
+		bookshelf.transaction(transaction => {
+			// Get the Keyword we're going to delete from our system
+			// and the Keyword it will be merged into
+			let oldKeywordProm = Keyword.getByExtId(term.id, transaction);
+			let mergeSynonymProm = Synonym
+				.where('name', term.name)
+				.fetch({
+					withRelated: 'keyword',
+					transacting: transaction
+				});
+
+			return Promise.all([oldKeywordProm, mergeSynonymProm])
+				.then(([oldKeyword, mergeSynonym]) => {
+
+					// Skip Keywords we can't find in our system.
+					// We only throw an error here to break the promise chain.
+					if (!oldKeyword) throw new Error('Skip');
+
+					// We need a Keyword to merge into
+					if (!mergeSynonym || !mergeSynonym.related('keyword')) throw new Error('NoMergeFound');
+
+
+					let mergeKeyword = mergeSynonym.related('keyword');
+
+					// Update all annotations referencing the deleted term with merged term
+
+				});
+
+		})
+		.then(() => next()) // Transaction commits automatically
+		.catch(err => {
+			// Transaction rolls back automatically on error
+
+			// Move onto next term for these expected errors
+			if (err.message === 'Skip') {
+				logger.warn(`Tried to delete Keyword with ID "${term.id}", but could not find it in our system.`);
+				return next();
+			}
+
+			if (err.message === 'NoMergeFound') {
+				logger.error('Found no keyword to merge into when deleting term: %j', term);
+				return next();
+			}
+
+			// Re-throw unexpected error
+			throw err;
+		});
 	}
 }
 
