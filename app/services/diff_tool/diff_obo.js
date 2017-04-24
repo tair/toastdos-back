@@ -1,7 +1,7 @@
 const stream = require('stream');
 
 const START_OF_GROUP = /^(?:[0-9]+,)?[0-9]+([acd])[0-9]+(?:,[0-9]+)?$/;
-const ID_MATCHER = /^ID: .*$/;
+const ID_MATCHER = /^id: .*\n?$/;
 
 /**
  * Processes unix diffs of obo files to find terms that
@@ -14,38 +14,46 @@ const ID_MATCHER = /^ID: .*$/;
  */
 class DeletedOboTermExtractor extends stream.Transform {
 
+	constructor() {
+		super();
+		this.deletedTerm = '';
+		this.ignore = false;
+	}
+
 	_transform(chunk, encoding, next) {
-		let lines = chunk.toString().split('\n');
-
-		let deletedTerm = '';
-		let ignore = false;
-
-		lines.forEach(line => {
+		chunk.toString().split('\n').forEach(line => {
 
 			// Switch into ignore mode when we encounter a
 			// diff group that isn't 'change' or 'delete'
 			let groupStart = line.match(START_OF_GROUP);
 			if (groupStart) {
-				ignore = !(groupStart[1] === 'c' || groupStart[1] === 'd');
+				this.ignore = !(groupStart[1] === 'c' || groupStart[1] === 'd');
 			}
 
 			// Skip lines when we're in ignore mode
-			if (ignore) {
+			if (this.ignore) {
 				return;
+			}
+
+			// Strip the diff arrow off the start of the line.
+			// This is also a data line, so re-add the newline
+			if (line.charAt(0) === '<' || line.charAt(0) === '>') {
+				line = line.slice(2) + '\n';
 			}
 
 			// Start of a deleted term
 			if (line.match(ID_MATCHER)) {
-				deletedTerm += line;
+				this.deletedTerm += line;
 			}
 			// End of a deleted term
-			else if (line === '\n') {
-				this.push(deletedTerm);
-				deletedTerm = '';
+			else if (this.deletedTerm && (line === '---' || line === '\n')) {
+				this.deletedTerm = '[Term]\n' + this.deletedTerm;
+				this.push(this.deletedTerm);
+				this.deletedTerm = '';
 			}
 			// Continuation of a deleted term
-			else {
-				deletedTerm += line;
+			else if (this.deletedTerm) {
+				this.deletedTerm += line;
 			}
 		});
 
