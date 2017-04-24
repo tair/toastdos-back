@@ -9,9 +9,12 @@
 
 const stream     = require('stream');
 const fs         = require('fs');
-const OboParser  = require('../../lib/obo_parser').OboParser;
 const LineStream = require('byline').LineStream;
 const _          = require('lodash');
+
+const OboParser  = require('../../lib/obo_parser').OboParser;
+const unixDiff   = require('../diff_tool/unix_diff');
+const oboDiff    = require('../diff_tool/diff_obo');
 
 const logger = require('../logger');
 
@@ -237,4 +240,52 @@ function loadOboIntoDB(filepath) {
 	});
 }
 
-module.exports.loadOboIntoDB = loadOboIntoDB;
+/**
+ * Handles terms that have been deleted in the given obo file.
+ * By default, a cached version of the given obo file is used.
+ * This can be overridden.
+ * ex: /given/path/file.obo
+ *     /given/path/cache/file.obo
+ *
+ * A deleted term's (Term A) name is *supposed* to be added to
+ * another term's (Term B) synonym list in the new obo file.
+ * Update all annotations that reference Term A to reference
+ * Term B instead. Finally, Term A is deleted from our system.
+ *
+ * @param newOboPath - path of the .obo file
+ * @param oldOboPath - optional. Overrides use of cached .obo for the diff
+ * @returns {Promise.<TResult>}
+ */
+function processDeletedTerms(newOboPath, oldOboPath) {
+	let cachedPath = oldOboPath;
+
+	// Use cached obo if no old obo is specified
+	if (!oldOboPath) {
+		// Separate filename from filepath
+		let splitPath = newOboPath.split('/');
+		let filename = splitPath.pop();
+		let filePath = splitPath.join('/');
+
+		cachedPath = `${filePath}/cache/${filename}`;
+	}
+
+	// Make sure our obo files actually exist
+	if (!fs.existsSync(newOboPath)) {
+		return Promise.reject(new Error(`File "${newOboPath}" does not exist`));
+	}
+	if (!fs.existsSync(cachedPath)) {
+		return Promise.reject(new Error(`File "${cachedPath}" does not exist`));
+	}
+
+	// Set up the processing pipeline
+	unixDiff.unixDiff(newOboPath, cachedPath)
+		.pipe(new oboDiff.DeletedOboTermExtractor())
+		.on('data', data => {
+			console.log(data.toString());
+		});
+}
+
+module.exports = {
+	loadOboIntoDB,
+	processDeletedTerms
+};
