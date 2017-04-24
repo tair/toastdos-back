@@ -123,7 +123,8 @@ describe('OBO Data Importer', function() {
 
 	describe('Updating', function() {
 
-		beforeEach('Clear DB, run importer, then run update', function() {
+		beforeEach('Clear DB, then run importer', function() {
+			// Update tests modify the DB, so repopulate it before each test
 			return Promise.all([
 					knex('gene_term_annotation').truncate(),
 					knex('gene_gene_annotation').truncate(),
@@ -207,7 +208,6 @@ describe('OBO Data Importer', function() {
 				});
 		});
 
-
 		it('Synonyms missing in new OBO should be removed', function() {
 			const expectedSubset = [{name: 'another synonym'}];
 			return oboImporter.loadOboIntoDB('./test/lib/test_terms_update.obo')
@@ -217,6 +217,10 @@ describe('OBO Data Importer', function() {
 					chai.expect(synonyms).to.not.containSubset(expectedSubset);
 				});
 		});
+
+		it('Deleted Keywords are removed');
+
+		it('Annotations referencing deleted Keywords are properly updated');
 
 	});
 
