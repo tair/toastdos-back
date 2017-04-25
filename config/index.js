@@ -7,6 +7,9 @@ if (process.env.NODE_ENV === 'production') {
 else if (process.env.NODE_ENV === 'test') {
 	module.exports = require('./test');
 }
+else if (process.env.NODE_ENV === 'staging') {
+	module.exports = require('./staging');
+}
 else {
 	process.env.NODE_ENV = 'development';
 	module.exports = require('./development');
