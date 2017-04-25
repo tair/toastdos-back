@@ -9,9 +9,9 @@ module.exports = {
 		name: 'test-info',
 		filename: './logs/test.log'
 	},
-	loggerdebug: {
+	loggererror: {
 		level: 'error',
-		name: 'test-debug',
+		name: 'test-error',
 		filename: './logs/test.log'
 	},
 	database: require('../knexfile').test,

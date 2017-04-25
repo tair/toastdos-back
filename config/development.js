@@ -10,9 +10,9 @@ module.exports = {
 		json: false,
 		timestamp: tsFormat
 	},
-	loggerdebug: {
-		level: 'debug',
-		name: 'developer-debug',
+	loggererror: {
+		level: 'error',
+		name: 'developer-error',
 		filename: './logs/development.log',
 		json: false,
 		timestamp: tsFormat
