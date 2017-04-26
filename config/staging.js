@@ -2,17 +2,16 @@
 const tsFormat = () => (new Date()).toLocaleTimeString();
 
 module.exports = {
-	// development environment configuration
-	loggerinfo: {
+	// local staging environment configuration
+	logger: {
 		level: 'info',
-		name: 'developer-info',
-		filename: './logs/staging.log',
-		json: false,
-		timestamp: tsFormat
-	},
-	loggerdebug: {
-		level: 'debug',
-		name: 'developer-debug',
+		levels: {
+			'debug': 0,
+			'info': 1,
+			'warn': 2,
+			'error': 3
+		},
+		name: 'staging-log',
 		filename: './logs/staging.log',
 		json: false,
 		timestamp: tsFormat
