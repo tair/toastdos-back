@@ -18,6 +18,7 @@ id: GO:0000002
 name: test keyword 2
 def: "This term has no namespace, so the default namespace should be used" [GOC:mcc, PMID:10873824, PMID:11389764]
 synonym: "Name conflict synonym" EXACT []
+synonym: "Do we properly parse unicode? 漢字"
 
 [Term]
 id: GO:0000003

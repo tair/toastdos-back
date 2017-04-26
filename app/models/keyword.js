@@ -39,6 +39,11 @@ const Keyword = bookshelf.model('Keyword', {
 					return addNew(params, transaction);
 				}
 			});
+	},
+	getByExtId: function(externalId, transaction) {
+		return bookshelf.model('Keyword')
+			.where('external_id', externalId)
+			.fetch({transacting: transaction});
 	}
 });
 

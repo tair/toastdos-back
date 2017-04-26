@@ -9,15 +9,21 @@
 
 const stream     = require('stream');
 const fs         = require('fs');
-const OboParser  = require('../../lib/obo_parser').OboParser;
 const LineStream = require('byline').LineStream;
 const _          = require('lodash');
 
+const OboParser               = require('../../lib/obo_parser').OboParser;
+const unixDiff                = require('../diff_tool/unix_diff');
+const DeletedOboTermExtractor = require('../diff_tool/diff_obo').DeletedOboTermExtractor;
+
 const logger = require('../logger');
 
-const Keyword     = require('../../models/keyword');
-const KeywordType = require('../../models/keyword_type');
-const Synonym     = require('../../models/synonym');
+const bookshelf          = require('../../lib/bookshelf');
+const Keyword            = require('../../models/keyword');
+const KeywordType        = require('../../models/keyword_type');
+const Synonym            = require('../../models/synonym');
+const GeneTermAnnotation = require('../../models/gene_term_annotation');
+const GeneGeneAnnotation = require('../../models/gene_gene_annotation');
 
 
 /**
@@ -211,6 +217,114 @@ class DataImporter extends stream.Writable {
 }
 
 /**
+ * Takes in a parsed obo term and handles the process
+ * of deleting that term from the system.
+ * See processDeletedTerms for details.
+ */
+class DeletedTermHandler extends stream.Writable {
+	_write(chunk, enc, next) {
+		let term = JSON.parse(chunk.toString());
+
+		bookshelf.transaction(transaction => {
+			// Keyword to be deleted
+			let oldKeywordProm = Keyword.getByExtId(term.id, transaction);
+
+			// Synonym whose parent Keyword will be used to replace deleted Keyword
+			let mergeSynonymProm = Synonym
+				.where('name', term.name)
+				.fetch({
+					withRelated: 'keyword',
+					transacting: transaction
+				});
+
+			// Used for collection.save methods called below
+			let updateParams = {
+				method: 'update',
+				require: false,
+				patch: true,
+				transacting: transaction
+			};
+
+			return Promise.all([oldKeywordProm, mergeSynonymProm])
+				.then(([oldKeyword, mergeSynonym]) => {
+
+					// Skip Keywords we can't find in our system.
+					if (!oldKeyword) {
+						throw new Error('Skip');
+					}
+
+					// We need a Keyword to merge into
+					if (!mergeSynonym || !mergeSynonym.related('keyword')) {
+						throw new Error('NoMergeFound');
+					}
+
+					// Point all Annotations referencing the deleted Keyword to the merge Keyword.
+					// Do operations one-by-one to avoid race conditions with GeneTermAnnotations.
+					// Carry this hash of Keyword IDs through each promise in this chain.
+					return Promise.resolve({
+						old: oldKeyword.get('id'),
+						merge: mergeSynonym.related('keyword').get('id')
+					});
+				})
+				.then(keywordIDs => {
+					// Update method_id on GeneTermAnnotations
+					let gtMethodProm = GeneTermAnnotation
+						.query(qb => qb.where('method_id', keywordIDs.old))
+						.save({method_id: keywordIDs.merge}, updateParams);
+
+					return Promise.all([Promise.resolve(keywordIDs), gtMethodProm]);
+				})
+				.then(([keywordIDs, ignore_res]) => {
+					// Update keyword_id on GeneTermAnnotations
+					let gtKeywordProm = GeneTermAnnotation
+						.query(qb => qb.where('keyword_id', keywordIDs.old))
+						.save({keyword_id: keywordIDs.merge}, updateParams);
+
+					return Promise.all([Promise.resolve(keywordIDs), gtKeywordProm]);
+				})
+				.then(([keywordIDs, ignore_res]) => {
+					// Update method_id on GeneGeneAnnotations
+					let ggMethodProm = GeneGeneAnnotation
+						.query(qb => qb.where('method_id', keywordIDs.old))
+						.save({method_id: keywordIDs.merge}, updateParams);
+
+					return Promise.all([Promise.resolve(keywordIDs), ggMethodProm]);
+				})
+				.then(([keywordIDs, ignore_res]) => {
+					// Delete removed Synonyms
+					let synProm = Synonym
+						.where('keyword_id', keywordIDs.old)
+						.destroy({transacting: transaction});
+
+					return Promise.all([Promise.resolve(keywordIDs), synProm]);
+				})
+				.then(([keywordIDs, ignore_res]) => {
+					// Delete removed Keyword
+					return Keyword
+						.where('id', keywordIDs.old)
+						.destroy({transacting: transaction});
+				});
+		})
+		.then(() => next()) // Transaction commits automatically
+		.catch(err => {
+			// Transaction rolls back automatically on error
+
+			// Log errors, but move onto next term
+			if (err.message === 'Skip') {
+				logger.warn(`Tried to delete Keyword with ID "${term.id}", but could not find it in our system.`);
+			} else if (err.message === 'NoMergeFound') {
+				logger.error('Found no keyword to merge into when deleting term: %j', term);
+			} else {
+				logger.error(err);
+			}
+
+			next();
+		});
+	}
+}
+
+
+/**
  * Adds each term in the obo file into the DB.
  *
  * @param filepath - path of the .obo file to read in
@@ -237,4 +351,55 @@ function loadOboIntoDB(filepath) {
 	});
 }
 
-module.exports.loadOboIntoDB = loadOboIntoDB;
+/**
+ * Handles terms that have been deleted in the given obo file.
+ * By default, a cached version of the given obo file is used.
+ * This can be overridden.
+ * ex: /given/path/file.obo
+ *     /given/path/cache/file.obo
+ *
+ * A deleted term's (Term A) name is *supposed* to be added to
+ * another term's (Term B) synonym list in the new obo file.
+ * Update all annotations that reference Term A to reference
+ * Term B instead. Finally, Term A is deleted from our system.
+ *
+ * @param newOboPath - path of the .obo file
+ * @param oldOboPath - optional. Overrides use of cached .obo for the diff
+ * @returns {Promise.<TResult>}
+ */
+function processDeletedTerms(newOboPath, oldOboPath) {
+	let cachedPath = oldOboPath;
+
+	// Use cached obo if no old obo is specified
+	if (!oldOboPath) {
+		// Separate filename from filepath
+		let splitPath = newOboPath.split('/');
+		let filename = splitPath.pop();
+		let filePath = splitPath.join('/');
+
+		cachedPath = `${filePath}/cache/${filename}`;
+	}
+
+	// Make sure our obo files actually exist
+	if (!fs.existsSync(newOboPath)) {
+		return Promise.reject(new Error(`File "${newOboPath}" does not exist`));
+	}
+	if (!fs.existsSync(cachedPath)) {
+		return Promise.reject(new Error(`File "${cachedPath}" does not exist`));
+	}
+
+	// Set up the processing pipeline
+	return new Promise((resolve, reject) => {
+		unixDiff.unixDiff(cachedPath, newOboPath)
+			.pipe(new DeletedOboTermExtractor())
+			.pipe(new OboParser())
+			.pipe(new DeletedTermHandler())
+			.on('finish', data => resolve(data))
+			.on('error', err => reject(err));
+	});
+}
+
+module.exports = {
+	loadOboIntoDB,
+	processDeletedTerms
+};
