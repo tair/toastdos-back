@@ -109,7 +109,7 @@ exports.up = function(knex, Promise) {
 			table.integer('type_id').references('annotation_type.id').notNullable();
 			table.integer('submission_id').references('submission.id').notNullable();
 			table.integer('annotation_id').notNullable();
-			table.integer('annotation_format').notNullable();
+			table.string('annotation_format').notNullable();
 			table.timestamps(true, true); // Use Javascript Date format, default to knex.fn.now()
 
 			table.index('publication_id');
