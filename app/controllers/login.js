@@ -44,7 +44,7 @@ function login(req, res, next) {
 					userPromise = Promise.resolve(user);
 				}
 				return userPromise.then(resolvedUser => {
-					auth.signToken({user_id: resolvedUser.get(id)}, (err, userJwt) => {
+					auth.signToken({user_id: resolvedUser.get('id')}, (err, userJwt) => {
 						return response.ok(res, {
 							jwt: userJwt
 						});
@@ -61,7 +61,7 @@ function login(req, res, next) {
 						role => newUser.roles().attach(role)
 					).then(
 						() =>
-							auth.signToken({user_id: newUser.get(id)}, (err, userJwt) => {
+							auth.signToken({user_id: newUser.get('id')}, (err, userJwt) => {
 								return response.created(res, {
 									jwt: userJwt
 								});
