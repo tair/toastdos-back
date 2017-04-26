@@ -20,7 +20,7 @@ function login(req, res, next) {
 
 	let checkPasswordPromise = userDataPromise.then(user => {
 		return new Promise((accept, reject) => {
-			authentication.checkPassword(req.body.password, user.related('password').attributes.password_hash, (err, success) => {
+			authentication.checkPassword(req.body.password, user.related('password').get(password_hash), (err, success) => {
 				if(err) {
 					return reject(err);
 				}
@@ -36,7 +36,7 @@ function login(req, res, next) {
 		}
 		
 		let tokenData = {
-			username: userData.attributes.username,
+			username: userData.get(username),
 			// todo add other token data
 		};
 
