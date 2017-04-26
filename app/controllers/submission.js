@@ -214,24 +214,27 @@ function generateSubmissionSummary(req, res, next) {
 	} else if (req.query.limit < 1) {
 		itemsPerPage = 1;
 	} else {
-		itemsPerPage = req.query.limit;
+		itemsPerPage = parseInt(req.query.limit);
 	}
 
 	if (!req.query.page || req.query.page <= 1) {
 		page = 1;
 	} else {
-		page = req.query.page;
+		page = parseInt(req.query.page);
 	}
 
-	Submission
+	let countProm = Submission.query(qb => qb.count('* as count')).fetch();
+	let groupProm = Submission
 		.query(qb => {}) // Necessary to chain into orderBy
 		.orderBy('created_at', 'DESC')
 		.fetchPage({
 			page: page,
 			pageSize: itemsPerPage,
 			withRelated: ['publication', 'submitter', 'annotations.status'],
-		})
-		.then(submissionCollection => {
+		});
+
+	Promise.all([countProm, groupProm])
+		.then(([count, submissionCollection]) => {
 			let submissions = submissionCollection.map(submissionModel => {
 				let publication = submissionModel.related('publication');
 				let annotations = submissionModel.related('annotations');
@@ -244,7 +247,14 @@ function generateSubmissionSummary(req, res, next) {
 				};
 			});
 
-			return response.ok(res, submissions);
+			let finalRes = {
+				page: page,
+				page_size: itemsPerPage,
+				total_pages: Math.ceil(count.get('count') / itemsPerPage),
+				submissions: submissions
+			};
+
+			return response.ok(res, finalRes);
 		})
 		.catch(err => response.defaultServerError(res, err));
 }

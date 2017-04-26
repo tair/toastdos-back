@@ -348,8 +348,9 @@ describe('Submission Controller', function() {
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
-						chai.expect(res.body[0].submission_date).to.be.above(res.body[1].submission_date);
-						chai.expect(res.body[1].submission_date).to.be.above(res.body[2].submission_date);
+						let subs = res.body.submissions;
+						chai.expect(subs[0].submission_date).to.be.above(subs[1].submission_date);
+						chai.expect(subs[1].submission_date).to.be.above(subs[2].submission_date);
 						done();
 					});
 			});
@@ -372,9 +373,9 @@ describe('Submission Controller', function() {
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
-						chai.expect(res.body).to.be.an.array;
-						chai.expect(res.body).to.have.lengthOf(1);
-						chai.expect(res.body[0]).to.contain(expectedSubmission);
+						chai.expect(res.body.submissions).to.be.an.array;
+						chai.expect(res.body.submissions).to.have.lengthOf(1);
+						chai.expect(res.body.submissions[0]).to.contain(expectedSubmission);
 						done();
 					});
 			});
@@ -419,8 +420,9 @@ describe('Submission Controller', function() {
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
-						chai.expect(res.body).to.have.lengthOf(expectedLength);
-						chai.expect(res.body[expectedLength - 1]).to.contain(expectedSubmission);
+						chai.expect(res.body.page_size).to.equal(expectedLength);
+						chai.expect(res.body.submissions).to.have.lengthOf(expectedLength);
+						chai.expect(res.body.submissions[expectedLength - 1]).to.contain(expectedSubmission);
 						done();
 					});
 			});
@@ -465,8 +467,10 @@ describe('Submission Controller', function() {
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
-						chai.expect(res.body).to.have.lengthOf(expectedLength);
-						chai.expect(res.body[expectedLength - 1]).to.contain(expectedSubmission);
+						chai.expect(res.body.page).to.equal(testPage);
+						chai.expect(res.body.page_size).to.equal(expectedLength);
+						chai.expect(res.body.submissions).to.have.lengthOf(expectedLength);
+						chai.expect(res.body.submissions[expectedLength - 1]).to.contain(expectedSubmission);
 						done();
 					});
 			});

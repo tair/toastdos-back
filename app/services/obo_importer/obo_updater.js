@@ -31,6 +31,7 @@ function updateKeywordsUsing(oboURI) {
 
 				console.log('File has changed, importing updates...');
 				return oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
+					.then(() => oboImporter.processDeletedTerms(`${OBO_ROOT}/${oboName}`, `${OBO_ROOT}/cache/${oboName}`))
 					.then(() => console.log(`Finished importing ${oboName}`));
 			}
 			else {

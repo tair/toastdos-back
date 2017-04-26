@@ -1,3 +1,15 @@
+# This tool is currently unused, but has been left for historic purposes.
+#
+# Original import / update tests with SQLite3 were slow.
+# To speed them up, we wanted to do a "diff with context" between
+# the new obo and a saved older version, then only run the update
+# on the diff. The (best case) difference was roughly 48,000 terms vs 500.
+#
+# Later tests with PostgreSQL ended up being much faster than SQLite3,
+# so we decided adding diffs to the update workflow was unnecessary.
+#
+# If updates ever get too slow, this tool can be added into the workflow.
+
 import os
 import string
 import subprocess
