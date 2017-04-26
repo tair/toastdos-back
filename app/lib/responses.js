@@ -24,25 +24,25 @@ function created(res, object) {
 
 function badRequest(res, message) {
 	if (!testing) console.error(message);
-	logger.error(message);
+	logger.warn(message);
 	return res.status(BAD_REQUEST).send(message);
 }
 
 function unauthorized(res, message) {
 	if (!testing) console.error(message);
-	logger.error(message);
+	logger.warn(message);
 	return res.status(UNAUTHORIZED).send(message);
 }
 
 function forbidden(res, message) {
 	if (!testing) console.error(message);
-	logger.error(message);
+	logger.warn(message);
 	return res.status(FORBIDDEN).send(message);
 }
 
 function notFound(res, message) {
 	if (!testing) console.error(message);
-	logger.error(message);
+	logger.warn(message);
 	return res.status(NOT_FOUND).send(message);
 }
 
