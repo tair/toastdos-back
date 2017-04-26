@@ -99,7 +99,7 @@ class DataImporter extends stream.Writable {
 			.then(keyword => this._addSynonyms(term.synonym, keyword.get('id')))
 			.then(() => next())
 			.catch(err => {
-				logger.debug(err);
+				logger.error(err);
 				next();
 			});
 	}
