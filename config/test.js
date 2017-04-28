@@ -6,7 +6,18 @@ module.exports = {
 	logger: {
 		level: 'none',
 		name: 'placeholder',
-		filename: './logs/test.log',
+		filename: './logs/test.log'
+	},
+	loggerconsole: {
+		colorize: true,
+		level: 'debug',
+		levels: {
+			'debug': 0,
+			'info': 1,
+			'warn': 2,
+			'error': 3
+		},
+		timestamp: tsFormat
 	},
 	database: require('../knexfile').test,
 	testsecret: 'testsecret'

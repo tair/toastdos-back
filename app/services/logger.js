@@ -14,6 +14,7 @@ if (!fs.existsSync('./logs')) {
 const logger = new winston.Logger({
 	transports: [
 		new winston.transports.File(config.logger),
+		new winston.transports.Console(config.loggerconsole)
 	],
 	exitOnError: false
 });
