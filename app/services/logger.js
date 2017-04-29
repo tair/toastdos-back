@@ -11,10 +11,16 @@ if (!fs.existsSync('./logs')) {
 	fs.mkdirSync('./logs');
 }
 
+let logmode;
+if(process.env.NODE_ENV != 'test'){
+	logmode=new winston.transports.File(config.logger);
+} else{
+	logmode=new winston.transports.Console(config.logger);
+}
+
 const logger = new winston.Logger({
 	transports: [
-		new winston.transports.File(config.logger),
-		new winston.transports.Console(config.loggerconsole)
+		logmode
 	],
 	exitOnError: false
 });

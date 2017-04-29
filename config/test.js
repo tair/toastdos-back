@@ -4,11 +4,6 @@ const tsFormat = () => (new Date()).toLocaleTimeString();
 module.exports = {
     //test environment configuration
 	logger: {
-		level: 'none',
-		name: 'placeholder',
-		filename: './logs/test.log'
-	},
-	loggerconsole: {
 		colorize: true,
 		level: 'debug',
 		levels: {

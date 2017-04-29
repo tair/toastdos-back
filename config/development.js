@@ -16,10 +16,6 @@ module.exports = {
 		json: false,
 		timestamp: tsFormat
 	},
-	loggerconsole: {
-		level: 'none',
-		name: 'placeholder'
-	},
 	database: require('../knexfile').development,
 	jwt: {
 		algorithm: 'RS256',
