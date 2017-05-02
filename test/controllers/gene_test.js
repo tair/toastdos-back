@@ -20,7 +20,7 @@ describe('Gene Controller', function() {
 			};
 
 			chai.request(server)
-				.get(`/api/gene/verify/${uniprotGeneName}`)
+				.get(`/api/locus/verify/${uniprotGeneName}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.deep.equal(expectedBody);
@@ -56,7 +56,7 @@ describe('Gene Controller', function() {
 			};
 
 			chai.request(server)
-				.get(`/api/gene/verify/${tairGeneName}`)
+				.get(`/api/locus/verify/${tairGeneName}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.deep.equal(expectedResponse);
@@ -67,7 +67,7 @@ describe('Gene Controller', function() {
 		it('A name that returns no values responds with Not Found', function(done) {
 			let badGeneName = 'Totally Fake Gene';
 			chai.request(server)
-				.get(`/api/gene/verify/${badGeneName}`)
+				.get(`/api/locus/verify/${badGeneName}`)
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(404);
 					chai.expect(res.text).to.equal(`No Locus found for name ${badGeneName}`);
