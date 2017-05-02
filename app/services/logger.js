@@ -12,9 +12,9 @@ if (!fs.existsSync('./logs')) {
 }
 
 let logmode;
-if(process.env.NODE_ENV != 'test'){
+if (process.env.NODE_ENV !== 'test') {
 	logmode=new winston.transports.File(config.logger);
-} else{
+} else {
 	logmode=new winston.transports.Console(config.logger);
 }
 
@@ -27,7 +27,7 @@ const logger = new winston.Logger({
 
 module.exports = logger;
 module.exports.stream = {
-	write: function(message, encoding){
+	write: function(message, encoding) {
 		logger.info(message);
 	}
 };
