@@ -196,8 +196,15 @@ function addNewKeywords(annotations, transaction) {
  * submission date.
  *
  * Query params:
- * limit - Number of results to fetch. Defaults to / hard capped at PAGE_LIMIT.
- * page - Page of results to start on. Defaults to 1.
+ * limit - Optional. Number of results to fetch. Defaults to / hard capped at PAGE_LIMIT.
+ * page - Optional. Page of results to start on. Defaults to 1.
+ * sort_by - Optional. Submission value to sort list by.
+ *      Options are:
+ *          - date
+ *          - publication
+ *          - annotations
+ *      Defaults to date.
+ * sort_dir - Optional. Direction to sort list by. Defaults to 'DESC'.
  *
  * Responses:
  * 200 with submission list in body
@@ -223,15 +230,32 @@ function generateSubmissionSummary(req, res, next) {
 		page = parseInt(req.query.page);
 	}
 
+	// Validate sort direction
+	if (req.query.sort_dir && req.query.sort_dir !== 'asc' && req.query.sort_dir !== 'desc') {
+		return response.badRequest(res, `Invalid sort_dir value '${req.query.sort_dir}'`);
+	}
+
+	// Validate sort field
+	if (req.query.sort_by
+	 && req.query.sort_by !== 'date'
+	 && req.query.sort_by !== 'publication'
+	 && req.query.sort_by !== 'annotations') {
+		return response.badRequest(res, `Invalid sort_by value '${req.query.sort_by}'`);
+	}
+
 	let countProm = Submission.query(qb => qb.count('* as count')).fetch();
-	let groupProm = Submission
-		.query(qb => {}) // Necessary to chain into orderBy
-		.orderBy('created_at', 'DESC')
-		.fetchPage({
-			page: page,
-			pageSize: itemsPerPage,
-			withRelated: ['publication', 'submitter', 'annotations.status'],
-		});
+	let groupProm = Submission.query(qb => {}); // Necessary to chain into other calls
+
+	// We can offload the date sort to SQL
+	if (req.query.sort_by === 'date') {
+		groupProm.orderBy('created_at', req.query.sort_dir);
+	}
+
+	groupProm.fetchPage({
+		page: page,
+		pageSize: itemsPerPage,
+		withRelated: ['publication', 'submitter', 'annotations.status'],
+	});
 
 	Promise.all([countProm, groupProm])
 		.then(([count, submissionCollection]) => {
