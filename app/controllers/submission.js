@@ -235,14 +235,6 @@ function generateSubmissionSummary(req, res, next) {
 		return response.badRequest(res, `Invalid sort_dir value '${req.query.sort_dir}'`);
 	}
 
-	// Validate sort field
-	if (req.query.sort_by
-	 && req.query.sort_by !== 'date'
-	 && req.query.sort_by !== 'publication'
-	 && req.query.sort_by !== 'annotations') {
-		return response.badRequest(res, `Invalid sort_by value '${req.query.sort_by}'`);
-	}
-
 	let countProm = Submission.query(qb => qb.count('* as count')).fetch();
 	let groupProm = Submission
 		.query(() => {}) // Necessary to chain into fetchPage
@@ -254,6 +246,26 @@ function generateSubmissionSummary(req, res, next) {
 
 	Promise.all([countProm, groupProm])
 		.then(([count, submissionCollection]) => {
+
+			// The query to make SQL sort by publication name or annotation count
+			// is annoyingly complicated, so we do it here instead.
+			if (!req.query.sort_by || req.query.sort_by === 'date') {
+				submissionCollection.sort((a, b) => {
+					
+				});
+			}
+			else if (req.query.sort_by === 'annotations') {
+				submissionCollection.sort((a, b) => {
+
+				});
+			} else if (req.query.sort_by === 'publication') {
+				submissionCollection.sort((a, b) => {
+
+				});
+			} else {
+				return response.badRequest(res, `Invalid sort_by value '${req.query.sort_by}'`);
+			}
+
 			let submissions = submissionCollection.map(submissionModel => {
 				let publication = submissionModel.related('publication');
 				let annotations = submissionModel.related('annotations');
