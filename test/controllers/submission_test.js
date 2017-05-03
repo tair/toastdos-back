@@ -501,7 +501,7 @@ describe('Submission Controller', function() {
 
 		it('Results are properly sorted in correct direction', function() {
 			let pubProm = chai.request(server)
-				.get('/api/submission/list?sort_by=publication&sort_dir=asc')
+				.get('/api/submission/list?sort_by=document&sort_dir=asc')
 				.set({Authorization: `Bearer ${testToken}`})
 				.then(res => {
 					let subs = res.body.submissions;

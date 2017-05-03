@@ -200,9 +200,9 @@ function addNewKeywords(annotations, transaction) {
  * page - Optional. Page of results to start on. Defaults to 1.
  * sort_by - Optional. Submission value to sort list by.
  *      Options are:
- *          - date
- *          - publication
- *          - annotations
+ *          - date - Creation date of submission
+ *          - document - Publication name
+ *          - annotations - Total number of annotations
  *      Defaults to date.
  * sort_dir - Optional. Direction to sort list by. Defaults to 'DESC'.
  *
@@ -261,7 +261,7 @@ function generateSubmissionSummary(req, res, next) {
 					return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -count : count;
 				});
 			}
-			else if (req.query.sort_by === 'publication') {
+			else if (req.query.sort_by === 'document') {
 				sortedSubCollection = submissionCollection.toArray().sort((a, b) => {
 					let puba = a.related('publication');
 					let nameA = puba.get('doi') || puba.get('pubmed_id');
