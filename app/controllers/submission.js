@@ -249,24 +249,38 @@ function generateSubmissionSummary(req, res, next) {
 
 			// The query to make SQL sort by publication name or annotation count
 			// is annoyingly complicated, so we do it here instead.
+			//
+			// We are aware that this isn't scalable, and it should be offloaded
+			// to SQL in the future.
+			let sortedSubCollection;
 			if (!req.query.sort_by || req.query.sort_by === 'date') {
-				submissionCollection.sort((a, b) => {
-					
+				sortedSubCollection = submissionCollection.sortBy(elem => {
+					let milliseconds = Date.parse(elem.get('created_at'));
+					return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -milliseconds : milliseconds;
 				});
 			}
 			else if (req.query.sort_by === 'annotations') {
-				submissionCollection.sort((a, b) => {
-
+				sortedSubCollection = submissionCollection.sortBy(elem => {
+					let count = elem.related('annotations').size();
+					return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -count : count;
 				});
-			} else if (req.query.sort_by === 'publication') {
-				submissionCollection.sort((a, b) => {
+			}
+			else if (req.query.sort_by === 'publication') {
+				sortedSubCollection = submissionCollection.toArray().sort((a, b) => {
+					let puba = a.related('publication');
+					let nameA = puba.get('doi') || puba.get('pubmed_id');
 
+					let pubb = b.related('publication');
+					let nameB = pubb.get('doi') || pubb.get('pubmed_id');
+
+					return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? nameB > nameA : nameA > nameB;
 				});
-			} else {
+			}
+			else {
 				return response.badRequest(res, `Invalid sort_by value '${req.query.sort_by}'`);
 			}
 
-			let submissions = submissionCollection.map(submissionModel => {
+			let submissions = sortedSubCollection.map(submissionModel => {
 				let publication = submissionModel.related('publication');
 				let annotations = submissionModel.related('annotations');
 				return {
