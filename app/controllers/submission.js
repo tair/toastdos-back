@@ -282,6 +282,7 @@ function generateSubmissionSummary(req, res, next) {
 				page: page,
 				page_size: itemsPerPage,
 				total_pages: Math.ceil(count.get('count') / itemsPerPage),
+				sort_by: req.param.sort_by || 'date',
 				submissions: submissions
 			};
 

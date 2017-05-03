@@ -348,6 +348,7 @@ describe('Submission Controller', function() {
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body.sort_by).to.equal('date');
 						let subs = res.body.submissions;
 						chai.expect(subs[0].submission_date).to.be.above(subs[1].submission_date);
 						chai.expect(subs[1].submission_date).to.be.above(subs[2].submission_date);
