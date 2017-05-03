@@ -244,18 +244,13 @@ function generateSubmissionSummary(req, res, next) {
 	}
 
 	let countProm = Submission.query(qb => qb.count('* as count')).fetch();
-	let groupProm = Submission.query(qb => {}); // Necessary to chain into other calls
-
-	// We can offload the date sort to SQL
-	if (req.query.sort_by === 'date') {
-		groupProm.orderBy('created_at', req.query.sort_dir);
-	}
-
-	groupProm.fetchPage({
-		page: page,
-		pageSize: itemsPerPage,
-		withRelated: ['publication', 'submitter', 'annotations.status'],
-	});
+	let groupProm = Submission
+		.query(() => {}) // Necessary to chain into fetchPage
+		.fetchPage({
+			page: page,
+			pageSize: itemsPerPage,
+			withRelated: ['publication', 'submitter', 'annotations.status']
+		});
 
 	Promise.all([countProm, groupProm])
 		.then(([count, submissionCollection]) => {
