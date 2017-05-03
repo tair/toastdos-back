@@ -499,6 +499,29 @@ describe('Submission Controller', function() {
 				.then(res => chai.expect(res).to.not.exist);
 		});
 
+		it('Results are properly sorted in correct direction', function() {
+			let pubProm = chai.request(server)
+				.get('/api/submission/list?sort_by=publication&sort_dir=asc')
+				.set({Authorization: `Bearer ${testToken}`})
+				.then(res => {
+					let subs = res.body.submissions;
+					// Use of negation here achieves "less than or equal"
+					chai.expect(subs[0].document).to.not.be.above(subs[1].document);
+					chai.expect(subs[1].document).to.not.be.above(subs[2].document);
+				});
+
+			let annProm = chai.request(server)
+				.get('/api/submission/list?sort_by=annotations&sort_dir=desc')
+				.set({Authorization: `Bearer ${testToken}`})
+				.then(res => {
+					let subs = res.body.submissions;
+					chai.expect(subs[0].submission_date).to.be.above(subs[1].submission_date);
+					chai.expect(subs[1].submission_date).to.be.above(subs[2].submission_date);
+				});
+
+			return Promise.all([pubProm, annProm]);
+		});
+
 	});
 
 	describe('GET /api/submission/:id', function() {
