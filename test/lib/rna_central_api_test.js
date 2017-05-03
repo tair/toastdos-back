@@ -31,4 +31,19 @@ describe('RNA Central API', function () {
 		});
 	});
 
+	it('Good but lower cased Locus name responds successfully', function() {
+		const goodLocusName = 'URS0000000018';
+		const lowercasedLocusName = goodLocusName.toLowerCase();
+		const expectedResponse = {
+			source: 'RNA Central',
+			locus_name: goodLocusName,
+			taxon_id: 77133,
+			taxon_name: 'uncultured bacterium'
+		};
+
+		return RNACentral.getLocusByName(lowercasedLocusName).then(result => {
+			chai.expect(result).to.deep.equal(expectedResponse);
+		});
+	});
+
 });
