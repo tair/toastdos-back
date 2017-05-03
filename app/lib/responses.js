@@ -8,8 +8,6 @@ const FORBIDDEN = 403;
 const NOT_FOUND = 404;
 const INTERNAL_SERVER_ERROR = 500;
 
-const testing = (process.env.NODE_ENV === 'test');
-
 const logger = require("../services/logger");
 
 function ok(res, object) {
@@ -23,37 +21,31 @@ function created(res, object) {
 }
 
 function badRequest(res, message) {
-	if (!testing) console.error(message);
 	logger.warn(message);
 	return res.status(BAD_REQUEST).send(message);
 }
 
 function unauthorized(res, message) {
-	if (!testing) console.error(message);
 	logger.warn(message);
 	return res.status(UNAUTHORIZED).send(message);
 }
 
 function forbidden(res, message) {
-	if (!testing) console.error(message);
 	logger.warn(message);
 	return res.status(FORBIDDEN).send(message);
 }
 
 function notFound(res, message) {
-	if (!testing) console.error(message);
 	logger.warn(message);
 	return res.status(NOT_FOUND).send(message);
 }
 
 function serverError(res, message) {
-	if (!testing) console.error(message);
 	logger.error(message);
 	return res.status(INTERNAL_SERVER_ERROR).send(message);
 }
 
 function defaultServerError(res, err) {
-	if (testing) console.error(err);
 	logger.error(err);
 	return res.status(INTERNAL_SERVER_ERROR).send('Internal Server Error');
 }
