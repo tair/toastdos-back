@@ -476,6 +476,28 @@ describe('Submission Controller', function() {
 			});
 		});
 
+		it('Invalid sort parameters are rejected', function() {
+			const badSortParam = 'fakeparam';
+			return chai.request(server)
+				.get(`/api/submission/list?sort_by=${badSortParam}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.catch(err => {
+					chai.expect(err.response.text).to.equal(`Invalid sort_by value '${badSortParam}'`);
+				})
+				.then(res => chai.expect(res).to.not.exist);
+		});
+
+		it('Invalid sort direction is rejected', function() {
+			const badSortDir = 'around';
+			return chai.request(server)
+				.get(`/api/submission/list?sort_dir=${badSortDir}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.catch(err => {
+					chai.expect(err.response.text).to.equal(`Invalid sort_dir value '${badSortDir}'`);
+				})
+				.then(res => chai.expect(res).to.not.exist);
+		});
+
 	});
 
 	describe('GET /api/submission/:id', function() {
