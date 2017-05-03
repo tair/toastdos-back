@@ -348,6 +348,7 @@ describe('Submission Controller', function() {
 					.set({Authorization: `Bearer ${testToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(200);
+						chai.expect(res.body.sort_by).to.equal('date');
 						let subs = res.body.submissions;
 						chai.expect(subs[0].submission_date).to.be.above(subs[1].submission_date);
 						chai.expect(subs[1].submission_date).to.be.above(subs[2].submission_date);
@@ -474,6 +475,51 @@ describe('Submission Controller', function() {
 						done();
 					});
 			});
+		});
+
+		it('Invalid sort parameters are rejected', function() {
+			const badSortParam = 'fakeparam';
+			return chai.request(server)
+				.get(`/api/submission/list?sort_by=${badSortParam}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.catch(err => {
+					chai.expect(err.response.text).to.equal(`Invalid sort_by value '${badSortParam}'`);
+				})
+				.then(res => chai.expect(res).to.not.exist);
+		});
+
+		it('Invalid sort direction is rejected', function() {
+			const badSortDir = 'around';
+			return chai.request(server)
+				.get(`/api/submission/list?sort_dir=${badSortDir}`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.catch(err => {
+					chai.expect(err.response.text).to.equal(`Invalid sort_dir value '${badSortDir}'`);
+				})
+				.then(res => chai.expect(res).to.not.exist);
+		});
+
+		it('Results are properly sorted in correct direction', function() {
+			let pubProm = chai.request(server)
+				.get('/api/submission/list?sort_by=document&sort_dir=asc')
+				.set({Authorization: `Bearer ${testToken}`})
+				.then(res => {
+					let subs = res.body.submissions;
+					// Use of negation here achieves "less than or equal"
+					chai.expect(subs[0].document).to.not.be.above(subs[1].document);
+					chai.expect(subs[1].document).to.not.be.above(subs[2].document);
+				});
+
+			let annProm = chai.request(server)
+				.get('/api/submission/list?sort_by=annotations&sort_dir=desc')
+				.set({Authorization: `Bearer ${testToken}`})
+				.then(res => {
+					let subs = res.body.submissions;
+					chai.expect(subs[0].submission_date).to.be.above(subs[1].submission_date);
+					chai.expect(subs[1].submission_date).to.be.above(subs[2].submission_date);
+				});
+
+			return Promise.all([pubProm, annProm]);
 		});
 
 	});

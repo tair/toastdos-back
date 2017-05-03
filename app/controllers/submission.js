@@ -196,8 +196,15 @@ function addNewKeywords(annotations, transaction) {
  * submission date.
  *
  * Query params:
- * limit - Number of results to fetch. Defaults to / hard capped at PAGE_LIMIT.
- * page - Page of results to start on. Defaults to 1.
+ * limit - Optional. Number of results to fetch. Defaults to / hard capped at PAGE_LIMIT.
+ * page - Optional. Page of results to start on. Defaults to 1.
+ * sort_by - Optional. Submission value to sort list by.
+ *      Options are:
+ *          - date - Creation date of submission
+ *          - document - Publication name
+ *          - annotations - Total number of annotations
+ *      Defaults to date.
+ * sort_dir - Optional. Direction to sort list by. Defaults to 'DESC'.
  *
  * Responses:
  * 200 with submission list in body
@@ -223,19 +230,59 @@ function generateSubmissionSummary(req, res, next) {
 		page = parseInt(req.query.page);
 	}
 
+	// Validate sort direction
+	if (req.query.sort_dir && req.query.sort_dir !== 'asc' && req.query.sort_dir !== 'desc') {
+		return response.badRequest(res, `Invalid sort_dir value '${req.query.sort_dir}'`);
+	}
+
 	let countProm = Submission.query(qb => qb.count('* as count')).fetch();
 	let groupProm = Submission
-		.query(qb => {}) // Necessary to chain into orderBy
-		.orderBy('created_at', 'DESC')
-		.fetchPage({
-			page: page,
-			pageSize: itemsPerPage,
-			withRelated: ['publication', 'submitter', 'annotations.status'],
-		});
+		.query(() => {}) // Necessary to chain into fetchPage
+		.fetchAll({withRelated: ['publication', 'submitter', 'annotations.status']});
 
 	Promise.all([countProm, groupProm])
 		.then(([count, submissionCollection]) => {
-			let submissions = submissionCollection.map(submissionModel => {
+
+			// The query to make SQL sort by publication name or annotation count
+			// is annoyingly complicated, so we do it here instead.
+			//
+			// FIXME: We are aware that this isn't scalable, and it should be offloaded
+			// to SQL in the future.
+			let sortedSubCollection;
+			if (!req.query.sort_by || req.query.sort_by === 'date') {
+				sortedSubCollection = submissionCollection.sortBy(elem => {
+					let milliseconds = Date.parse(elem.get('created_at'));
+					return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -milliseconds : milliseconds;
+				});
+			}
+			else if (req.query.sort_by === 'annotations') {
+				sortedSubCollection = submissionCollection.sortBy(elem => {
+					let count = elem.related('annotations').size();
+					return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -count : count;
+				});
+			}
+			else if (req.query.sort_by === 'document') {
+				sortedSubCollection = submissionCollection.toArray().sort((a, b) => {
+					let puba = a.related('publication');
+					let nameA = puba.get('doi') || puba.get('pubmed_id');
+
+					let pubb = b.related('publication');
+					let nameB = pubb.get('doi') || pubb.get('pubmed_id');
+
+					return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? nameB > nameA : nameA > nameB;
+				});
+			}
+			else {
+				return response.badRequest(res, `Invalid sort_by value '${req.query.sort_by}'`);
+			}
+
+			// Do our own pagination
+			//
+			// FIXME: Like above, we realize this is the database's job.
+			// This should also be addressed with a better query.
+			sortedSubCollection = sortedSubCollection.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+			let submissions = sortedSubCollection.map(submissionModel => {
 				let publication = submissionModel.related('publication');
 				let annotations = submissionModel.related('annotations');
 				return {
@@ -251,6 +298,7 @@ function generateSubmissionSummary(req, res, next) {
 				page: page,
 				page_size: itemsPerPage,
 				total_pages: Math.ceil(count.get('count') / itemsPerPage),
+				sort_by: req.param.sort_by || 'date',
 				submissions: submissions
 			};
 
