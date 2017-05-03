@@ -15,10 +15,10 @@ const BASE_URL = 'http://rnacentral.org/api/v1/rna';
  */
 function getLocusByName(name) {
 	return new Promise((resolve, reject) => {
-		let requestUrl = `${BASE_URL}/${name}?flat=true`;
+		let requestUrl = `${BASE_URL}/${name.toUpperCase()}?flat=true`;
 		request.get(requestUrl, (error, response, bodyJson) => {
 			if (error) reject(new Error(error));
-			else if (response.statusCode === 404) reject(new Error(`No Locus found for name ${name}`));
+			else if (response.statusCode === 404) reject(new Error(`No Locus found for name ${name.toUpperCase()}`));
 			else {
 				let body = JSON.parse(bodyJson);
 				let taxonId =  body.xrefs.results[0].taxid;
