@@ -43,9 +43,7 @@ describe('RNA Central API', function () {
 
 		return RNACentral.getLocusByName(lowercasedLocusName).then(result => {
 			chai.expect(result).to.deep.equal(expectedResponse);
-		}).catch(err => {
-			throw err;
-		})
+		});
 	});
 
 });
