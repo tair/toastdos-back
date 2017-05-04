@@ -261,6 +261,15 @@ function generateSubmissionSummary(req, res, next) {
 					return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -count : count;
 				});
 			}
+			else if (req.query.sort_by === 'pending') {
+				sortedSubCollection = submissionCollection.sortBy(elem => {
+					let pending = elem
+						.related('annotations')
+						.filter(ann => ann.related('status').get('name') === PENDING_STATUS)
+						.length;
+					return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -pending : pending;
+				});
+			}
 			else if (req.query.sort_by === 'document') {
 				sortedSubCollection = submissionCollection.toArray().sort((a, b) => {
 					let puba = a.related('publication');
