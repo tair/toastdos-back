@@ -500,26 +500,49 @@ describe('Submission Controller', function() {
 		});
 
 		it('Results are properly sorted in correct direction', function() {
-			let pubProm = chai.request(server)
-				.get('/api/submission/list?sort_by=document&sort_dir=asc')
-				.set({Authorization: `Bearer ${testToken}`})
-				.then(res => {
-					let subs = res.body.submissions;
-					// Use of negation here achieves "less than or equal"
-					chai.expect(subs[0].document).to.not.be.above(subs[1].document);
-					chai.expect(subs[1].document).to.not.be.above(subs[2].document);
-				});
+			const pendingIds = [
+				testdata.annotations[1].id,
+				testdata.annotations[3].id,
+				testdata.annotations[4].id,
+			];
 
-			let annProm = chai.request(server)
-				.get('/api/submission/list?sort_by=annotations&sort_dir=desc')
-				.set({Authorization: `Bearer ${testToken}`})
-				.then(res => {
-					let subs = res.body.submissions;
-					chai.expect(subs[0].submission_date).to.be.above(subs[1].submission_date);
-					chai.expect(subs[1].submission_date).to.be.above(subs[2].submission_date);
-				});
+			// Set some Annotation statuses to 'pending'
+			return AnnotationStatus.where({name: 'pending'}).fetch().then(status => {
+				return Annotation
+					.where('id', 'in', pendingIds)
+					.save({status_id: status.get('id')}, {patch: true});
+			}).then(() => {
 
-			return Promise.all([pubProm, annProm]);
+				let pubProm = chai.request(server)
+					.get('/api/submission/list?sort_by=document&sort_dir=asc')
+					.set({Authorization: `Bearer ${testToken}`})
+					.then(res => {
+						let subs = res.body.submissions;
+						// Use of negation here achieves "less than or equal"
+						chai.expect(subs[0].document).to.not.be.above(subs[1].document);
+						chai.expect(subs[1].document).to.not.be.above(subs[2].document);
+					});
+
+				let annProm = chai.request(server)
+					.get('/api/submission/list?sort_by=annotations&sort_dir=desc')
+					.set({Authorization: `Bearer ${testToken}`})
+					.then(res => {
+						let subs = res.body.submissions;
+						chai.expect(subs[0].submission_date).to.be.above(subs[1].submission_date);
+						chai.expect(subs[1].submission_date).to.be.above(subs[2].submission_date);
+					});
+
+				let pendProm = chai.request(server)
+					.get('/api/submission/list?sort_by=pending&sort_dir=asc')
+					.set({Authorization: `Bearer ${testToken}`})
+					.then(res => {
+						let subs = res.body.submissions;
+						chai.expect(subs[0].pending).to.be.below(subs[1].pending);
+						chai.expect(subs[1].pending).to.be.below(subs[2].pending);
+					});
+
+				return Promise.all([pubProm, annProm, pendProm]);
+			});
 		});
 
 	});
