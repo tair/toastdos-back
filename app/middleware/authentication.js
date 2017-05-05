@@ -6,6 +6,7 @@ const response = require('../lib/responses');
 const User = require('../models/user');
 
 const TOKEN_MATCHER = /Bearer (.*)$/;
+const RESEARCHER_ROLE = 'Researcher';
 const CURATOR_ROLE = 'Curator';
 
 /**
@@ -68,6 +69,18 @@ function validateUser(req, res, next) {
 }
 
 /**
+ * Middleware that ensures the requesting user is a researcher
+ */
+function requireResearcher(req, res, next) {
+	let roleNames = req.user.related('roles').pluck('name');
+	if (roleNames.includes(RESEARCHER_ROLE)) {
+		next();
+	} else {
+		response.unauthorized(res, 'Only Researchers may access this resource');
+	}
+}
+
+/**
  * Middleware that ensures the requesting user is a curator
  */
 function requireCurator(req, res, next) {
@@ -83,5 +96,6 @@ function requireCurator(req, res, next) {
 module.exports = {
 	validateAuthentication,
 	validateUser,
+	requireResearcher,
 	requireCurator
 };

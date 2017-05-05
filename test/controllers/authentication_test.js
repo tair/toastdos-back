@@ -142,4 +142,19 @@ describe('Authentication middleware', function() {
 
 	});
 
+	describe('Researcher authentication', function() {
+
+		it('Users without the Researcher role are unauthorized', function() {
+			return chai.request(server)
+				.post(`/api/submission/`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.catch(err => {
+					chai.expect(err.response.status).to.equal(401);
+					chai.expect(err.response.text).to.equal('Only Researchers may access this resource');
+				})
+				.then(res => chai.expect(res).to.not.exist);
+		});
+
+	});
+
 });

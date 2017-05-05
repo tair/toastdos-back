@@ -9,6 +9,7 @@ let router = express.Router();
 router.post(
 	'/',
 	authenticationMiddleware.validateAuthentication,
+	authenticationMiddleware.requireResearcher,
 	submissionController.submitGenesAndAnnotations
 );
 
