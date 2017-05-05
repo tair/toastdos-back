@@ -12,10 +12,10 @@ if (!fs.existsSync('./logs')) {
 }
 
 let logmode;
-if (process.env.NODE_ENV !== 'test') {
-	logmode=new winston.transports.File(config.logger);
+if (process.env.NODE_ENV === 'test') {
+	logmode = new winston.transports.Console(config.logger);
 } else {
-	logmode=new winston.transports.Console(config.logger);
+	logmode = new winston.transports.File(config.logger);
 }
 
 const logger = new winston.Logger({
