@@ -132,7 +132,7 @@ describe('Authentication middleware', function() {
 		it('Users without the Curator role are unauthorized', function(done) {
 			const blah = 1; // Should never get into the actual controller, so this shouldn't matter
 			chai.request(server)
-				.get(`/api/submission/?publication_id=${blah}&submitter_id=${blah}&submission_date=${blah}`)
+				.post(`/api/submission/?publication_id=${blah}&submitter_id=${blah}&submission_date=${blah}`)
 				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
