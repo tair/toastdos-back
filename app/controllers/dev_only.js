@@ -24,7 +24,7 @@ function makeDevToken(req, res, next) {
 				return response.badRequest(res, `User with id ${req.params.id} does not exist`);
 			}
 
-			return auth.signToken({user_id: fetchedUser.get(id)}, (err, token) => {
+			return auth.signToken({user_id: fetchedUser.get('id')}, (err, token) => {
 				if (err) {
 					return response.serverError(res, err.message);
 				} else {
