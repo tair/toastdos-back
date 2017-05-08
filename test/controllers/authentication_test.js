@@ -130,15 +130,29 @@ describe('Authentication middleware', function() {
 	describe('Curator authentication', function() {
 
 		it('Users without the Curator role are unauthorized', function(done) {
-			const blah = 1; // Should never get into the actual controller, so this shouldn't matter
 			chai.request(server)
-				.get(`/api/submission/?publication_id=${blah}&submitter_id=${blah}&submission_date=${blah}`)
+				.get(`/api/submission/list`)
 				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
 					chai.expect(res.text).to.equal('Only Curators may access this resource');
 					done();
 				});
+		});
+
+	});
+
+	describe('Researcher authentication', function() {
+
+		it('Users without the Researcher role are unauthorized', function() {
+			return chai.request(server)
+				.post(`/api/submission/`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.catch(err => {
+					chai.expect(err.response.status).to.equal(401);
+					chai.expect(err.response.text).to.equal('Only Researchers may access this resource');
+				})
+				.then(res => chai.expect(res).to.not.exist);
 		});
 
 	});

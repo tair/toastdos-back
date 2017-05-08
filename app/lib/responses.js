@@ -11,32 +11,32 @@ const INTERNAL_SERVER_ERROR = 500;
 const logger = require("../services/logger");
 
 function ok(res, object) {
-	logger.info(object);
+	logger.debug(object);
 	return res.status(OK).json(object);
 }
 
 function created(res, object) {
-	logger.info(object);
+	logger.debug(object);
 	return res.status(CREATED).json(object);
 }
 
 function badRequest(res, message) {
-	logger.warn(message);
+	logger.info(message);
 	return res.status(BAD_REQUEST).send(message);
 }
 
 function unauthorized(res, message) {
-	logger.warn(message);
+	logger.info(message);
 	return res.status(UNAUTHORIZED).send(message);
 }
 
 function forbidden(res, message) {
-	logger.warn(message);
+	logger.info(message);
 	return res.status(FORBIDDEN).send(message);
 }
 
 function notFound(res, message) {
-	logger.warn(message);
+	logger.info(message);
 	return res.status(NOT_FOUND).send(message);
 }
 

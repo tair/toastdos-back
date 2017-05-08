@@ -5,7 +5,7 @@ module.exports = {
     //test environment configuration
 	logger: {
 		colorize: true,
-		level: 'debug',
+		level: 'warn',
 		levels: {
 			'debug': 0,
 			'info': 1,
