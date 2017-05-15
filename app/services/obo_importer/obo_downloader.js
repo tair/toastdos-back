@@ -14,6 +14,14 @@ const DEFAULT_FILE_NAME = 'default_name';
  * Returns a promise that resolves to the name of the downloaded file.
  */
 function downloadObo(oboRoot, uri) {
+	// Make sure obo and cache directories actually exist
+	if (!fs.existsSync(oboRoot)) {
+		fs.mkdirSync(oboRoot);
+	}
+	if (!fs.existsSync(`${oboRoot}/cache/`)) {
+		fs.mkdirSync(`${oboRoot}/cache/`);
+	}
+
 	// Extract obo file name from uri
 	let filename = uri.match(NAME_EXTRACTOR)[1];
 	if (!filename) {
