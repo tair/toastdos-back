@@ -22,12 +22,12 @@ describe('Uniprot API', function () {
 			});
 	});
 
-	it('Partial existing ID causes error due to multiple results', function() {
+	it('Partial existing ID causes error because it doesn\'t exist', function() {
 		const validPartialId = 'Q131';
 		return Uniprot.getLocusByName(validPartialId).then(result => {
-			throw new Error('Did not reject when getting multiple values');
+			throw new Error('Did not reject with partial result');
 		}).catch(err => {
-			chai.expect(err.message).to.equal('Given ID matches multiple loci');
+			chai.expect(err.message).to.equal(`No Locus found for name ${validPartialId}`);
 		});
 	});
 
@@ -39,24 +39,4 @@ describe('Uniprot API', function () {
 			chai.expect(err.message).to.equal(`No Locus found for name ${fakeName}`);
 		});
 	});
-
-	it('Gene queries return a limited list of data', function() {
-		const requestLimit = 10;
-		const genericName = 'butter';
-		return Uniprot.searchGeneByName(genericName).then(result => {
-			chai.expect(result).to.have.length(requestLimit);
-		}).catch(err => {
-			throw err;
-		});
-	});
-
-	it('Gene queries that return no results causes error', function() {
-		const nonMatchingName = 'randomthing';
-		return Uniprot.searchGeneByName(nonMatchingName).then(result => {
-			throw new Error('Did not reject when search returned no values');
-		}).catch(err => {
-			chai.expect(err.toString()).to.contain('Given query matches no genes');
-		});
-	});
-
 });
