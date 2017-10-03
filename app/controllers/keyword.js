@@ -4,6 +4,7 @@ const Keyword     = require('../models/keyword');
 const KeywordType = require('../models/keyword_type');
 
 const response = require('../lib/responses');
+const knex = require('../lib/bookshelf').knex;
 
 const KEYWORD_SUBSTRING_MIN_LENGTH = 3;
 const KEYWORD_SEARCH_LIMIT = 20;
@@ -38,18 +39,18 @@ function partialKeywordMatch(req, res, next) {
 
 	keywordTypePromise
 		.then(keywordType => {
-			return Keyword.query(qb => {
-				if (keywordType) {
-					qb.where('keyword_type_id', '=', keywordType.get('id'));
-                    if(keywordType.get('name') == 'eco') {
-                        qb.leftOuterJoin('keyword_mapping', 'keyword.external_id', 'keyword_mapping.eco_id');
-                    }
+			let qb = knex("keyword");
+			if (keywordType) {
+				if(keywordType.get('name') == 'eco') {
+					console.log('DOING JOIN!');
+					qb.rightOuterJoin('keyword_mapping', 'keyword.external_id', 'keyword_mapping.eco_id');
 				}
-				qb.where('name', 'LIKE', `%${req.query.substring}%`);
-				qb.whereNot('is_obsolete', 1);
-				qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
-			})
-			.fetchAll();
+				qb.where('keyword_type_id', '=', keywordType.get('id'));
+			}
+			qb.where('name', 'LIKE', `%${req.query.substring}%`);
+			qb.whereNot('is_obsolete', 1);
+			qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
+			return qb.select("keyword.*, keyword_mapping.evidence_code");
 		})
 		.then(results => response.ok(res, results))
 		.catch(err => {
