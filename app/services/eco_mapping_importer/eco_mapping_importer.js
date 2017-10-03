@@ -43,8 +43,8 @@ class DataImporter extends stream.Writable {
 				// TODO: investigate promise problem
 				return null;
 			})
-			.catch(function(err){
-				console.error(err);
+			.catch((err) => {
+				next(err);
 			});
 	}
 

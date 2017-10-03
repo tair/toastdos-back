@@ -6,6 +6,7 @@ require('./keyword');
 
 const KeywordMapping = bookshelf.model('KeywordMapping', {
 	tableName: 'keyword_mapping',
+	idAttribute: 'eco_id',
 	eco_id: function() {
 		return this.hasOne('Keyword', 'eco_id', 'external_id');
     }
@@ -21,7 +22,7 @@ const KeywordMapping = bookshelf.model('KeywordMapping', {
                 eco_id: params.eco_id,
                 evidence_code: params.evidence_code
             })
-            .save(null, {transacting: transaction});
+            .save(null, {transacting: transaction, method: 'insert'});
     },
 	addOrGet: function(params, transaction) {
 		return bookshelf.model('KeywordMapping')
