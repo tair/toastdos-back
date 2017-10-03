@@ -1,0 +1,7 @@
+default-namespace: default_keyword_type
+[Term]
+id: GO:0000001
+
+[Term]
+id: GO:0000002
+name: test keyword 2
