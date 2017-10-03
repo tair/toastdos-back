@@ -41,6 +41,9 @@ function partialKeywordMatch(req, res, next) {
 			return Keyword.query(qb => {
 				if (keywordType) {
 					qb.where('keyword_type_id', '=', keywordType.get('id'));
+                    if(keywordType.get('name') == 'eco') {
+                        qb.leftOuterJoin('keyword_mapping', 'keyword.external_id', 'keyword_mapping.eco_id');
+                    }
 				}
 				qb.where('name', 'LIKE', `%${req.query.substring}%`);
 				qb.whereNot('is_obsolete', 1);
