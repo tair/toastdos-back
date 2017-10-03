@@ -12,6 +12,7 @@ const testdata = require('../../seeds/test/test_data.json');
 describe('Authentication middleware', function() {
 
 	let testToken = '';
+	let unauthTestToken = '';
 
 	// Make a token so tests can authenticate
 	before('Generate test JWT', function(done) {
@@ -19,6 +20,11 @@ describe('Authentication middleware', function() {
 		auth.signToken({user_id: authenticatedUser.id}, (err, newToken) => {
 			chai.expect(err).to.be.null;
 			testToken = newToken;
+		});
+		let unauthenticatedUser = testdata.users[1];
+		auth.signToken({user_id: unauthenticatedUser.id}, (err, unauthNewToken) => {
+			chai.expect(err).to.be.null;
+			unauthTestToken = unauthNewToken;
 			done();
 		});
 	});
@@ -132,7 +138,7 @@ describe('Authentication middleware', function() {
 		it('Users without the Curator role are unauthorized', function(done) {
 			chai.request(server)
 				.get(`/api/submission/list`)
-				.set({Authorization: `Bearer ${testToken}`})
+				.set({Authorization: `Bearer ${unauthTestToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(401);
 					chai.expect(res.text).to.equal('Only Curators may access this resource');
@@ -147,7 +153,7 @@ describe('Authentication middleware', function() {
 		it('Users without the Researcher role are unauthorized', function() {
 			return chai.request(server)
 				.post(`/api/submission/`)
-				.set({Authorization: `Bearer ${testToken}`})
+				.set({Authorization: `Bearer ${unauthTestToken}`})
 				.catch(err => {
 					chai.expect(err.response.status).to.equal(401);
 					chai.expect(err.response.text).to.equal('Only Researchers may access this resource');
