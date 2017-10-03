@@ -124,7 +124,7 @@ describe('OBO Data Importer', function() {
 			.catch((error) => {
 				fs.unlinkSync(badOboName);
 				throw new Error(error);
-		});
+			});
 	});
 
 	describe('Updating', function() {
