@@ -73,7 +73,7 @@
   "roles" : [
     {
       "id" : 1,
-      "name" : "Test Role 1"
+      "name" : "Researcher"
     },
     {
       "id" : 2,
