@@ -42,7 +42,6 @@ function partialKeywordMatch(req, res, next) {
 			let qb = knex("keyword");
 			if (keywordType) {
 				if(keywordType.get('name') == 'eco') {
-					console.log('DOING JOIN!');
 					qb.rightOuterJoin('keyword_mapping', 'keyword.external_id', 'keyword_mapping.eco_id');
 				}
 				qb.where('keyword_type_id', '=', keywordType.get('id'));
@@ -50,7 +49,7 @@ function partialKeywordMatch(req, res, next) {
 			qb.where('name', 'LIKE', `%${req.query.substring}%`);
 			qb.whereNot('is_obsolete', 1);
 			qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
-			return qb.select("keyword.*, keyword_mapping.evidence_code");
+			return qb.select("*");
 		})
 		.then(results => response.ok(res, results))
 		.catch(err => {
