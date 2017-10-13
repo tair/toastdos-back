@@ -119,9 +119,11 @@ describe('OBO Data Importer', function() {
 			.then(() => knex('keyword').truncate())
 			.then(() => oboImporter.loadOboIntoDB(badOboName))
 			.then(() => Keyword.where('external_id', goodId).fetch())
-			.then(keyword => {
+			.then(keyword => chai.expect(keyword).to.exist)
+			.then(() => fs.unlinkSync(badOboName))
+			.catch((error) => {
 				fs.unlinkSync(badOboName);
-				chai.expect(keyword).to.exist;
+				throw new Error(error);
 			});
 	});
 
