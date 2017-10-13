@@ -17,25 +17,38 @@ const KeywordMapping = bookshelf.model('KeywordMapping', {
 			.fetch({transacting: transaction});
     },
     addNew: function(params, transaction) {
-        return bookshelf.model('KeywordMapping')
-            .forge({
-                eco_id: params.eco_id,
-                evidence_code: params.evidence_code
-            })
-            .save(null, {transacting: transaction, method: 'insert'});
+        // Check if eco_id exists in Keyword as an external_id
+        return bookshelf.model('Keyword')
+            .where('external_id', params.eco_id)
+            .fetch({transacting: transaction})
+            .then(keyword => {
+                // Add keywordMapping if eco_id exists as external_id
+                if (keyword) {
+                    return bookshelf.model('KeywordMapping')
+                        .forge({
+                            eco_id: params.eco_id,
+                            evidence_code: params.evidence_code
+                        })
+                        .save(null, {transacting: transaction, method: 'insert'});
+                // Skip this eco_id
+                } else {
+                    return Promise.resolve();
+                }
+            });
     },
-	addOrGet: function(params, transaction) {
-		return bookshelf.model('KeywordMapping')
-			.where('eco_id', params.eco_id)
-			.fetch({transacting: transaction})
-			.then(keywordMapping => {
-				if (keywordMapping) {
-					return Promise.resolve(keywordMapping);
-				} else {
-					return KeywordMapping.addNew(params, transaction);
-				}
-			});
-	},
+    addOrGet: function(params, transaction) {
+        return bookshelf.model('KeywordMapping')
+            .where('eco_id', params.eco_id)
+            .fetch({transacting: transaction})
+            .then(keywordMapping => {
+                // GET if keywordMapping exists
+                if (keywordMapping) {
+                    return Promise.resolve(keywordMapping);
+                } else {
+                    return KeywordMapping.addNew(params, transaction);
+                }
+            });
+    },
     clearAll: function(params, transaction) {
         return bookshelf.knex('keyword_mapping').truncate();
     }
