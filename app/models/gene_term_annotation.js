@@ -15,12 +15,6 @@ const GeneTermAnnotation = bookshelf.model('GeneTermAnnotation', {
 	keyword: function() {
 		return this.belongsTo('Keyword', 'keyword_id');
 	},
-	evidence: function() {
-		return this.belongsTo('Locus', 'evidence_id');
-	},
-	evidenceSymbol: function() {
-		return this.belongsTo('GeneSymbol', 'evidence_symbol_id');
-	},
 	parentData: function() {
 		return this.morphOne('Annotation', 'annotation', ['annotation_format', 'annotation_id']);
 	}

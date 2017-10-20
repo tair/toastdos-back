@@ -146,22 +146,24 @@ exports.up = function(knex, Promise) {
 
 exports.down = function(knex, Promise) {
 	return knex.schema
-		.dropTable('user')
-		.dropTable('role')
 		.dropTable('user_role')
+		.dropTable('role')
 		.dropTable('draft')
-		.dropTable('keyword')
-		.dropTable('synonym')
-		.dropTable('keyword_type')
-		.dropTable('publication')
-		.dropTable('annotation_status')
-		.dropTable('annotation')
 		.dropTable('gene_term_annotation')
 		.dropTable('gene_gene_annotation')
 		.dropTable('comment_annotation')
-		.dropTable('locus')
-		.dropTable('locus_name')
+		.dropTable('annotation')
+		.dropTable('annotation_status')
+		.dropTable('annotation_type')
 		.dropTable('gene_symbol')
+		.dropTable('locus_name')
+		.dropTable('locus')
 		.dropTable('taxon')
-		.dropTable('external_source');
+		.dropTable('synonym')
+		.dropTable('keyword')
+		.dropTable('keyword_type')
+		.dropTable('external_source')
+		.dropTable('submission')
+		.dropTable('publication')
+		.dropTable('user');
 };

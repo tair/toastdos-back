@@ -9,6 +9,7 @@
     "coverage": "istanbul cover _mocha",
     "exec": "exec",
     "migrate": "knex migrate:latest",
+    "rollback": "knex migrate:rollback",
     "daemon": "node ./app/services/obo_importer/daemon.js",
     "import": "node ./app/services/obo_importer/cli.js",
     "seed": "knex seed:run",
