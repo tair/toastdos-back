@@ -9,8 +9,10 @@ const Annotation         = require('../models/annotation');
 const AnnotationStatus   = require('../models/annotation_status');
 const AnnotationType     = require('../models/annotation_type');
 const Keyword            = require('../models/keyword');
+const EvidenceWith       = require('../models/evidence_with');
 
-const knex = require('../lib/bookshelf').knex;
+const knex        = require('../lib/bookshelf').knex;
+const locusHelper = require('../lib/locus_submission_helper.js');
 
 const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'];
 
@@ -21,8 +23,8 @@ const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'
 const AnnotationFormats = {
 	GENE_TERM: {
 		name: 'gene_term_annotation',
-		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidence']),
-		optionalFields: ['evidence'],
+		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidence_with']),
+		optionalFields: ['evidence_with'],
 		verifyReferences: verifyGeneTermFields,
 		createRecords: createGeneTermRecords
 	},
@@ -212,11 +214,12 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
 	);
 
 	// Evidence Locus is optional, but needs to exist if specified
-	if (annotation.data.evidence && !locusMap[annotation.data.evidence]) {
-		verificationPromises.push(
-			Promise.reject(new Error(`Locus ${annotation.data.evidence} not present in submission`))
-		);
-	}
+    const evidence_with = annotation.data.evidence_with;
+    for(subject_name of evidence_with) {
+    	if (subject_name && !locusMap[subject_name]) {
+    	    locusHelper.addLocusRecords({name: subject_name});
+        }
+    }
 
 	return Promise.all(verificationPromises);
 }
@@ -240,7 +243,6 @@ function verifyGeneGeneFields(annotation, locusMap, transaction) {
 		);
 	}
 
-
 	return Promise.all(verificationPromises);
 }
 
@@ -259,18 +261,15 @@ function verifyCommentFields(annotation, locusMap) {
 function createGeneTermRecords(annotation, locusMap, transaction) {
 	let subAnnotation = {
 		method_id: annotation.data.method.id,
-		keyword_id: annotation.data.keyword.id
+		keyword_id: annotation.data.keyword.id,
 	};
 
-	// 'evidence' is an optional field
-	if (annotation.data.evidence) {
-		subAnnotation.evidence_id = locusMap[annotation.data.evidence].locus.get('locus_id');
-
-		// GeneSymbols are optional
-		if (locusMap[annotation.data.evidence].symbol) {
-			subAnnotation.evidence_symbol_id = locusMap[annotation.data.evidence].symbol.get('id');
-		}
-	}
+	// add evidence_with to db if exists
+    let subject_id;
+    for(const subject of annotation.data.evidence_with) {
+    	subject_id = locusMap[annotation.data.evidence_with].locus.get('locus_id');
+        
+    }
 
 	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
 }
@@ -302,7 +301,7 @@ function createCommentRecords(annotation, locusMap, transaction) {
  * Added the matcher because Bookshelf could fail for reasons other than a record not being found.
  */
 function redefinePromiseError(params) {
-	return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
 		params.promise
 			.then(result => resolve(result))
 			.catch(err => {

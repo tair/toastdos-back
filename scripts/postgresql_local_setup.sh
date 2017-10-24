@@ -2,14 +2,20 @@
 # This script sets up the test environment in a locally installed PostgreSQL server.
 # NOTE: You need to install PostgreSQL yourself before running this
 
-DB_NAME="toastdos_staging"
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run with sudo"
+    exit
+fi
+
+if [[ -z "$NODE_ENV" ]]; then
+    env="development"
+else
+    env="$NODE_ENV"
+fi
+
+DB_NAME="toastdos_"$env""
 DB_USER="toastdos"
 DB_PASS="vulpes"
-
-if [ "$EUID" -ne 0 ]
-  then echo "Please run with sudo"
-  exit
-fi
 
 # We need to use the default PostgreSQL superuser to do this stuff
 echo "Creating database '$DB_NAME'"
@@ -33,4 +39,5 @@ local   all             all                                     peer
 then run
 sudo service postgresql restart
 
-then PostgreSQL should be ready to use"
+then PostgreSQL should be ready to use\n
+NOTE: you will need to change md5 back to peer (or whatever it was before you changed it) if you want to run this script again"

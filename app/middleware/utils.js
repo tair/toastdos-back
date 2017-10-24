@@ -11,6 +11,9 @@ function allowHeaders(req, res, next) {
 }
 
 function allowMethods(req, res, next) {
+    //TODO: REMOVE console.log
+    if(req.body) console.log(JSON.stringify(req.body, null, 2));
+
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     return next();
 }

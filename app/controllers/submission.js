@@ -347,8 +347,7 @@ function getSingleSubmission(req, res, next) {
 					return annotation.fetch({withRelated: [
 						'childData.method',
 						'childData.keyword',
-						'childData.evidence.names',
-						'childData.evidenceSymbol'
+						'childData.evidence_with'
 					]});
 				}
 
@@ -415,21 +414,8 @@ function getAllLociFromAnnotations(annotationList) {
 
 		// Comment annotations don't have any child data we care about
 		if (ann.annotation_format !== 'comment_annotation') {
-
-			if (!_.isEmpty(ann.childData.evidence)) {
-				let evidenceName = ann.childData.evidence.names[0].locus_name;
-				list[evidenceName] = {
-					id: ann.childData.evidence.id,
-					locusName: evidenceName
-				};
-
-				if (!_.isEmpty(ann.childData.evidenceSymbol)) {
-					list[evidenceName].geneSymbol = ann.childData.evidenceSymbol.symbol;
-					list[evidenceName].fullName = ann.childData.evidenceSymbol.full_name;
-				}
-			}
-
-			if (!_.isEmpty(ann.childData.locus2)) {
+			
+            if (!_.isEmpty(ann.childData.locus2)) {
 				let locus2Name = ann.childData.locus2.names[0].locus_name;
 				list[locus2Name] = {
 					id: ann.childData.locus2.id,
@@ -476,9 +462,10 @@ function generateAnnotationSubmissionList(annotationList) {
 				name: annotation.related('childData').related('keyword').get('name')
 			};
 
-			if (annotation.related('childData').related('evidence').get('id')) {
-				refinedAnn.data.evidence = annotation.related('childData').related('evidence').related('names').first().get('locus_name');
-			}
+            const evidence_with = annotation.related('childData').get('evidence_with');
+			if (evidence_with) {
+				refinedAnn.data.evidence_with = evidence_with;
+            }
 		}
 		else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
 			refinedAnn.data.locusName2 = annotation.related('childData').related('locus2').related('names').first().get('locus_name');

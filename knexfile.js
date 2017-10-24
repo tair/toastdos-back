@@ -3,22 +3,38 @@
 module.exports = {
 
   development: {
-    client: 'sqlite3',
+    client: 'postgresql',
     connection: {
-      filename: './database.sqlite3'
+      database: 'toastdos_development',
+      user:     'toastdos',
+      password: 'vulpes'
     },
-    useNullAsDefault: true,
+    pool: {
+      min: 2,
+      max: 10
+    },
+    migrations: {
+      tableName: 'knex_migrations'
+    },
     seeds: {
-        directory: './seeds'
+      directory: './seeds/test'
     }
   },
 
   test: {
-    client: 'sqlite3',
-    connection : {
-      filename: ':memory:'
+    client: 'postgresql',
+    connection: {
+      database: 'toastdos_test',
+      user:     'toastdos',
+      password: 'vulpes'
     },
-    useNullAsDefault: true,
+    pool: {
+      min: 2,
+      max: 10
+    },
+    migrations: {
+      tableName: 'knex_migrations'
+    },
     seeds: {
       directory: './seeds/test'
     }

@@ -4,10 +4,12 @@ exports.up = function(knex, Promise) {
         .createTable('evidence_with', table => {
             table.increments('id');
             table.integer('annotation_id').references('annotation.id').notNullable();
-            table.integer('locus_id').references('locus.id').notNullable();
+            table.integer('subject_id').notNullable();
             table.string('type').notNullable();
         })
         .table('gene_term_annotation', table => {
+            table.dropForeign('evidence_id');
+            table.dropForeign('evidence_symbol_id');
             table.dropColumn('evidence_id');
             table.dropColumn('evidence_symbol_id');
         });
