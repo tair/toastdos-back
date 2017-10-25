@@ -213,6 +213,7 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
 		})
 	);
 
+    //TODO: check if not locus and act accordingly
 	// Evidence Locus is optional, but needs to exist if specified
     const evidence_with = annotation.data.evidence_with;
     for(subject_name of evidence_with) {
@@ -264,14 +265,17 @@ function createGeneTermRecords(annotation, locusMap, transaction) {
 		keyword_id: annotation.data.keyword.id,
 	};
 
-	// add evidence_with to db if exists
-    let subject_id;
-    for(const subject of annotation.data.evidence_with) {
-    	subject_id = locusMap[annotation.data.evidence_with].locus.get('locus_id');
-        
-    }
-
-	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
+	return GeneTermAnnotation.addNew(subAnnotation, transcation).then((annotation, locusMap) => {
+        //TODO: check if not locus and act accordingly
+        // add evidence_with to db if exists
+        for(const subject of annotation.data.evidence_with) {
+            EvidenceWith.addNew({
+                subject_id: locusMap[annotation.data.evidence_with].locus.get('subject'),
+                gene_term_id: 12345,
+                type: "temp" //TODO: actually implement type
+            }, transaction);
+        }
+    });
 }
 
 function createGeneGeneRecords(annotation, locusMap, transaction) {

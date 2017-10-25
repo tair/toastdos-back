@@ -227,7 +227,6 @@ describe('Submission helper', function() {
 					locusName: testdata.locus_name[0].locus_name,
 					method: { id: testdata.keywords[0].id },
 					keyword: { name: 'New Keyword Name'},
-					evidence: testdata.locus_name[1].locus_name,
 					[invalidFieldName]: 'I am an invalid field'
 				}
 			};
@@ -296,7 +295,6 @@ describe('Submission helper', function() {
 			}).catch(err => {
 				chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
 				reqFields.forEach(field => chai.expect(err.message).to.contain(field));
-				chai.expect(err.message).to.not.contain('evidence'); // Because evidence is optional
 			});
 		});
 
@@ -361,7 +359,6 @@ describe('Submission helper', function() {
 					locusName: badLocusName,
 					method: { id: testdata.keywords[0].id },
 					keyword: { id: testdata.keywords[0].id },
-					evidence: testdata.locus[1].locus_name
 				}
 			};
 
@@ -415,7 +412,6 @@ describe('Submission helper', function() {
 					locusName: testdata.locus_name[0].locus_name,
 					method: { id: badMethodId },
 					keyword: { id: testdata.keywords[0].id },
-					evidence: testdata.locus_name[1].locus_name
 				}
 			};
 
@@ -434,7 +430,6 @@ describe('Submission helper', function() {
 					locusName: testdata.locus_name[0].locus_name,
 					method: { id: testdata.keywords[0].id },
 					keyword: { id: badMethodId },
-					evidence: testdata.locus_name[1].locus_name
 				}
 			};
 
@@ -442,25 +437,6 @@ describe('Submission helper', function() {
 				throw new Error('Invalid fields were not rejected');
 			}).catch(err => {
 				chai.expect(err.message).to.equal(`Keyword id ${badMethodId} does not reference an existing Keyword`);
-			});
-		});
-
-		it('GT verification rejects for invalid evidence locus', function() {
-			const verifyGeneTermFields = annotationHelper.__get__('verifyGeneTermFields');
-			const badLocusName = 'Bad Locus Name';
-			const partialGTAnnotation = {
-				data: {
-					locusName: testdata.locus_name[0].locus_name,
-					method: { id: testdata.keywords[0].id },
-					keyword: { id: testdata.keywords[0].id },
-					evidence: badLocusName
-				}
-			};
-
-			return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(res => {
-				throw new Error('Invalid fields were not rejected');
-			}).catch(err => {
-				chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
 			});
 		});
 
@@ -516,19 +492,16 @@ describe('Submission helper', function() {
 					locusName: testdata.locus_name[0].locus_name,
 					method: { id: expectedMethod.id },
 					keyword: { id: expectedKeyword.id },
-					evidence: testdata.locus_name[1].locus_name
 				}
 			};
 
 			return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, unusedKeywordScope).then(gtAnn => {
-				return gtAnn.fetch({withRelated: ['method', 'keyword', 'evidence', 'evidenceSymbol']});
+				return gtAnn.fetch({withRelated: ['method', 'keyword']});
 			}).then(fullGTAnnotation => {
 				let fullGTObj = fullGTAnnotation.toJSON();
 
 				chai.expect(fullGTObj.method).to.contain(expectedMethod);
 				chai.expect(fullGTObj.keyword).to.contain(expectedKeyword);
-				chai.expect(fullGTObj.evidence).to.contain(expectedEvidenceLocus);
-				chai.expect(fullGTObj.evidenceSymbol).to.contain(expectedEvidenceSymbol);
 			});
 		});
 

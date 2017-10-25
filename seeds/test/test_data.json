@@ -214,9 +214,7 @@
     {
       "id" : 1,
       "method_id" : 1,
-      "keyword_id" : 2,
-      "evidence_id" : 1,
-      "evidence_symbol_id" : 1
+      "keyword_id" : 2
     },
     {
       "id" : 2,

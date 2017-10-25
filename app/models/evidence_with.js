@@ -3,23 +3,19 @@
 const bookshelf = require('../lib/bookshelf');
 
 require('./locus');
-require('./annotation');
+require('./gene_term_annotation');
 
 const EvidenceWith = bookshelf.model('EvidenceWith', {
 	tableName: 'evidence_with',
 	subject_id: function() {
 		return this.morphOne('Subject', 'subject_id', ['locus']);
     },
-    annotation_id: function() {
-        return this.morphOne('Annotation', 'annotation', ['annotation_format','annotation_id']);
+    gene_term_id: function() {
+        return this.hasMany('GeneTermAnnotation', 'id');
     },
     addNew: function(params, transaction) {
         return bookshelf.model('EvidenceWith')
-            .forge({
-                subject_id: params.subject_id,
-                annotation_id: params.annotation_id,
-                type: params.type
-            })
+            .forge(params)
             .save(null, {transacting: transaction});
     }
 });
