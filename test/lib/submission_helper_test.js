@@ -17,11 +17,11 @@ const testdata = require('../../seeds/test/test_data.json');
 
 describe('Submission helper', function() {
 
-	before('Setup SQLite memory database', function() {
+	before('Setup postgreSQL test database', function() {
 		return knex.migrate.latest();
 	});
 
-	beforeEach('Populate SQLite memory DB with fresh test data', function() {
+	beforeEach('Populate postgreSQL test database with fresh test data', function() {
 		return knex.seed.run();
 	});
 

@@ -347,7 +347,7 @@ function getSingleSubmission(req, res, next) {
 					return annotation.fetch({withRelated: [
 						'childData.method',
 						'childData.keyword',
-						'childData.evidence_with'
+						'childData.evidenceWith'
 					]});
 				}
 
@@ -462,9 +462,9 @@ function generateAnnotationSubmissionList(annotationList) {
 				name: annotation.related('childData').related('keyword').get('name')
 			};
 
-            const evidence_with = annotation.related('childData').get('evidence_with');
-			if (evidence_with) {
-				refinedAnn.data.evidence_with = evidence_with;
+            const evidenceWith = annotation.related('childData').get('evidenceWith');
+			if (evidenceWith) {
+				refinedAnn.data.evidenceWith = evidenceWith;
             }
 		}
 		else if (annotation.get('annotation_format') === 'gene_gene_annotation') {

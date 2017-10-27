@@ -86,7 +86,7 @@ describe('Submission Controller', function() {
 						keyword: {
 							name: 'New keyword'
 						},
-						evidence_with: ['URS00000EF184']
+						evidenceWith: ['URS00000EF184']
 					}
 				},
 				{
@@ -99,7 +99,7 @@ describe('Submission Controller', function() {
 						keyword: {
 							name: 'New keyword'
 						},
-						evidence_with: ['URS00000EF184']
+						evidenceWith: ['URS00000EF184']
 					}
 				}
 			]
@@ -588,7 +588,7 @@ describe('Submission Controller', function() {
 								id: testdata.keywords[1].id,
 								name: testdata.keywords[1].name
 							},
-							evidence_with: [testdata.locus_name[0].locus_name]
+							evidenceWith: [testdata.locus_name[0].locus_name]
 						}
 					},
 					{

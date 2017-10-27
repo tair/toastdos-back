@@ -23,8 +23,8 @@ const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'
 const AnnotationFormats = {
 	GENE_TERM: {
 		name: 'gene_term_annotation',
-		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidence_with']),
-		optionalFields: ['evidence_with'],
+		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidenceWith']),
+		optionalFields: ['evidenceWith'],
 		verifyReferences: verifyGeneTermFields,
 		createRecords: createGeneTermRecords
 	},
@@ -215,10 +215,10 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
 
     //TODO: check if not locus and act accordingly
 	// Evidence Locus is optional, but needs to exist if specified
-    const evidence_with = annotation.data.evidence_with;
-    for(subject_name of evidence_with) {
-    	if (subject_name && !locusMap[subject_name]) {
-    	    locusHelper.addLocusRecords({name: subject_name});
+    const evidenceWith = annotation.data.evidenceWith;
+    for(const subject of evidenceWith) {
+        if (subject && !locusMap[subject_name]) {
+    	    locusHelper.addLocusRecords({name: subject});
         }
     }
 
@@ -265,16 +265,20 @@ function createGeneTermRecords(annotation, locusMap, transaction) {
 		keyword_id: annotation.data.keyword.id,
 	};
 
-	return GeneTermAnnotation.addNew(subAnnotation, transcation).then((annotation, locusMap) => {
+	return GeneTermAnnotation.addNew(subAnnotation, transcation).then((annotation, locusMap, transaction) => {
         //TODO: check if not locus and act accordingly
         // add evidence_with to db if exists
-        for(const subject of annotation.data.evidence_with) {
-            EvidenceWith.addNew({
-                subject_id: locusMap[annotation.data.evidence_with].locus.get('subject'),
+        let evidenceWithPromises = [];
+        
+        for(const subject of annotation.data.evidenceWith) {
+            evidenceWithPromises.push(EvidenceWith.addNew({
+                subject_id: locusMap[subject].locus.get('subject'),
                 gene_term_id: 12345,
                 type: "temp" //TODO: actually implement type
-            }, transaction);
+            }, transaction));
         }
+        
+        return Promise.all(evidenceWithPromises);
     });
 }
 
