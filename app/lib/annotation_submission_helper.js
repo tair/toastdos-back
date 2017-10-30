@@ -105,7 +105,7 @@ function addAnnotationRecords(annotation, locusMap, submission, transaction) {
 		// Step 3: Create sub-annotation
 		.then(() => strategy.format.createRecords(annotation, locusMap, transaction))
 		// Step 4: With dependencies created, now add the Annotation itself
-		.then(subAnnotation => {
+		.then((subAnnotation) => {
 
 			// We need the status and type IDs
 			return Promise.all([
@@ -217,7 +217,7 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
 	// Evidence Locus is optional, but needs to exist if specified
     const evidenceWith = annotation.data.evidenceWith;
     for(const subject of evidenceWith) {
-        if (subject && !locusMap[subject_name]) {
+        if (subject && !locusMap[subject]) {
     	    locusHelper.addLocusRecords({name: subject});
         }
     }
@@ -265,21 +265,24 @@ function createGeneTermRecords(annotation, locusMap, transaction) {
 		keyword_id: annotation.data.keyword.id,
 	};
 
-	return GeneTermAnnotation.addNew(subAnnotation, transcation).then((annotation, locusMap, transaction) => {
-        //TODO: check if not locus and act accordingly
-        // add evidence_with to db if exists
-        let evidenceWithPromises = [];
-        
-        for(const subject of annotation.data.evidenceWith) {
-            evidenceWithPromises.push(EvidenceWith.addNew({
-                subject_id: locusMap[subject].locus.get('subject'),
-                gene_term_id: 12345,
-                type: "temp" //TODO: actually implement type
-            }, transaction));
-        }
-        
-        return Promise.all(evidenceWithPromises);
-    });
+	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction})
+        .then( (geneTermAnnotation) => {
+            //TODO: check if not locus and act accordingly
+            // add evidence_with to db if exists
+            let evidenceWithPromises = [];
+             
+            for(const subject of annotation.data.evidenceWith) {
+                evidenceWithPromises.push(EvidenceWith.forge({
+                    subject_id: locusMap[subject].locus.get('locus_id'),
+                    gene_term_id: geneTermAnnotation.id,
+                    type: 'temp' //TODO: actually implement type
+                }).save(null , {transacting: transaction}));
+            }
+            
+            return Promise.all([Promise.resolve(geneTermAnnotation), ...evidenceWithPromises])
+        }).then(([geneTermAnnotation]) => {
+            return geneTermAnnotation;
+        });
 }
 
 function createGeneGeneRecords(annotation, locusMap, transaction) {

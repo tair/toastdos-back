@@ -17,12 +17,7 @@ const GeneTermAnnotation = bookshelf.model('GeneTermAnnotation', {
 	},
 	parentData: function() {
 		return this.morphOne('Annotation', 'annotation', ['annotation_format', 'annotation_id']);
-	},
-    addNew: function(params, transaction) {
-        return bookshelf.model('GeneTermAnnotation')
-            .forge(params)
-            .save(null, {transacting: transaction})
-    }
+	}
 });
 
 module.exports = GeneTermAnnotation;

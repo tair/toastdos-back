@@ -13,11 +13,6 @@ const EvidenceWith = bookshelf.model('EvidenceWith', {
     gene_term_id: function() {
         return this.hasMany('GeneTermAnnotation', 'id');
     },
-    addNew: function(params, transaction) {
-        return bookshelf.model('EvidenceWith')
-            .forge(params)
-            .save(null, {transacting: transaction});
-    }
 });
 
 module.exports = EvidenceWith;
