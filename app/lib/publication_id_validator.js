@@ -69,12 +69,12 @@ function validatePubmedId(pmid) {
 	return new Promise((resolve, reject) => {
 		request.get(pubmedUrl(pmid), (error, response, bodyJson) => {
 			let body = JSON.parse(bodyJson);
-			let lookupError = body.result[pmid].error;
+			let pubResult = body.result[pmid];
 
-			if (lookupError) {
-				reject(new Error(`Pubmed ID '${pmid}' did not match any publications`));
-			} else {
+			if (pubResult && !pubResult.error) {
 				resolve(body);
+			} else {
+				reject(new Error(`Pubmed ID '${pmid}' did not match any publications`));
 			}
 		});
 	});
