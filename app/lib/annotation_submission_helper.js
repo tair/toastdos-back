@@ -9,8 +9,10 @@ const Annotation         = require('../models/annotation');
 const AnnotationStatus   = require('../models/annotation_status');
 const AnnotationType     = require('../models/annotation_type');
 const Keyword            = require('../models/keyword');
+const EvidenceWith       = require('../models/evidence_with');
 
-const knex = require('../lib/bookshelf').knex;
+const knex        = require('../lib/bookshelf').knex;
+const locusHelper = require('../lib/locus_submission_helper.js');
 
 const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'];
 
@@ -21,8 +23,8 @@ const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'
 const AnnotationFormats = {
 	GENE_TERM: {
 		name: 'gene_term_annotation',
-		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidence']),
-		optionalFields: ['evidence'],
+		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidenceWith']),
+		optionalFields: ['evidenceWith'],
 		verifyReferences: verifyGeneTermFields,
 		createRecords: createGeneTermRecords
 	},
@@ -103,7 +105,7 @@ function addAnnotationRecords(annotation, locusMap, submission, transaction) {
 		// Step 3: Create sub-annotation
 		.then(() => strategy.format.createRecords(annotation, locusMap, transaction))
 		// Step 4: With dependencies created, now add the Annotation itself
-		.then(subAnnotation => {
+		.then((subAnnotation) => {
 
 			// We need the status and type IDs
 			return Promise.all([
@@ -211,12 +213,14 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
 		})
 	);
 
+    //TODO: check if not locus and act accordingly
 	// Evidence Locus is optional, but needs to exist if specified
-	if (annotation.data.evidence && !locusMap[annotation.data.evidence]) {
-		verificationPromises.push(
-			Promise.reject(new Error(`Locus ${annotation.data.evidence} not present in submission`))
-		);
-	}
+    const evidenceWith = annotation.data.evidenceWith;
+    for(const subject of evidenceWith) {
+        if (subject && !locusMap[subject]) {
+    	    locusHelper.addLocusRecords({name: subject});
+        }
+    }
 
 	return Promise.all(verificationPromises);
 }
@@ -240,7 +244,6 @@ function verifyGeneGeneFields(annotation, locusMap, transaction) {
 		);
 	}
 
-
 	return Promise.all(verificationPromises);
 }
 
@@ -259,20 +262,27 @@ function verifyCommentFields(annotation, locusMap) {
 function createGeneTermRecords(annotation, locusMap, transaction) {
 	let subAnnotation = {
 		method_id: annotation.data.method.id,
-		keyword_id: annotation.data.keyword.id
+		keyword_id: annotation.data.keyword.id,
 	};
 
-	// 'evidence' is an optional field
-	if (annotation.data.evidence) {
-		subAnnotation.evidence_id = locusMap[annotation.data.evidence].locus.get('locus_id');
-
-		// GeneSymbols are optional
-		if (locusMap[annotation.data.evidence].symbol) {
-			subAnnotation.evidence_symbol_id = locusMap[annotation.data.evidence].symbol.get('id');
-		}
-	}
-
-	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
+	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction})
+        .then( (geneTermAnnotation) => {
+            //TODO: check if not locus and act accordingly
+            // add evidence_with to db if exists
+            let evidenceWithPromises = [];
+             
+            for(const subject of annotation.data.evidenceWith) {
+                evidenceWithPromises.push(EvidenceWith.forge({
+                    subject_id: locusMap[subject].locus.get('locus_id'),
+                    gene_term_id: geneTermAnnotation.id,
+                    type: 'temp' //TODO: actually implement type
+                }).save(null , {transacting: transaction}));
+            }
+            
+            return Promise.all([Promise.resolve(geneTermAnnotation), ...evidenceWithPromises])
+        }).then(([geneTermAnnotation]) => {
+            return geneTermAnnotation;
+        });
 }
 
 function createGeneGeneRecords(annotation, locusMap, transaction) {
@@ -302,7 +312,7 @@ function createCommentRecords(annotation, locusMap, transaction) {
  * Added the matcher because Bookshelf could fail for reasons other than a record not being found.
  */
 function redefinePromiseError(params) {
-	return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
 		params.promise
 			.then(result => resolve(result))
 			.catch(err => {
