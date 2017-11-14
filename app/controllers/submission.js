@@ -327,37 +327,36 @@ function generateSubmissionSummary(req, res, next) {
 function getSingleSubmission(req, res, next) {
 	Submission
 		.where('id', req.params.id)
-		.fetch({require: true})
-		.then(submission => {
-			return submission.fetch({withRelated: [
+		.fetch({
+			require: true,
+			withRelated: [
 				'submitter',
 				'publication',
 				'annotations.type',
 				'annotations.childData',
 				'annotations.locus.names',
 				'annotations.locusSymbol',
-			]});
+			]
 		})
 		.then(submission => {
 			// Get additional annotation data needed for submission.
 			// The data we need changes slightly based on annotation format
 			let additionalDataPromises = submission.related('annotations').map(annotation => {
-
 				if (annotation.get('annotation_format') === 'gene_term_annotation') {
-					return annotation.fetch({withRelated: [
+					return annotation.load([
 						'childData.method',
 						'childData.keyword',
 						'childData.evidence.names',
 						'childData.evidenceSymbol'
-					]});
+					]);
 				}
 
 				if (annotation.get('annotation_format') === 'gene_gene_annotation') {
-					return annotation.fetch({withRelated: [
+					return annotation.load([
 						'childData.method',
 						'childData.locus2.names',
 						'childData.locus2Symbol'
-					]});
+					]);
 				}
 
 				if (annotation.get('annotation_format') === 'comment_annotation') {
@@ -400,34 +399,26 @@ function getAllLociFromAnnotations(annotationList) {
 	// Use a map (from reduce) to prevent duplicate loci in the list.
 	let locusMap = annotationList.reduce((list, annotation) => {
 
+		if (!annotation) {
+			return list;
+		}
+
 		// Use this as a raw object because Bookshelf was having some issue where
 		// the Bookshelf model was defined, but no fields on the model were set.
 		let ann = annotation.toJSON();
 
 		// All annotations reference a locus
 		let locusName = ann.locus.names[0].locus_name;
+		let locusSymbol = ann.locusSymbol;
 		list[locusName] = {
 			id: ann.locus.id,
 			locusName: locusName,
-			geneSymbol: ann.locusSymbol.symbol,
-			fullName: ann.locusSymbol.full_name
+			geneSymbol: locusSymbol ? locusSymbol.symbol : null,
+			fullName: locusSymbol ? locusSymbol.full_name : null
 		};
 
 		// Comment annotations don't have any child data we care about
 		if (ann.annotation_format !== 'comment_annotation') {
-
-			if (!_.isEmpty(ann.childData.evidence)) {
-				let evidenceName = ann.childData.evidence.names[0].locus_name;
-				list[evidenceName] = {
-					id: ann.childData.evidence.id,
-					locusName: evidenceName
-				};
-
-				if (!_.isEmpty(ann.childData.evidenceSymbol)) {
-					list[evidenceName].geneSymbol = ann.childData.evidenceSymbol.symbol;
-					list[evidenceName].fullName = ann.childData.evidenceSymbol.full_name;
-				}
-			}
 
 			if (!_.isEmpty(ann.childData.locus2)) {
 				let locus2Name = ann.childData.locus2.names[0].locus_name;
