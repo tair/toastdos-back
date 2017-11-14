@@ -289,9 +289,78 @@ function generateSubmissionSummary(req, res, next) {
 			//
 			// FIXME: Like above, we realize this is the database's job.
 			// This should also be addressed with a better query.
-			sortedSubCollection = sortedSubCollection.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-			let submissions = sortedSubCollection.map(submissionModel => {
+			// FIXME: clean up these 3 repetitive sections for each collection
+
+			// In progress submissions
+			let sortedInProgressSubCollection = sortedSubCollection.filter(sub => {
+				let annotations = sub.related('annotations');
+				let pending = annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length;
+				let total = annotations.size();
+
+				return (pending > 0 && pending < total);
+			});
+
+			sortedInProgressSubCollection = _.sortBy(sortedInProgressSubCollection,elem => {
+				let pending = elem
+					.related('annotations')
+					.filter(ann => ann.related('status').get('name') === PENDING_STATUS)
+					.length;
+				return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -pending : pending;
+			}).slice((page - 1) * itemsPerPage, page * itemsPerPage).map(submissionModel => {
+				let publication = submissionModel.related('publication');
+				let annotations = submissionModel.related('annotations');
+				return {
+					id: submissionModel.get('id'),
+					document: publication.get('doi') || publication.get('pubmed_id'),
+					total: annotations.size(),
+					pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
+					submission_date: new Date(submissionModel.get('created_at')).toISOString()
+				};
+			});
+
+			// Needs review submissions
+			let sortedNeedsReviewSubCollection = sortedSubCollection.filter(sub => {
+				let annotations = sub.related('annotations');
+				let pending = annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length;
+				let total = annotations.size();
+
+				return (pending == total);
+			});
+
+			sortedNeedsReviewSubCollection = _.sortBy(sortedNeedsReviewSubCollection,elem => {
+				let pending = elem
+					.related('annotations')
+					.filter(ann => ann.related('status').get('name') === PENDING_STATUS)
+					.length;
+				return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -pending : pending;
+			}).slice((page - 1) * itemsPerPage, page * itemsPerPage).map(submissionModel => {
+				let publication = submissionModel.related('publication');
+				let annotations = submissionModel.related('annotations');
+				return {
+					id: submissionModel.get('id'),
+					document: publication.get('doi') || publication.get('pubmed_id'),
+					total: annotations.size(),
+					pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
+					submission_date: new Date(submissionModel.get('created_at')).toISOString()
+				};
+			});
+
+			// reviewed submissions
+			let sortedReviewedSubCollection = sortedSubCollection.filter(sub => {
+				let annotations = sub.related('annotations');
+				let pending = annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length;
+
+				return (pending == 0);
+			});
+
+			sortedReviewedSubCollection = _.sortBy(sortedReviewedSubCollection,elem => {
+				let pending = elem
+					.related('annotations')
+					.filter(ann => ann.related('status').get('name') === PENDING_STATUS)
+					.length;
+				return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -pending : pending;
+			}).slice((page - 1) * itemsPerPage, page * itemsPerPage).map(submissionModel => {
 				let publication = submissionModel.related('publication');
 				let annotations = submissionModel.related('annotations');
 				return {
@@ -308,7 +377,9 @@ function generateSubmissionSummary(req, res, next) {
 				page_size: itemsPerPage,
 				total_pages: Math.ceil(count.get('count') / itemsPerPage),
 				sort_by: req.param.sort_by || 'date',
-				submissions: submissions
+				inProgress: sortedInProgressSubCollection,
+				needsReview: sortedNeedsReviewSubCollection,
+				reviewed: sortedReviewedSubCollection,
 			};
 
 			return response.ok(res, finalRes);
@@ -327,37 +398,37 @@ function generateSubmissionSummary(req, res, next) {
 function getSingleSubmission(req, res, next) {
 	Submission
 		.where('id', req.params.id)
-		.fetch({require: true})
-		.then(submission => {
-			return submission.fetch({withRelated: [
+		.fetch({
+			require: true,
+			withRelated: [
 				'submitter',
 				'publication',
 				'annotations.type',
 				'annotations.childData',
 				'annotations.locus.names',
 				'annotations.locusSymbol',
-			]});
+			]
 		})
 		.then(submission => {
 			// Get additional annotation data needed for submission.
 			// The data we need changes slightly based on annotation format
 			let additionalDataPromises = submission.related('annotations').map(annotation => {
-
 				if (annotation.get('annotation_format') === 'gene_term_annotation') {
-					return annotation.fetch({withRelated: [
+					return annotation.load([
 						'childData.method',
+						'childData.method.keywordMapping',
 						'childData.keyword',
 						'childData.evidence.names',
 						'childData.evidenceSymbol'
-					]});
+					]);
 				}
 
 				if (annotation.get('annotation_format') === 'gene_gene_annotation') {
-					return annotation.fetch({withRelated: [
+					return annotation.load([
 						'childData.method',
 						'childData.locus2.names',
 						'childData.locus2Symbol'
-					]});
+					]);
 				}
 
 				if (annotation.get('annotation_format') === 'comment_annotation') {
@@ -378,6 +449,7 @@ function getSingleSubmission(req, res, next) {
 				publicationId: publication,
 				genes: locusList,
 				annotations: annotationList,
+				submitter: submission.related('submitter'),
 				submitted_at: submission.get('created_at')
 			};
 
@@ -400,34 +472,26 @@ function getAllLociFromAnnotations(annotationList) {
 	// Use a map (from reduce) to prevent duplicate loci in the list.
 	let locusMap = annotationList.reduce((list, annotation) => {
 
+		if (!annotation) {
+			return list;
+		}
+
 		// Use this as a raw object because Bookshelf was having some issue where
 		// the Bookshelf model was defined, but no fields on the model were set.
 		let ann = annotation.toJSON();
 
 		// All annotations reference a locus
 		let locusName = ann.locus.names[0].locus_name;
+		let locusSymbol = ann.locusSymbol;
 		list[locusName] = {
 			id: ann.locus.id,
 			locusName: locusName,
-			geneSymbol: ann.locusSymbol.symbol,
-			fullName: ann.locusSymbol.full_name
+			geneSymbol: locusSymbol ? locusSymbol.symbol : null,
+			fullName: locusSymbol ? locusSymbol.full_name : null
 		};
 
 		// Comment annotations don't have any child data we care about
 		if (ann.annotation_format !== 'comment_annotation') {
-
-			if (!_.isEmpty(ann.childData.evidence)) {
-				let evidenceName = ann.childData.evidence.names[0].locus_name;
-				list[evidenceName] = {
-					id: ann.childData.evidence.id,
-					locusName: evidenceName
-				};
-
-				if (!_.isEmpty(ann.childData.evidenceSymbol)) {
-					list[evidenceName].geneSymbol = ann.childData.evidenceSymbol.symbol;
-					list[evidenceName].fullName = ann.childData.evidenceSymbol.full_name;
-				}
-			}
 
 			if (!_.isEmpty(ann.childData.locus2)) {
 				let locus2Name = ann.childData.locus2.names[0].locus_name;
@@ -468,23 +532,23 @@ function generateAnnotationSubmissionList(annotationList) {
 		if (annotation.get('annotation_format') === 'gene_term_annotation') {
 			refinedAnn.data.method = {
 				id: annotation.related('childData').related('method').get('id'),
-				name: annotation.related('childData').related('method').get('name')
+				name: annotation.related('childData').related('method').get('name'),
+				externalId: annotation.related('childData').related('method').get('external_id'),
+				evidenceCode: annotation.related('childData').related('method').related('keywordMapping').get('evidence_code')
 			};
 
 			refinedAnn.data.keyword = {
 				id: annotation.related('childData').related('keyword').get('id'),
-				name: annotation.related('childData').related('keyword').get('name')
+				name: annotation.related('childData').related('keyword').get('name'),
+				externalId: annotation.related('childData').related('keyword').get('external_id')
 			};
-
-			if (annotation.related('childData').related('evidence').get('id')) {
-				refinedAnn.data.evidence = annotation.related('childData').related('evidence').related('names').first().get('locus_name');
-			}
 		}
 		else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
 			refinedAnn.data.locusName2 = annotation.related('childData').related('locus2').related('names').first().get('locus_name');
 			refinedAnn.data.method = {
 				id: annotation.related('childData').related('method').get('id'),
-				name: annotation.related('childData').related('method').get('name')
+				name: annotation.related('childData').related('method').get('name'),
+				externalId: annotation.related('childData').related('method').get('external_id'),
 			};
 		}
 		else { //if (annotation.get('annotation_format') === 'comment_annotation')

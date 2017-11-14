@@ -3,6 +3,7 @@
 const bookshelf = require('../lib/bookshelf');
 
 require('./keyword_type');
+require('./keyword_mapping');
 
 const Keyword = bookshelf.model('Keyword', {
 	tableName: 'keyword',
@@ -11,6 +12,9 @@ const Keyword = bookshelf.model('Keyword', {
 	},
 	synonyms: function() {
 		return this.hasMany('Synonym', 'keyword_id');
+	},
+	keywordMapping: function() {
+		return this.hasOne('KeywordMapping', 'eco_id', 'external_id');
 	}
 }, {
 	addNew: function(params, transaction) {
