@@ -29,6 +29,7 @@ function getLocusByName(name) {
 			if (error) reject(new Error(error));
 			else if (response.statusCode === 404) reject(new Error(`No Locus found for name ${name}`));
 			else {
+				console.log(bodyJson);
 				let body = JSON.parse(bodyJson);
 				let partialTaxon = {
 					source: 'TAIR',

@@ -416,6 +416,7 @@ function getSingleSubmission(req, res, next) {
 				if (annotation.get('annotation_format') === 'gene_term_annotation') {
 					return annotation.load([
 						'childData.method',
+						'childData.method.keywordMapping',
 						'childData.keyword',
 						'childData.evidence.names',
 						'childData.evidenceSymbol'
@@ -448,6 +449,7 @@ function getSingleSubmission(req, res, next) {
 				publicationId: publication,
 				genes: locusList,
 				annotations: annotationList,
+				submitter: submission.related('submitter'),
 				submitted_at: submission.get('created_at')
 			};
 
@@ -530,23 +532,23 @@ function generateAnnotationSubmissionList(annotationList) {
 		if (annotation.get('annotation_format') === 'gene_term_annotation') {
 			refinedAnn.data.method = {
 				id: annotation.related('childData').related('method').get('id'),
-				name: annotation.related('childData').related('method').get('name')
+				name: annotation.related('childData').related('method').get('name'),
+				externalId: annotation.related('childData').related('method').get('external_id'),
+				evidenceCode: annotation.related('childData').related('method').related('keywordMapping').get('evidence_code')
 			};
 
 			refinedAnn.data.keyword = {
 				id: annotation.related('childData').related('keyword').get('id'),
-				name: annotation.related('childData').related('keyword').get('name')
+				name: annotation.related('childData').related('keyword').get('name'),
+				externalId: annotation.related('childData').related('keyword').get('external_id')
 			};
-
-			if (annotation.related('childData').related('evidence').get('id')) {
-				refinedAnn.data.evidence = annotation.related('childData').related('evidence').related('names').first().get('locus_name');
-			}
 		}
 		else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
 			refinedAnn.data.locusName2 = annotation.related('childData').related('locus2').related('names').first().get('locus_name');
 			refinedAnn.data.method = {
 				id: annotation.related('childData').related('method').get('id'),
-				name: annotation.related('childData').related('method').get('name')
+				name: annotation.related('childData').related('method').get('name'),
+				externalId: annotation.related('childData').related('method').get('external_id'),
 			};
 		}
 		else { //if (annotation.get('annotation_format') === 'comment_annotation')

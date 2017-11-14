@@ -13,7 +13,7 @@ module.exports = {
     }
   },
 
-  test: {
+  /*test: {
     client: 'sqlite3',
     connection : {
       filename: ':memory:'
@@ -21,6 +21,25 @@ module.exports = {
     useNullAsDefault: true,
     seeds: {
       directory: './seeds/test'
+    }
+  },*/
+
+  test: {
+    client: 'postgresql',
+    connection: {
+      database: 'toastdos_test',
+      user:     'toastdos',
+      password: 'vulpes'
+    },
+    pool: {
+      min: 2,
+      max: 10
+    },
+    migrations: {
+      tableName: 'knex_migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   },
 

@@ -2,7 +2,7 @@
 # This script sets up the test environment in a locally installed PostgreSQL server.
 # NOTE: You need to install PostgreSQL yourself before running this
 
-DB_NAME="toastdos_staging"
+DB_NAME="toastdos_test"
 DB_USER="toastdos"
 DB_PASS="vulpes"
 
