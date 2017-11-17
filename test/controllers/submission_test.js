@@ -582,13 +582,14 @@ describe('Submission Controller', function() {
 							locusName: testdata.locus_name[0].locus_name,
 							method: {
 								id: testdata.keywords[0].id,
-								name: testdata.keywords[0].name
+								name: testdata.keywords[0].name,
+								externalId: testdata.keywords[0].external_id
 							},
 							keyword: {
 								id: testdata.keywords[1].id,
-								name: testdata.keywords[1].name
+								name: testdata.keywords[1].name,
+								externalId: testdata.keywords[1].external_id
 							},
-							evidence: testdata.locus_name[0].locus_name,
 						}
 					},
 					{
@@ -598,15 +599,22 @@ describe('Submission Controller', function() {
 							locusName: testdata.locus_name[0].locus_name,
 							method: {
 								id: testdata.keywords[0].id,
-								name: testdata.keywords[0].name
+								name: testdata.keywords[0].name,
+								externalId: testdata.keywords[0].external_id
 							},
 							keyword: {
 								id: testdata.keywords[1].id,
-								name: testdata.keywords[1].name
+								name: testdata.keywords[1].name,
+								externalId: testdata.keywords[1].external_id
 							},
 						}
 					}
-				]
+				],
+				submitter: {
+					email_address: testdata.users[0].email_address,
+					name: testdata.users[0].name,
+					orcid_id: testdata.users[0].orcid_id,
+				}
 			};
 
 			chai.request(server)

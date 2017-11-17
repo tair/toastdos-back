@@ -444,12 +444,20 @@ function getSingleSubmission(req, res, next) {
 			let annotationList = generateAnnotationSubmissionList(submission.related('annotations'));
 			let publication = submission.related('publication').get('doi') || submission.related('publication').get('pubmed_id');
 
+			let submitter = submission.related('submitter');
+
+			let submitterObj = {
+				email_address: submitter.get('email_address'),
+				name: submitter.get('name'),
+				orcid_id: submitter.get('orcid_id')
+			};
+
 			let sub = {
 				id: submission.get('id'),
 				publicationId: publication,
 				genes: locusList,
 				annotations: annotationList,
-				submitter: submission.related('submitter'),
+				submitter: submitterObj,
 				submitted_at: submission.get('created_at')
 			};
 
