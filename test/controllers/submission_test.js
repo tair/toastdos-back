@@ -698,6 +698,57 @@ describe('Submission Controller', function() {
 	});
 
 	describe('POST /api/submission/:id/curate/', function() {
+		beforeEach('Set up updated submission test data', function() {
+			this.currentTest.updatedSubmissionId = 1;
+			this.currentTest.updatedSubmission = {
+				publicationId: '10.1594/GFZ.GEOFON.gfz2009kciu',
+				genes: [
+					{
+						id: 1,
+						locusName: 'Test Locus 1',
+						geneSymbol: 'TFN1',
+						fullName: 'Test Full Name 1'
+					}
+				],
+				annotations: [
+					{
+						id: 1,
+						type: 'MOLECULAR_FUNCTION',
+						data: {
+							locusName: 'Test Locus 1',
+							method: {
+								id: 1,
+								name: 'Test Term 001',
+								externalId: 'T001'
+							},
+							keyword: {
+								id: 2,
+								name: 'Test Term 002',
+								externalId: 'T002'
+							}
+						}
+					},
+					{
+						id: 2,
+						type: 'BIOLOGICAL_PROCESS',
+						data: {
+							locusName: 'Test Locus 1',
+							method: {
+								id: 1,
+								name: 'Test Term 001',
+								externalId: 'T001'
+							},
+							keyword: {
+								id: 2,
+								name: 'Test Term 002',
+								externalId: 'T002'
+							}
+						}
+					}
+				]
+			};
+		});
+
 		it('Responds with error for invalid id', function(done) {
 			const badId = 999;
 			chai.request(server)
@@ -731,6 +782,17 @@ describe('Submission Controller', function() {
 						done();
 					});
 			})
+		});
+
+		it('Well-formed curation request makes correct records', function(done) {
+			chai.request(server)
+				.post(`/api/submission/${this.test.updatedSubmissionId}/curate`)
+				.send(this.test.updatedSubmission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					done();
+				});
 		});
 	})
 

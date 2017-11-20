@@ -118,14 +118,34 @@
     }
   ],
 
-  "annotation_types" : [
+  "annotation_types": [
     {
-      "id" : 1,
-      "name" : "Test Annotation Type"
+      "id": 1,
+      "name": "MOLECULAR_FUNCTION"
     },
     {
-      "id" : 2,
-      "name" : "Test Annotation Type 2"
+      "id": 2,
+      "name": "BIOLOGICAL_PROCESS"
+    },
+    {
+      "id": 3,
+      "name": "SUBCELLULAR_LOCATION"
+    },
+    {
+      "id": 4,
+      "name": "ANATOMICAL_LOCATION"
+    },
+    {
+      "id": 5,
+      "name": "TEMPORAL_EXPRESSION"
+    },
+    {
+      "id": 6,
+      "name": "PROTEIN_INTERACTION"
+    },
+    {
+      "id": 7,
+      "name": "COMMENT"
     }
   ],
 

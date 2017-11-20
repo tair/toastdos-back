@@ -256,8 +256,9 @@ function curateGenesAndAnnotations(req, res, next) {
 		.then(([submission, data]) => {
 			const validationResult = validateSubmissionRequest(req.body);
 			if (validationResult.error !== null) {
-				return Promise.reject(validationResult.error);
+				return Promise.reject(new Error(validationResult.error));
 			}
+			// TODO Process curation logic here.
 		})
 		.then(() => {
 			response.ok(res);
@@ -271,7 +272,7 @@ function curateGenesAndAnnotations(req, res, next) {
 				return response.badRequest(res, err.message);
 			}
 
-			return response.defaultServerError(res, err)
+			return response.defaultServerError(res, err);
 		});
 }
 
