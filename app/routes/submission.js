@@ -13,6 +13,13 @@ router.post(
 	submissionController.submitGenesAndAnnotations
 );
 
+router.post(
+	'/:id/curate',
+	authenticationMiddleware.validateAuthentication,
+	authenticationMiddleware.requireCurator,
+	submissionController.curateGenesAndAnnotations
+);
+
 router.get(
 	'/list/',
 	authenticationMiddleware.validateAuthentication,

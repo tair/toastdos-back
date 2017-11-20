@@ -19,6 +19,73 @@ const METHOD_KEYWORD_TYPE_NAME = 'eco';
 
 
 /**
+ * Determines if an error message could have come from validation.
+ * @param {String} message
+ */
+function isValidationError(message) {
+	return (
+		   message.includes('No Locus found')
+		|| message.includes('Invalid annotation types')
+		|| message.match(/(Missing|Invalid) .* fields/)
+		|| message.includes('id xor name')
+		|| message.includes('not present in submission')
+		|| message.includes('does not reference existing Keyword')
+	);
+}
+
+/**
+ * A submission request to be structurally validated
+ * @param {*} submission
+ */
+function validateSubmissionRequest(submission) {
+	const result = {
+		error: null,
+		publicationType: null
+	};
+
+	let error = (message) => {
+		result.error = message;
+		return result;
+	};
+
+	// Ensure we actually provided a list of genes and annotations
+	if (!submission.genes || submission.genes.length === 0) {
+		return error('No genes specified');
+	}
+
+	if (!submission.annotations || submission.annotations.length === 0) {
+		return error('No annotations specified');
+	}
+
+	// Ensure each locus provides a name
+	if (submission.genes.some(gene => !gene.locusName)) {
+		return error('Body contained malformed Gene data');
+	}
+
+	// Ensure each annotation supplies type information and data
+	if (submission.annotations.some(ann => (!ann.type || !ann.data) )) {
+		return error('Body contained malformed Annotation data');
+	}
+
+	// Validate Annotation type
+	let foundBadAnnType = submission.annotations.find(ann => !annotationHelper.AnnotationTypeData[ann.type]);
+	if (foundBadAnnType) {
+		return error(`Invalid annotation type ${foundBadAnnType.type}`);
+	}
+
+	// Publication ID validation / type detection
+	if (publicationValidator.isDOI(submission.publicationId)) {
+		result.publicationType = 'doi';
+	} else if (publicationValidator.isPubmedId(submission.publicationId)) {
+		result.publicationType = 'pubmed_id';
+	} else {
+		return error(`${submission.publicationId} is not a DOI or Pubmed ID`);
+	}
+
+	return result;
+}
+
+/**
  * Creates records for all of the new Locuses and Annotations.
  * Performs all of the database additions inside a transaction,
  * and if anything goes wrong, the entire thing is rolled back.
@@ -30,46 +97,17 @@ const METHOD_KEYWORD_TYPE_NAME = 'eco';
  */
 function submitGenesAndAnnotations(req, res, next) {
 
-	// Ensure we actually provided a list of genes and annotations
-	if (!req.body.genes || req.body.genes.length === 0) {
-		return response.badRequest(res, 'No genes specified');
-	}
+	const validationResult = validateSubmissionRequest(req.body);
 
-	if (!req.body.annotations || req.body.annotations.length === 0) {
-		return response.badRequest(res, 'No annotations specified');
-	}
-
-	// Ensure each locus provides a name
-	if (req.body.genes.some(gene => !gene.locusName)) {
-		return response.badRequest(res, 'Body contained malformed Gene data');
-	}
-
-	// Ensure each annotation supplies type information and data
-	if (req.body.annotations.some(ann => (!ann.type || !ann.data) )) {
-		return response.badRequest(res, 'Body contained malformed Annotation data');
-	}
-
-	// Validate Annotation type
-	let foundBadAnnType = req.body.annotations.find(ann => !annotationHelper.AnnotationTypeData[ann.type]);
-	if (foundBadAnnType) {
-		return response.badRequest(res, `Invalid annotation type ${foundBadAnnType.type}`);
-	}
-
-	// Publication ID validation / type detection
-	let publicationType;
-	if (publicationValidator.isDOI(req.body.publicationId)) {
-		publicationType = 'doi';
-	} else if (publicationValidator.isPubmedId(req.body.publicationId)) {
-		publicationType = 'pubmed_id';
-	} else {
-		return response.badRequest(res, `${req.body.publicationId} is not a DOI or Pubmed ID`);
+	if (validationResult.error !== null) {
+		return response.badRequest(res, validationResult.error);
 	}
 
 	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
 	bookshelf.transaction(transaction => {
 
 		return Publication.addOrGet({
-				[publicationType]: req.body.publicationId
+				[validationResult.publicationType]: req.body.publicationId
 			}, transaction)
 			.then(publication => {
 
@@ -146,17 +184,94 @@ function submitGenesAndAnnotations(req, res, next) {
 			// NOTE: Transaction is automatically rolled back on error
 
 			// This covers any validation / verification errors in submission
-			if (   err.message.includes('No Locus found')
-				|| err.message.includes('Invalid annotation types')
-				|| err.message.match(/(Missing|Invalid) .* fields/)
-				|| err.message.includes('id xor name')
-				|| err.message.includes('not present in submission')
-				|| err.message.includes('does not reference existing Keyword')
-			) {
+			if (isValidationError(err.message)) {
 				return response.badRequest(res, err.message);
 			}
 
 			response.defaultServerError(res, err);
+		});
+}
+
+/**
+ * Internal helper function that will retrieve a submission with the relevant
+ * annotation data.
+ * @param {Number} id
+ */
+function getSubmissionWithData(id) {
+	return Submission.where('id', id)
+		.fetch({
+			require: true,
+			withRelated: [
+				'submitter',
+				'publication',
+				'annotations.type',
+				'annotations.childData',
+				'annotations.locus.names',
+				'annotations.locusSymbol',
+			]
+		})
+		.then(submission => {
+			// Get additional annotation data needed for submission.
+			// The data we need changes slightly based on annotation format
+			let additionalDataPromises = submission.related('annotations').map(annotation => {
+				if (annotation.get('annotation_format') === 'gene_term_annotation') {
+					return annotation.load([
+						'childData.method',
+						'childData.method.keywordMapping',
+						'childData.keyword',
+						'childData.evidence.names',
+						'childData.evidenceSymbol'
+					]);
+				}
+
+				if (annotation.get('annotation_format') === 'gene_gene_annotation') {
+					return annotation.load([
+						'childData.method',
+						'childData.locus2.names',
+						'childData.locus2Symbol'
+					]);
+				}
+
+				if (annotation.get('annotation_format') === 'comment_annotation') {
+					return Promise.resolve(annotation);
+				}
+			});
+
+			return Promise.all([Promise.resolve(submission), Promise.all(additionalDataPromises)])
+		});
+}
+
+/**
+ * Curates records for all of the new Locuses and Annotations.
+ * Performs all of the database additions inside a transaction,
+ * and if anything goes wrong, the entire thing is rolled back.
+ *
+ * Responds with:
+ * 201 with empty body on successful add.
+ * 400 with text describing problem with request.
+ * 500 if something blows up on our end.
+ */
+function curateGenesAndAnnotations(req, res, next) {
+	getSubmissionWithData(req.params.id)
+		.then(([submission, data]) => {
+			const validationResult = validateSubmissionRequest(req.body);
+			if (validationResult.error !== null) {
+				return Promise.reject(validationResult.error);
+			}
+		})
+		.then(() => {
+			response.ok(res);
+		})
+		.catch(err => {
+			if (err.message.includes('EmptyResponse')) {
+				return response.notFound(res, `No submission with ID ${req.params.id}`)
+			}
+
+			if (isValidationError(err.message)) {
+				return response.badRequest(res, err.message);
+			}
+
+			return response.defaultServerError(res, err)
 		});
 }
 
@@ -396,48 +511,7 @@ function generateSubmissionSummary(req, res, next) {
  * 500 if something goes wrong internally
  */
 function getSingleSubmission(req, res, next) {
-	Submission
-		.where('id', req.params.id)
-		.fetch({
-			require: true,
-			withRelated: [
-				'submitter',
-				'publication',
-				'annotations.type',
-				'annotations.childData',
-				'annotations.locus.names',
-				'annotations.locusSymbol',
-			]
-		})
-		.then(submission => {
-			// Get additional annotation data needed for submission.
-			// The data we need changes slightly based on annotation format
-			let additionalDataPromises = submission.related('annotations').map(annotation => {
-				if (annotation.get('annotation_format') === 'gene_term_annotation') {
-					return annotation.load([
-						'childData.method',
-						'childData.method.keywordMapping',
-						'childData.keyword',
-						'childData.evidence.names',
-						'childData.evidenceSymbol'
-					]);
-				}
-
-				if (annotation.get('annotation_format') === 'gene_gene_annotation') {
-					return annotation.load([
-						'childData.method',
-						'childData.locus2.names',
-						'childData.locus2Symbol'
-					]);
-				}
-
-				if (annotation.get('annotation_format') === 'comment_annotation') {
-					return Promise.resolve(annotation);
-				}
-			});
-
-			return Promise.all([Promise.resolve(submission), Promise.all(additionalDataPromises)])
-		})
+	getSubmissionWithData(req.params.id)
 		.then(([submission, loadedAnnotations]) => {
 
 			let locusList = getAllLociFromAnnotations(loadedAnnotations);
@@ -571,6 +645,7 @@ function generateAnnotationSubmissionList(annotationList) {
 
 module.exports = {
 	submitGenesAndAnnotations,
+	curateGenesAndAnnotations,
 	generateSubmissionSummary,
 	getSingleSubmission
 };

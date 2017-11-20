@@ -696,4 +696,42 @@ describe('Submission Controller', function() {
 
 	});
 
+	describe('POST /api/submission/:id/curate/', function() {
+		it('Curation responds with error for invalid id', function(done) {
+			const badId = 999;
+			chai.request(server)
+				.post(`/api/submission/${badId}/curate/`)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					console.log("HERHEHEHEHEHEHEHE:");
+					console.log(res.text);
+					chai.expect(res.status).to.equal(404);
+					chai.expect(res.text).to.equal(`No submission with ID ${badId}`);
+					done();
+				});
+		});
+
+
+		it('Does not allow researchers to curate', function(done) {
+			let id = 1;
+			let researchAuthenticatedUser = testdata.users[1];
+			let tokenResolve;
+			let tokenPromise = new Promise(resolve => { tokenResolve = resolve; });
+			auth.signToken({user_id: researchAuthenticatedUser.id}, (err, newToken) => {
+				chai.expect(err).to.be.null;
+				tokenResolve(newToken);
+			});
+			tokenPromise.then((researchTestToken) => {
+				chai.request(server)
+					.post(`/api/submission/${id}/curate/`)
+					.set({Authorization: `Bearer ${researchTestToken}`})
+					.end((err, res) => {
+						chai.expect(res.status).to.equal(401);
+						chai.expect(res.text).to.equal('Only Curators may access this resource');
+						done();
+					});
+			})
+		});
+	})
+
 });
