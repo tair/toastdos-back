@@ -30,6 +30,7 @@ function isValidationError(message) {
 		|| message.includes('id xor name')
 		|| message.includes('not present in submission')
 		|| message.includes('does not reference existing Keyword')
+		|| message.includes('need a status')
 	);
 }
 
@@ -204,6 +205,7 @@ function getSubmissionWithData(id) {
 			withRelated: [
 				'submitter',
 				'publication',
+				'annotations.status',
 				'annotations.type',
 				'annotations.childData',
 				'annotations.locus.names',
@@ -257,6 +259,9 @@ function curateGenesAndAnnotations(req, res, next) {
 			const validationResult = validateSubmissionRequest(req.body);
 			if (validationResult.error !== null) {
 				return Promise.reject(new Error(validationResult.error));
+			}
+			if (req.body.annotations.some((a => !a.status))) {
+				return Promise.reject(new Error("All annotations need a status"));
 			}
 			// TODO Process curation logic here.
 		})
@@ -606,6 +611,7 @@ function generateAnnotationSubmissionList(annotationList) {
 		let refinedAnn = {
 			id: annotation.get('id'),
 			type: annotation.related('type').get('name'),
+			status: annotation.related('status').get('name'),
 			data: {
 				locusName: annotation.related('locus').related('names').first().get('locus_name'),
 			}

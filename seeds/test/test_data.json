@@ -110,11 +110,15 @@
   "annotation_statuses" : [
     {
       "id" : 1,
-      "name" : "test status"
+      "name" : "pending"
     },
     {
       "id" : 2,
-      "name" : "test status 2"
+      "name" : "accepted"
+    },
+    {
+      "id" : 3,
+      "name" : "rejected"
     }
   ],
 

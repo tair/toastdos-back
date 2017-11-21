@@ -579,6 +579,7 @@ describe('Submission Controller', function() {
 					{
 						id: testdata.annotations[0].id,
 						type: testdata.annotation_types[0].name,
+						status: testdata.annotation_statuses[0].name,
 						data: {
 							locusName: testdata.locus_name[0].locus_name,
 							method: {
@@ -596,6 +597,7 @@ describe('Submission Controller', function() {
 					{
 						id: testdata.annotations[1].id,
 						type: testdata.annotation_types[1].name,
+						status: testdata.annotation_statuses[1].name,
 						data: {
 							locusName: testdata.locus_name[0].locus_name,
 							method: {
@@ -714,6 +716,7 @@ describe('Submission Controller', function() {
 					{
 						id: 1,
 						type: 'MOLECULAR_FUNCTION',
+						status: 'accepted',
 						data: {
 							locusName: 'Test Locus 1',
 							method: {
@@ -731,6 +734,7 @@ describe('Submission Controller', function() {
 					{
 						id: 2,
 						type: 'BIOLOGICAL_PROCESS',
+						status: 'accepted',
 						data: {
 							locusName: 'Test Locus 1',
 							method: {
