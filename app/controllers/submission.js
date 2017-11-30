@@ -288,7 +288,19 @@ function curateGenesAndAnnotations(req, res, next) {
 					return Promise.reject(new ValidationError('All annotations must be part of this submission'));
 			}
 
-			
+			// Now that the request is valid, start the update.
+			return bookshelf.transaction(transaction => {
+				// Check if publication needs to be updated
+				return Publication.addOrGet({
+					[validationResult.publicationType]: updatedSubmission.publicationId
+				}, transaction).then(publication => {
+					// If publication has been changed, update the id
+					if (curSubmission.get('publication_id') != publication.get('id')) {
+						return curSubmission
+							.save('publication_id', publication.get('id'), {transacting: transaction});
+					}
+				});
+			});
 		})
 		.then(() => {
 			response.ok(res);

@@ -810,6 +810,25 @@ describe('Submission Controller', function() {
 					done();
 				});
 		});
+
+		it('The publication id can be updated', function(done) {
+			const newPubId = "21"; // Simple valid PubMed id.
+			this.test.submission.publicationId = "21";
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					Promise.all([
+						Submission.where({id: this.test.submissionId}).fetch(),
+						Publication.where({pubmed_id: newPubId}).fetch(),
+					]).then(([submission, publication]) => {
+						chai.expect(publication).not.to.be.null;
+						chai.expect(submission.get('publication_id')).to.equal(publication.get('id'));
+						done();
+					})
+				});
+		});
 	})
 
 });
