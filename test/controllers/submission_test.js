@@ -701,8 +701,8 @@ describe('Submission Controller', function() {
 
 	describe('POST /api/submission/:id/curate/', function() {
 		beforeEach('Set up updated submission test data', function() {
-			this.currentTest.updatedSubmissionId = 1;
-			this.currentTest.updatedSubmission = {
+			this.currentTest.submissionId = 1;
+			this.currentTest.submission = {
 				publicationId: '10.1594/GFZ.GEOFON.gfz2009kciu',
 				genes: [
 					{
@@ -716,7 +716,7 @@ describe('Submission Controller', function() {
 					{
 						id: 1,
 						type: 'MOLECULAR_FUNCTION',
-						status: 'accepted',
+						status: 'pending',
 						data: {
 							locusName: 'Test Locus 1',
 							method: {
@@ -734,7 +734,7 @@ describe('Submission Controller', function() {
 					{
 						id: 2,
 						type: 'BIOLOGICAL_PROCESS',
-						status: 'accepted',
+						status: 'pending',
 						data: {
 							locusName: 'Test Locus 1',
 							method: {
@@ -766,7 +766,6 @@ describe('Submission Controller', function() {
 		});
 
 		it('Does not allow researchers to curate', function(done) {
-			const submissionId = 1;
 			const researchAuthenticatedUser = testdata.users[1];
 			// Generate a token for a user with just the research role.
 			const tokenPromise = new Promise(resolve => {
@@ -778,7 +777,7 @@ describe('Submission Controller', function() {
 
 			tokenPromise.then(researchTestToken => {
 				chai.request(server)
-					.post(`/api/submission/${submissionId}/curate/`)
+					.post(`/api/submission/${this.test.submissionId}/curate/`)
 					.set({Authorization: `Bearer ${researchTestToken}`})
 					.end((err, res) => {
 						chai.expect(res.status).to.equal(401);
@@ -788,13 +787,26 @@ describe('Submission Controller', function() {
 			})
 		});
 
-		it('Well-formed curation request makes correct records', function(done) {
+		it('Well-formed curation requests are accepted', function(done) {
 			chai.request(server)
-				.post(`/api/submission/${this.test.updatedSubmissionId}/curate`)
-				.send(this.test.updatedSubmission)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
 				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
+					done();
+				});
+		});
+
+		it('Annotations that contain an invalid id are rejected', function(done) {
+			this.test.submission.annotations[0].id = 3;
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal('All annotations must be part of this submission');
 					done();
 				});
 		});

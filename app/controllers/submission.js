@@ -20,18 +20,27 @@ const METHOD_KEYWORD_TYPE_NAME = 'eco';
 
 /**
  * Determines if an error message could have come from validation.
- * @param {String} message
+ * @param {Error|ValidationError} err
  */
-function isValidationError(message) {
+function isValidationError(err) {
 	return (
-		   message.includes('No Locus found')
-		|| message.includes('Invalid annotation types')
-		|| message.match(/(Missing|Invalid) .* fields/)
-		|| message.includes('id xor name')
-		|| message.includes('not present in submission')
-		|| message.includes('does not reference existing Keyword')
-		|| message.includes('need a status')
+		   err instanceof ValidationError
+		|| err.message.includes('No Locus found')
+		|| err.message.includes('Invalid annotation types')
+		|| err.message.match(/(Missing|Invalid) .* fields/)
+		|| err.message.includes('id xor name')
+		|| err.message.includes('not present in submission')
+		|| err.message.includes('does not reference existing Keyword')
+		|| err.message.includes('need a status')
 	);
+}
+
+/**
+ * A wrapper for all validation error messages
+ * @param {String} message 
+ */
+function ValidationError(message) {
+	this.message = message;
 }
 
 /**
@@ -45,7 +54,7 @@ function validateSubmissionRequest(submission) {
 	};
 
 	let error = (message) => {
-		result.error = message;
+		result.error = new ValidationError(message);
 		return result;
 	};
 
@@ -101,7 +110,7 @@ function submitGenesAndAnnotations(req, res, next) {
 	const validationResult = validateSubmissionRequest(req.body);
 
 	if (validationResult.error !== null) {
-		return response.badRequest(res, validationResult.error);
+		return response.badRequest(res, validationResult.error.message);
 	}
 
 	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
@@ -185,7 +194,7 @@ function submitGenesAndAnnotations(req, res, next) {
 			// NOTE: Transaction is automatically rolled back on error
 
 			// This covers any validation / verification errors in submission
-			if (isValidationError(err.message)) {
+			if (isValidationError(err)) {
 				return response.badRequest(res, err.message);
 			}
 
@@ -254,16 +263,32 @@ function getSubmissionWithData(id) {
  * 500 if something blows up on our end.
  */
 function curateGenesAndAnnotations(req, res, next) {
+	const updatedSubmission = req.body;
 	getSubmissionWithData(req.params.id)
-		.then(([submission, data]) => {
-			const validationResult = validateSubmissionRequest(req.body);
+		.then(([curSubmission, curAnnotations]) => {
+			// Do first-pass request structure validation
+			const validationResult = validateSubmissionRequest(updatedSubmission);
 			if (validationResult.error !== null) {
-				return Promise.reject(new Error(validationResult.error));
+				return Promise.reject(validationResult.error);
 			}
-			if (req.body.annotations.some((a => !a.status))) {
-				return Promise.reject(new Error("All annotations need a status"));
+
+			// Curation-specific validation
+			if (!updatedSubmission.annotations.every(a => !!a.status && !!a.id )) {
+				return Promise.reject(new ValidationError('All curated annotations need a status and an id'));
 			}
-			// TODO Process curation logic here.
+
+			const curAnnotationMap = curAnnotations.reduce((acc, annotation) => {
+				acc[annotation.get('id')] = annotation;
+				return acc;
+			}, {});
+			
+			// Validate the request's annotations are a subset of the current ones.
+			if (!updatedSubmission.annotations
+				.every(newAnnotation => newAnnotation.id in curAnnotationMap)) {
+					return Promise.reject(new ValidationError('All annotations must be part of this submission'));
+			}
+
+			
 		})
 		.then(() => {
 			response.ok(res);
@@ -273,7 +298,7 @@ function curateGenesAndAnnotations(req, res, next) {
 				return response.notFound(res, `No submission with ID ${req.params.id}`)
 			}
 
-			if (isValidationError(err.message)) {
+			if (isValidationError(err)) {
 				return response.badRequest(res, err.message);
 			}
 
