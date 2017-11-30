@@ -787,17 +787,6 @@ describe('Submission Controller', function() {
 			})
 		});
 
-		it('Well-formed curation requests are accepted', function(done) {
-			chai.request(server)
-				.post(`/api/submission/${this.test.submissionId}/curate`)
-				.send(this.test.submission)
-				.set({Authorization: `Bearer ${testToken}`})
-				.end((err, res) => {
-					chai.expect(res.status).to.equal(200);
-					done();
-				});
-		});
-
 		it('Annotations that contain an invalid id are rejected', function(done) {
 			this.test.submission.annotations[0].id = 3;
 			chai.request(server)
@@ -807,6 +796,44 @@ describe('Submission Controller', function() {
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
 					chai.expect(res.text).to.equal('All annotations must be part of this submission');
+					done();
+				});
+		});
+
+		it('Curated annotations must have an id and status', function(done) {
+			delete this.test.submission.annotations[0].id;
+			delete this.test.submission.annotations[1].status;
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal('All curated annotations need a status and an id');
+					done();
+				});
+		});
+
+		it('Malformed submissions fail', function(done) {
+			delete this.test.submission.annotations;
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal('No annotations specified');
+					done();
+				});
+		});
+
+		it('Well-formed curation requests are accepted', function(done) {
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
 					done();
 				});
 		});
@@ -826,9 +853,10 @@ describe('Submission Controller', function() {
 						chai.expect(publication).not.to.be.null;
 						chai.expect(submission.get('publication_id')).to.equal(publication.get('id'));
 						done();
-					})
+					});
 				});
 		});
+
 	})
 
 });
