@@ -49,13 +49,11 @@ function ValidationError(message) {
  */
 function validateSubmissionRequest(submission) {
 	const result = {
-		error: null,
 		publicationType: null
 	};
 
 	let error = (message) => {
-		result.error = new ValidationError(message);
-		return result;
+		return Promise.reject(new ValidationError(message));
 	};
 
 	// Ensure we actually provided a list of genes and annotations
@@ -92,7 +90,7 @@ function validateSubmissionRequest(submission) {
 		return error(`${submission.publicationId} is not a DOI or Pubmed ID`);
 	}
 
-	return result;
+	return Promise.resolve(result);
 }
 
 /**
@@ -107,24 +105,47 @@ function validateSubmissionRequest(submission) {
  */
 function submitGenesAndAnnotations(req, res, next) {
 
-	const validationResult = validateSubmissionRequest(req.body);
+	handleSubmissionOrCurationResponse(res, validateSubmissionRequest(req.body).then(validationResult => {
+		// Submission-only validation
+		if (!req.body.annotations.every(a => typeof a.status === 'undefined' && typeof a.id === 'undefined')) {
+			return Promise.reject('Annotations need a status and an id');
+		}
+		
+		return performSubmissionOrCuration(req, validationResult, null);
+	}));
+	
+}
 
-	if (validationResult.error !== null) {
-		return response.badRequest(res, validationResult.error.message);
-	}
-
+/**
+ * Makes the common submission or curation workflows happen
+ * @param {*} req - the request to respond to
+ * @param {*} validationResult - the validation result
+ * @param {*} existingSubmissionModel - the presence of this means that we are curating this submission
+ */
+function performSubmissionOrCuration(req, validationResult, existingSubmissionModel) {
 	// Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
-	bookshelf.transaction(transaction => {
+	return bookshelf.transaction(transaction => {
+		const isCuration = !!existingSubmissionModel;
 
 		return Publication.addOrGet({
 				[validationResult.publicationType]: req.body.publicationId
 			}, transaction)
 			.then(publication => {
-
-				let submissionPromise = Submission.addNew({
-					publication_id: publication.get('id'),
-					submitter_id: req.user.get('id')
-				}, transaction);
+				let submissionPromise;
+				if (isCuration) {
+					// If there is already an existing submission, update the publication id if it is different.
+					if (existingSubmissionModel.get('publication_id') != publication.get('id')) {
+						submissionPromise = existingSubmissionModel
+							.save('publication_id', publication.get('id'), {transacting: transaction});
+					} else {
+						submissionPromise = Promise.resolve(existingSubmissionModel);
+					}
+				} else {
+					submissionPromise = Submission.addNew({
+						publication_id: publication.get('id'),
+						submitter_id: req.user.get('id')
+					}, transaction);
+				}
 
 				let keywordPromise = addNewKeywords(req.body.annotations, transaction);
 
@@ -180,26 +201,42 @@ function submitGenesAndAnnotations(req, res, next) {
 					annotation.data.internalPublicationId = publication.attributes.id;
 					annotation.data.submitterId = req.user.attributes.id;
 
-					return annotationHelper.addAnnotationRecords(annotation, locusMap, submission, transaction);
+					return annotationHelper.addAnnotationRecords(isCuration, annotation, locusMap, submission, transaction);
 				});
 
 				return Promise.all(annotationPromises);
-			});
-	})
-		.then(annotationArray => {
-			// NOTE: Transaction is automatically committed on successful promise resolution
+			}).then(() => isCuration);
+	});
+}
+
+/**
+ * Handles the response to send from submission or curation.
+ * @param {*} res 
+ * @param {Promise} promise 
+ */
+function handleSubmissionOrCurationResponse(res, promise) {
+	promise.then(isCuration => {
+		// NOTE: Transaction is automatically committed on successful promise resolution
+		if (isCuration) {
+			response.ok(res);
+		} else {
 			response.created(res);
-		})
-		.catch(err => {
-			// NOTE: Transaction is automatically rolled back on error
+		}
+	})
+	.catch(err => {
+		// NOTE: Transaction is automatically rolled back on error
 
-			// This covers any validation / verification errors in submission
-			if (isValidationError(err)) {
-				return response.badRequest(res, err.message);
-			}
+		if (err.message.includes('EmptyResponse')) {
+			return response.notFound(res, 'No submission found for the supplied ID')
+		}
 
-			response.defaultServerError(res, err);
-		});
+		// This covers any validation / verification errors in submission
+		if (isValidationError(err)) {
+			return response.badRequest(res, err.message);
+		}
+
+		response.defaultServerError(res, err);
+	});
 }
 
 /**
@@ -263,17 +300,14 @@ function getSubmissionWithData(id) {
  * 500 if something blows up on our end.
  */
 function curateGenesAndAnnotations(req, res, next) {
-	const updatedSubmission = req.body;
-	getSubmissionWithData(req.params.id)
+	handleSubmissionOrCurationResponse(res, getSubmissionWithData(req.params.id)
 		.then(([curSubmission, curAnnotations]) => {
 			// Do first-pass request structure validation
-			const validationResult = validateSubmissionRequest(updatedSubmission);
-			if (validationResult.error !== null) {
-				return Promise.reject(validationResult.error);
-			}
+			return Promise.all([curSubmission, curAnnotations, validateSubmissionRequest(req.body)]);
+		}).then(([curSubmission, curAnnotations, validationResult]) => {
 
 			// Curation-specific validation
-			if (!updatedSubmission.annotations.every(a => !!a.status && !!a.id )) {
+			if (!req.body.annotations.every(a => !!a.status && !!a.id )) {
 				return Promise.reject(new ValidationError('All curated annotations need a status and an id'));
 			}
 
@@ -281,15 +315,19 @@ function curateGenesAndAnnotations(req, res, next) {
 				acc[annotation.get('id')] = annotation;
 				return acc;
 			}, {});
+
+			const newAnnotationMap = req.body.annotations.reduce((acc, annotation) => {
+				acc[annotation.id] = annotation;
+				return acc;
+			}, {});
 			
 			// Validate the request's annotations are a subset of the current ones.
-			if (!updatedSubmission.annotations
-				.every(newAnnotation => newAnnotation.id in curAnnotationMap)) {
+			if (!curAnnotations.every(annotation => annotation.get('id') in newAnnotationMap)) {
 					return Promise.reject(new ValidationError('All annotations must be part of this submission'));
 			}
 
 			// Validate that the annotation's keywords are not plain-text and are valid.
-			if (!updatedSubmission.annotations
+			if (!req.body.annotations
 				.every(newAnnotation => {
 					let method = newAnnotation.data.method;
 					let keyword = newAnnotation.data.keyword;
@@ -302,34 +340,18 @@ function curateGenesAndAnnotations(req, res, next) {
 					return Promise.reject(new ValidationError('All keywords have to have valid external ids'));
 			}
 
-			// Now that the request is valid, start the update.
-			return bookshelf.transaction(transaction => {
-				// Check if publication needs to be updated
-				return Publication.addOrGet({
-					[validationResult.publicationType]: updatedSubmission.publicationId
-				}, transaction).then(publication => {
-					// If publication has been changed, update the id
-					if (curSubmission.get('publication_id') != publication.get('id')) {
-						return curSubmission
-							.save('publication_id', publication.get('id'), {transacting: transaction});
-					}
-				});
+			req.body.annotations.forEach(newAnnotation => {
+				const curAnnotation = curAnnotationMap[newAnnotation.id];
+				if (annotationHelper.AnnotationTypeData[newAnnotation.type] ==
+					annotationHelper.AnnotationTypeData[curAnnotation.get('type')]) {
+					newAnnotation.data.id = curAnnotation.related('childData').get('id');
+				}
+				// TODO handle deleting the other format?
 			});
-		})
-		.then(() => {
-			response.ok(res);
-		})
-		.catch(err => {
-			if (err.message.includes('EmptyResponse')) {
-				return response.notFound(res, `No submission with ID ${req.params.id}`)
-			}
 
-			if (isValidationError(err)) {
-				return response.badRequest(res, err.message);
-			}
-
-			return response.defaultServerError(res, err);
-		});
+			// Now that the request is valid, start the update.
+			return performSubmissionOrCuration(req, validationResult, curSubmission);
+		}));
 }
 
 /**

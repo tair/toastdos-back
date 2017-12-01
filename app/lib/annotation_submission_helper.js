@@ -82,18 +82,19 @@ const NEW_ANNOTATION_STATUS = 'pending';
 /**
  * Creates all of the records necessary for the given annotation.
  *
+ * @param isCuration - if this is being added in curation mode
  * @param annotation - type and data for a single annotation submission
  * @param locusMap - an optimization to help looking up genes used in an annotation
  * @params submission - the submission this annotation is being added for
  * @param transaction - optional transaction for adding these records
  * @return {Promise.<*>}
  */
-function addAnnotationRecords(annotation, locusMap, submission, transaction) {
+function addAnnotationRecords(isCuration, annotation, locusMap, submission, transaction) {
 	let strategy = AnnotationTypeData[annotation.type];
 
 	// Step 1: Ensure annotation request all required fields and nothing extra
 	try {
-		validateFields(annotation, strategy.format.fields, strategy.format.optionalFields);
+		validateFields(isCuration, annotation, strategy.format.fields, strategy.format.optionalFields);
 	} catch (err) {
 		return Promise.reject(err);
 	}
@@ -101,14 +102,23 @@ function addAnnotationRecords(annotation, locusMap, submission, transaction) {
 	// Step 2: Verify the data
 	return strategy.format.verifyReferences(annotation, locusMap, transaction)
 		// Step 3: Create sub-annotation
-		.then(() => strategy.format.createRecords(annotation, locusMap, transaction))
+		.then(() => strategy.format.createRecords(isCuration, annotation, locusMap, transaction))
 		// Step 4: With dependencies created, now add the Annotation itself
 		.then(subAnnotation => {
+
+			let statusName = NEW_ANNOTATION_STATUS;
+			if (isCuration) {
+				statusName = annotation.status;
+			}
 
 			// We need the status and type IDs
 			return Promise.all([
 				AnnotationType.where({name: annotation.type}).fetch({require: true, transacting: transaction}),
-				AnnotationStatus.where({name: NEW_ANNOTATION_STATUS}).fetch({require: true, transacting: transaction})
+				redefinePromiseError({
+					promise: AnnotationStatus.where({name: statusName}).fetch({require: true, transacting: transaction}),
+					message: `Status '${statusName}' is not a valid status`,
+					pattern: 'EmptyResponse'
+				})
 			]).then(([type, status]) => {
 				let newAnn = {
 					submission_id: submission.get('id'),
@@ -120,6 +130,10 @@ function addAnnotationRecords(annotation, locusMap, submission, transaction) {
 					annotation_id: subAnnotation.attributes.id,
 					annotation_format: strategy.format.name
 				};
+
+				if (isCuration) {
+					newAnn.id = annotation.id;
+				}
 
 				// GeneSymbols are optional
 				if (locusMap[annotation.data.locusName].symbol) {
@@ -137,7 +151,21 @@ function addAnnotationRecords(annotation, locusMap, submission, transaction) {
  *
  * Throws an error for failed validation
  */
-function validateFields(annotation, validFields, optionalFields) {
+function validateFields(isCuration, annotation, validFields, optionalFields) {
+
+	if (isCuration) {
+		if (!annotation.id) {
+			throw new Error(`An annotation is missing an id`);
+		}
+
+		if (!annotation.status) {
+			throw new Error(`An annotation is missing a status`);
+		}
+
+		validFields = validFields.concat('id');
+		optionalFields = optionalFields || [];
+		optionalFields = optionalFields.concat('id');
+	}
 
 	// Look for extra fields
 	let extraFields = Object.keys(_.omit(annotation.data, validFields));
@@ -256,11 +284,15 @@ function verifyCommentFields(annotation, locusMap) {
  *
  * Returns a Promise that resolves to new sub-annotation.
  */
-function createGeneTermRecords(annotation, locusMap, transaction) {
+function createGeneTermRecords(isCuration, annotation, locusMap, transaction) {
 	let subAnnotation = {
 		method_id: annotation.data.method.id,
 		keyword_id: annotation.data.keyword.id
 	};
+
+	if (isCuration) {
+		subAnnotation.id = annotation.data.id;
+	}
 
 	// 'evidence' is an optional field
 	if (annotation.data.evidence) {
@@ -275,11 +307,15 @@ function createGeneTermRecords(annotation, locusMap, transaction) {
 	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
 }
 
-function createGeneGeneRecords(annotation, locusMap, transaction) {
+function createGeneGeneRecords(isCuration, annotation, locusMap, transaction) {
 	let newGGAnn = {
 		method_id: annotation.data.method.id,
 		locus2_id: locusMap[annotation.data.locusName2].locus.get('locus_id')
 	};
+
+	if (isCuration) {
+		newGGAnn.id = annotation.data.id;
+	}
 
 	// GeneSymbols are optional
 	if (locusMap[annotation.data.locusName2].symbol) {
@@ -289,9 +325,17 @@ function createGeneGeneRecords(annotation, locusMap, transaction) {
 	return GeneGeneAnnotation.forge(newGGAnn).save(null, {transacting: transaction});
 }
 
-function createCommentRecords(annotation, locusMap, transaction) {
+function createCommentRecords(isCuration, annotation, locusMap, transaction) {
 	// locusMap unused, but needed to keep function signature consistent
-	return CommentAnnotation.forge({text: annotation.data.text}).save(null, {transacting: transaction});
+	let commentAnnotation = {
+		text: annotation.data.text
+	};
+
+	if (isCuration) {
+		commentAnnotation.id = annotation.data.id;
+	}
+
+	return CommentAnnotation.forge(commentAnnotation).save(null, {transacting: transaction});
 }
 
 /**

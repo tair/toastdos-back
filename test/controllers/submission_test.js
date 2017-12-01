@@ -752,7 +752,7 @@ describe('Submission Controller', function() {
 				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(404);
-					chai.expect(res.text).to.equal(`No submission with ID ${badId}`);
+					chai.expect(res.text).to.equal('No submission found for the supplied ID');
 					done();
 				});
 		});
@@ -779,8 +779,8 @@ describe('Submission Controller', function() {
 			})
 		});
 
-		it('Annotations that contain an invalid id are rejected', function(done) {
-			this.test.submission.annotations[0].id = 3;
+		it('Every annotation must be present in the request', function(done) {
+			this.test.submission.annotations.pop();
 			chai.request(server)
 				.post(`/api/submission/${this.test.submissionId}/curate`)
 				.send(this.test.submission)
@@ -835,14 +835,111 @@ describe('Submission Controller', function() {
 				});
 		});
 
-		it('Well-formed curation requests are accepted', function(done) {
+		it('Simple well-formed curation requests are accepted', function(done) {
+			this.test.submission.annotations[0].status = 'accepted';
 			chai.request(server)
 				.post(`/api/submission/${this.test.submissionId}/curate`)
 				.send(this.test.submission)
 				.set({Authorization: `Bearer ${testToken}`})
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(200);
-					done();
+					Annotation.where({id: this.test.submission.annotations[0].id})
+						.fetch({withRelated: ['status']})
+						.then(annotation => {
+							chai.expect(annotation.related('status').get('name')).to.equal('accepted')
+							done();
+						});
+				});
+		});
+
+		it('Accepted annotation data fields can be updated', function(done) {
+			this.test.submission.annotations[0].status = 'accepted';
+			this.test.submission.annotations[0].data.keyword.id = 2;
+			this.test.submission.annotations[0].data.method.id = 4;
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					Annotation.where({id: this.test.submission.annotations[0].id})
+						.fetch({withRelated: ['status', 'childData', 'childData.keyword', 'childData.method']})
+						.then(annotation => {
+							chai.expect(annotation.related('status').get('name')).to.equal('accepted');
+							chai.expect(annotation.related('childData').related('keyword').get('id')).to.equal(2);
+							chai.expect(annotation.related('childData').related('method').get('id')).to.equal(4);
+							done();
+						});
+				});
+		});
+
+		it('Pending annotation data fields can be updated', function(done) {
+			delete this.test.submission.annotations[1].data.keyword.id;
+			this.test.submission.annotations[1].data.keyword.name = "New Keyword";
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					Annotation.where({id: this.test.submission.annotations[1].id})
+						.fetch({withRelated: ['status', 'childData', 'childData.keyword', 'childData.method']})
+						.then(annotation => {
+							chai.expect(annotation.related('status').get('name')).to.equal('pending');
+							chai.expect(annotation.related('childData').related('keyword').get('name')).to.equal('New Keyword');
+							done();
+						});
+				});
+		});
+
+		it('Annotation\'s format can be changed', function(done) {
+			this.test.submission.annotations[0].type = "PROTEIN_INTERACTION";
+			this.test.submission.annotations[0].data = {
+				locusName: 'Test Locus 1',
+				locusName2: 'Test Locus 2',
+				method: {
+					id: 1
+				}
+			};
+
+			this.test.submission.genes.push({
+				id: 2,
+				locusName: 'Test Locus 2',
+				geneSymbol: 'TFN2',
+				fullName: 'Test Full Name 2'
+			});
+
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					Annotation.where({id: this.test.submission.annotations[0].id})
+						.fetch({withRelated: ['status', 'childData']})
+						.then(annotation => {
+							chai.expect(annotation.get('annotation_format')).to.equal("gene_gene_annotation");
+							chai.expect(annotation.get('locus_id')).to.equal(1);
+							chai.expect(annotation.related('childData').get('locus2_id')).to.equal(2);
+							done();
+						});
+				});
+		});
+
+		it('The gene symbol can be changed', function(done) {
+			this.test.submission.genes[0].fullName = "New Full Name";
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					Annotation.where({id: this.test.submission.annotations[0].id})
+						.fetch({withRelated: ['locusSymbol']})
+						.then(annotation => {
+							chai.expect(annotation.related('locusSymbol').get('full_name')).to.equal("New Full Name");
+							done();
+						});
 				});
 		});
 
@@ -857,9 +954,11 @@ describe('Submission Controller', function() {
 					Promise.all([
 						Submission.where({id: this.test.submissionId}).fetch(),
 						Publication.where({pubmed_id: newPubId}).fetch(),
-					]).then(([submission, publication]) => {
+						Annotation.where({id: this.test.submission.annotations[0].id}).fetch(),
+					]).then(([submission, publication, annotation]) => {
 						chai.expect(publication).not.to.be.null;
 						chai.expect(submission.get('publication_id')).to.equal(publication.get('id'));
+						chai.expect(annotation.get('publication_id')).to.equal(publication.get('id'));
 						done();
 					});
 				});
