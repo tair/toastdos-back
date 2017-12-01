@@ -720,14 +720,10 @@ describe('Submission Controller', function() {
 						data: {
 							locusName: 'Test Locus 1',
 							method: {
-								id: 1,
-								name: 'Test Term 001',
-								externalId: 'T001'
+								id: 1
 							},
 							keyword: {
-								id: 2,
-								name: 'Test Term 002',
-								externalId: 'T002'
+								id: 2
 							}
 						}
 					},
@@ -738,14 +734,10 @@ describe('Submission Controller', function() {
 						data: {
 							locusName: 'Test Locus 1',
 							method: {
-								id: 1,
-								name: 'Test Term 001',
-								externalId: 'T001'
+								id: 1
 							},
 							keyword: {
-								id: 2,
-								name: 'Test Term 002',
-								externalId: 'T002'
+								id: 2
 							}
 						}
 					}
@@ -823,6 +815,22 @@ describe('Submission Controller', function() {
 				.end((err, res) => {
 					chai.expect(res.status).to.equal(400);
 					chai.expect(res.text).to.equal('No annotations specified');
+					done();
+				});
+		});
+
+		it('Each approved annotations\'s keywords must only have ids', function(done) {
+			this.test.submission.annotations[0].status = 'accepted';
+			delete this.test.submission.annotations[0].data.method.id;
+			this.test.submission.annotations[0].data.method.name = "New Keyword";
+
+			chai.request(server)
+				.post(`/api/submission/${this.test.submissionId}/curate`)
+				.send(this.test.submission)
+				.set({Authorization: `Bearer ${testToken}`})
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(400);
+					chai.expect(res.text).to.equal('All keywords have to have valid external ids');
 					done();
 				});
 		});

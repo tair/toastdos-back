@@ -288,6 +288,20 @@ function curateGenesAndAnnotations(req, res, next) {
 					return Promise.reject(new ValidationError('All annotations must be part of this submission'));
 			}
 
+			// Validate that the annotation's keywords are not plain-text and are valid.
+			if (!updatedSubmission.annotations
+				.every(newAnnotation => {
+					let method = newAnnotation.data.method;
+					let keyword = newAnnotation.data.keyword;
+
+					return newAnnotation.status != 'accepted' || 
+						(newAnnotation.status == 'accepted' &&
+							(!method || (!!method.id && !method.name)) && 
+							(!keyword || (!!keyword.id && !keyword.name)));
+				})) {
+					return Promise.reject(new ValidationError('All keywords have to have valid external ids'));
+			}
+
 			// Now that the request is valid, start the update.
 			return bookshelf.transaction(transaction => {
 				// Check if publication needs to be updated
