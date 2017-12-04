@@ -23,6 +23,7 @@ const GeneSymbol = bookshelf.model('GeneSymbol', {
 		let query = {};
 		if (params.full_name) query.full_name = params.full_name;
 		if (params.symbol) query.symbol = params.symbol;
+		if (params.locus_id) query.locus_id = params.locus_id;
 
 		return bookshelf.model('GeneSymbol')
 			.where(query)
