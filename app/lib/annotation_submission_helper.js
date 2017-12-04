@@ -9,6 +9,7 @@ const Annotation         = require('../models/annotation');
 const AnnotationStatus   = require('../models/annotation_status');
 const AnnotationType     = require('../models/annotation_type');
 const Keyword            = require('../models/keyword');
+const EvidenceWith       = require('../models/evidence_with');
 
 const knex = require('../lib/bookshelf').knex;
 
@@ -21,8 +22,8 @@ const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'
 const AnnotationFormats = {
 	GENE_TERM: {
 		name: 'gene_term_annotation',
-		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidence']),
-		optionalFields: ['evidence'],
+		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidenceWith']),
+		optionalFields: ['evidenceWith'],
 		verifyReferences: verifyGeneTermFields,
 		createRecords: createGeneTermRecords
 	},
@@ -244,11 +245,17 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
 		})
 	);
 
+	// TODO verify if method keyword mapping requires evidence with
+
 	// Evidence Locus is optional, but needs to exist if specified
-	if (annotation.data.evidence && !locusMap[annotation.data.evidence]) {
-		verificationPromises.push(
-			Promise.reject(new Error(`Locus ${annotation.data.evidence} not present in submission`))
-		);
+	if (annotation.data.evidenceWith) {
+		for (const subject of annotation.data.evidenceWith) {
+			if (subject && !locusMap[subject]) {
+				verificationPromises.push(
+					Promise.reject(new Error(`Locus ${annotation.data.evidence} not present in submission`))
+				);
+			}
+		}
 	}
 
 	return Promise.all(verificationPromises);
@@ -299,17 +306,23 @@ function createGeneTermRecords(isCuration, annotation, locusMap, transaction) {
 		subAnnotation.id = annotation.data.id;
 	}
 
-	// 'evidence' is an optional field
-	if (annotation.data.evidence) {
-		subAnnotation.evidence_id = locusMap[annotation.data.evidence].locus.get('locus_id');
+	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction})
+		.then(geneTermAnnotation => {
+			//TODO: check if not locus and act accordingly
+			// add evidence_with to db if exists
+			let evidenceWith = annotation.data.evidenceWith || [];
 
-		// GeneSymbols are optional
-		if (locusMap[annotation.data.evidence].symbol) {
-			subAnnotation.evidence_symbol_id = locusMap[annotation.data.evidence].symbol.get('id');
-		}
-	}
+			let evidenceWithPromises = evidenceWith.map(subject => (
+				EvidenceWith.forge({
+					gene_term_id: geneTermAnnotation.id,
+					subject_id: locusMap[subject].locus.get('locus_id'),
+					subject_type: 'locus',
+				}).save(null , {transacting: transaction})));
 
-	return GeneTermAnnotation.forge(subAnnotation).save(null, {transacting: transaction});
+			return Promise.all([Promise.resolve(geneTermAnnotation), ...evidenceWithPromises])
+		}).then(([geneTermAnnotation]) => {
+			return geneTermAnnotation;
+		});
 }
 
 function createGeneGeneRecords(isCuration, annotation, locusMap, transaction) {

@@ -149,15 +149,44 @@ function performSubmissionOrCuration(req, validationResult, existingSubmissionMo
 
 				let keywordPromise = addNewKeywords(req.body.annotations, transaction);
 
+				// Make a list of all evidence with loci
+				let ewLociNames = [];
+				req.body.annotations
+					.filter(ann =>
+						annotationHelper.AnnotationTypeData[ann.type].format.name == "gene_term_annotation" && 
+						ann.data.evidenceWith && 
+						ann.data.evidenceWith.length > 0)
+					.map(ann => {
+						ewLociNames = ewLociNames.concat(ann.data.evidenceWith);
+					});
+
+				let locusMap = {};
+
 				// Add all of the genes for the submission
-				let locusPromises = req.body.genes.map(gene => {
-					return locusHelper.addLocusRecords({
-						name: gene.locusName,
-						full_name: gene.fullName,
-						symbol: gene.geneSymbol,
-						submitter_id: req.user.attributes.id
-					}, transaction);
+				req.body.genes
+					.map(gene => {
+						locusMap[gene.locusName] = {
+							name: gene.locusName,
+							full_name: gene.fullName,
+							symbol: gene.geneSymbol,
+							submitter_id: req.user.attributes.id
+						}
+					});
+
+				ewLociNames.map(locusName => {
+					if (!(locusName in locusMap)) {
+						locusMap[locusName] =  {
+							name: locusName,
+							full_name: null,
+							symbol: null,
+							submitter_id: req.user.attributes.id
+						};
+					}
 				});
+
+				let locusPromises = _.values(locusMap)
+					.map(locus => locusHelper.addLocusRecords(locus, transaction));
+
 
 				// Group the promises by data type
 				return Promise.all([
@@ -267,8 +296,8 @@ function getSubmissionWithData(id) {
 						'childData.method',
 						'childData.method.keywordMapping',
 						'childData.keyword',
-						'childData.evidence.names',
-						'childData.evidenceSymbol'
+						'childData.evidenceWith',
+						'childData.evidenceWith.subject.names'
 					]);
 				}
 
@@ -704,6 +733,12 @@ function generateAnnotationSubmissionList(annotationList) {
 				name: annotation.related('childData').related('keyword').get('name'),
 				externalId: annotation.related('childData').related('keyword').get('external_id')
 			};
+
+			if (annotation.related('childData').related('evidenceWith').length > 0) {
+				refinedAnn.data.evidenceWith = annotation.related('childData').related('evidenceWith').map(ew => {
+					return ew.related('subject').related('names').first().get('locus_name');
+				});
+			}
 		}
 		else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
 			refinedAnn.data.locusName2 = annotation.related('childData').related('locus2').related('names').first().get('locus_name');
