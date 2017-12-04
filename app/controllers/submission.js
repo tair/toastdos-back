@@ -108,7 +108,7 @@ function submitGenesAndAnnotations(req, res, next) {
 	handleSubmissionOrCurationResponse(res, validateSubmissionRequest(req.body).then(validationResult => {
 		// Submission-only validation
 		if (!req.body.annotations.every(a => typeof a.status === 'undefined' && typeof a.id === 'undefined')) {
-			return Promise.reject('Annotations need a status and an id');
+			return Promise.reject('Annotations cannot have a status or an id');
 		}
 		
 		return performSubmissionOrCuration(req, validationResult, null);
