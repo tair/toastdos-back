@@ -44,27 +44,32 @@ const AnnotationTypeData = {
 	MOLECULAR_FUNCTION: {
 		name: 'Molecular Function',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: 'molecular_function'
+		keywordScope: 'molecular_function',
+		aspect: 'F'
 	},
 	BIOLOGICAL_PROCESS: {
 		name: 'Biological Process',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: 'biological_process'
+		keywordScope: 'biological_process',
+		aspect: 'P'
 	},
 	SUBCELLULAR_LOCATION: {
 		name: 'Subcellular Location',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: 'cellular_component'
+		keywordScope: 'cellular_component',
+		aspect: 'C'
 	},
 	ANATOMICAL_LOCATION: {
 		name: 'Anatomical Location',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: 'plant_anatomy'
+		keywordScope: 'plant_anatomy',
+		aspect: 'S'
 	},
 	TEMPORAL_EXPRESSION: {
 		name: 'Temporal Expression',
 		format: AnnotationFormats.GENE_TERM,
-		keywordScope: 'plant_structure_development_stage'
+		keywordScope: 'plant_structure_development_stage',
+		aspect: 'D'
 	},
 	PROTEIN_INTERACTION: {
 		name: 'Protein Interaction',
