@@ -11,6 +11,7 @@
     "migrate": "knex migrate:latest",
     "daemon": "node ./app/services/obo_importer/daemon.js",
     "import": "node ./app/services/obo_importer/cli.js",
+    "export": "node ./app/services/export_data_cli.js",
     "seed": "knex seed:run",
     "assign-roles": "node ./app/services/assign_roles_cli.js"
   },
