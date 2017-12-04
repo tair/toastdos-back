@@ -86,7 +86,7 @@ describe('Submission Controller', function() {
 						keyword: {
 							name: 'New keyword'
 						},
-						evidence: 'URS00000EF184'
+						evidenceWith: ['URS00000EF184']
 					}
 				},
 				{
@@ -99,7 +99,7 @@ describe('Submission Controller', function() {
 						keyword: {
 							name: 'New keyword'
 						},
-						evidence: 'URS00000EF184'
+						evidenceWith: ['URS00000EF184']
 					}
 				}
 			]
@@ -255,12 +255,21 @@ describe('Submission Controller', function() {
 					const newSubId = testdata.submission.length + 1;
 					Submission
 						.where({id: newSubId})
-						.fetch({withRelated: ['submitter', 'publication', 'annotations']})
+						.fetch({withRelated: ['submitter', 'publication', 'annotations', 'annotations.childData.evidenceWith.subject.names']})
 						.then(submission => {
 							chai.expect(submission.related('submitter').get('id')).to.equal(testdata.users[0].id);
 							chai.expect(submission.related('publication').get('doi')).to.equal(this.test.submission.publicationId);
 							chai.expect(submission.related('annotations').size()).to.equal(this.test.submission.annotations.length);
-
+							chai.expect(submission.related('annotations')
+								.at(2)
+								.related('childData')
+								.related('evidenceWith')
+								.first()
+								.related('subject')
+								.related('names')
+								.first()
+								.get('locus_name'))
+								.to.equal('URS00000EF184');
 							done();
 						});
 				});
@@ -592,6 +601,7 @@ describe('Submission Controller', function() {
 								name: testdata.keywords[1].name,
 								externalId: testdata.keywords[1].external_id
 							},
+							evidenceWith: [testdata.locus_name[0].locus_name],
 						}
 					},
 					{

@@ -238,9 +238,7 @@
     {
       "id" : 1,
       "method_id" : 1,
-      "keyword_id" : 2,
-      "evidence_id" : 1,
-      "evidence_symbol_id" : 1
+      "keyword_id" : 2
     },
     {
       "id" : 2,
@@ -439,6 +437,15 @@
       "full_name" : "Test Full Name 4",
       "source_id" : 2,
       "submitter_id" : 2
+    }
+  ],
+
+  "evidence_with" : [
+    {
+      "id" : 1,
+      "gene_term_id": 1,
+      "subject_type" : "locus",
+      "subject_id" : 1
     }
   ]
 

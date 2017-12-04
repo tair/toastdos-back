@@ -25,7 +25,8 @@ exports.seed = function(knex, Promise) {
 		knex('user').truncate(),
 		knex('locus').truncate(),
 		knex('taxon').truncate(),
-		knex('external_source').truncate()
+		knex('external_source').truncate(),
+		knex('evidence_with').truncate()
 	]).then(() => {
 		return Promise.all([
 			...testdata.taxon.map(taxon => knex('taxon').insert(taxon)),
@@ -47,6 +48,7 @@ exports.seed = function(knex, Promise) {
 			...testdata.gene_term_annotations.map(gtAnnotation => knex('gene_term_annotation').insert(gtAnnotation)),
 			...testdata.gene_gene_annotations.map(ggAnnotation => knex('gene_gene_annotation').insert(ggAnnotation)),
 			...testdata.comment_annotations.map(cAnnotation => knex('comment_annotation').insert(cAnnotation)),
+			...testdata.evidence_with.map(ew => knex('evidence_with').insert(ew)),
 			...testdata.draft.map(draft => {
 				// Have to stringify the wip_state otherwise it doesn't get added
 				let stringifiedDraft = Object.assign({}, draft);
