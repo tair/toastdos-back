@@ -70,9 +70,9 @@ function exportAllData() {
                 return  -milliseconds;
             }).filter(sub => {
                 // Only include submission's who's annotations are all not pending.
-				let annotations = sub.related('annotations');
-				let pending = annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length;
-				return (pending == 0);
+                let annotations = sub.related('annotations');
+                let pending = annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length;
+                return (pending == 0);
             });
 
             console.log(`Got ${sortedSubCollection.length} completed submissions`);
