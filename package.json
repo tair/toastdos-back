@@ -24,7 +24,7 @@
     "cookie-parser": "~1.4.3",
     "cron": "^1.2.1",
     "debug": "~2.2.0",
-    "ejs": "~2.4.1",
+    "ejs": "~2.5.5",
     "express": "~4.13.4",
     "jsonwebtoken": "^7.1.9",
     "knex": "^0.12.6",
