@@ -524,24 +524,6 @@ function generateSubmissionSummary(req, res, next) {
 				return (pending > 0 && pending < total);
 			});
 
-			sortedInProgressSubCollection = _.sortBy(sortedInProgressSubCollection,elem => {
-				let pending = elem
-					.related('annotations')
-					.filter(ann => ann.related('status').get('name') === PENDING_STATUS)
-					.length;
-				return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -pending : pending;
-			}).slice((page - 1) * itemsPerPage, page * itemsPerPage).map(submissionModel => {
-				let publication = submissionModel.related('publication');
-				let annotations = submissionModel.related('annotations');
-				return {
-					id: submissionModel.get('id'),
-					document: publication.get('doi') || publication.get('pubmed_id'),
-					total: annotations.size(),
-					pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
-					submission_date: new Date(submissionModel.get('created_at')).toISOString()
-				};
-			});
-
 			// Needs review submissions
 			let sortedNeedsReviewSubCollection = sortedSubCollection.filter(sub => {
 				let annotations = sub.related('annotations');
@@ -549,24 +531,6 @@ function generateSubmissionSummary(req, res, next) {
 				let total = annotations.size();
 
 				return (pending == total);
-			});
-
-			sortedNeedsReviewSubCollection = _.sortBy(sortedNeedsReviewSubCollection,elem => {
-				let pending = elem
-					.related('annotations')
-					.filter(ann => ann.related('status').get('name') === PENDING_STATUS)
-					.length;
-				return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -pending : pending;
-			}).slice((page - 1) * itemsPerPage, page * itemsPerPage).map(submissionModel => {
-				let publication = submissionModel.related('publication');
-				let annotations = submissionModel.related('annotations');
-				return {
-					id: submissionModel.get('id'),
-					document: publication.get('doi') || publication.get('pubmed_id'),
-					total: annotations.size(),
-					pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
-					submission_date: new Date(submissionModel.get('created_at')).toISOString()
-				};
 			});
 
 			// reviewed submissions
@@ -577,32 +541,30 @@ function generateSubmissionSummary(req, res, next) {
 				return (pending == 0);
 			});
 
-			sortedReviewedSubCollection = _.sortBy(sortedReviewedSubCollection,elem => {
-				let pending = elem
-					.related('annotations')
-					.filter(ann => ann.related('status').get('name') === PENDING_STATUS)
-					.length;
-				return (!req.query.sort_dir || req.query.sort_dir === 'desc') ? -pending : pending;
-			}).slice((page - 1) * itemsPerPage, page * itemsPerPage).map(submissionModel => {
-				let publication = submissionModel.related('publication');
-				let annotations = submissionModel.related('annotations');
-				return {
-					id: submissionModel.get('id'),
-					document: publication.get('doi') || publication.get('pubmed_id'),
-					total: annotations.size(),
-					pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
-					submission_date: new Date(submissionModel.get('created_at')).toISOString()
-				};
-			});
+			const responseMapping = subCollection => (
+				subCollection.slice(
+					(page - 1) * itemsPerPage, page * itemsPerPage
+				).map(submissionModel => {
+					let publication = submissionModel.related('publication');
+					let annotations = submissionModel.related('annotations');
+					return {
+						id: submissionModel.get('id'),
+						document: publication.get('doi') || publication.get('pubmed_id'),
+						total: annotations.size(),
+						pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
+						submission_date: new Date(submissionModel.get('created_at')).toISOString()
+					};
+				})
+			);
 
 			let finalRes = {
 				page: page,
 				page_size: itemsPerPage,
 				total_pages: Math.ceil(count.get('count') / itemsPerPage),
 				sort_by: req.param.sort_by || 'date',
-				inProgress: sortedInProgressSubCollection,
-				needsReview: sortedNeedsReviewSubCollection,
-				reviewed: sortedReviewedSubCollection,
+				inProgress: responseMapping(sortedInProgressSubCollection),
+				needsReview: responseMapping(sortedNeedsReviewSubCollection),
+				reviewed: responseMapping(sortedReviewedSubCollection),
 			};
 
 			return response.ok(res, finalRes);
