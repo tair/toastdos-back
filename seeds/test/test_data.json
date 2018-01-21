@@ -34,6 +34,11 @@
       "name" : "Name-with-hyphen",
       "external_id" : "NWH",
       "keyword_type_id" : 2
+    },
+    {
+      "id" : 5,
+      "name" : "NoExternal",
+      "keyword_type_id" : 1
     }
   ],
 

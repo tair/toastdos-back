@@ -39,7 +39,8 @@ function partialKeywordMatch(req, res, next) {
 
 	keywordTypePromise
 		.then(keywordType => {
-			let qb = knex("keyword");
+            let qb = knex("keyword");
+            qb.whereNotNull('external_id');
 			if (keywordType) {
 				if(keywordType.get('name') == 'eco') {
 					qb.rightOuterJoin('keyword_mapping', 'keyword.external_id', 'keyword_mapping.eco_id');
