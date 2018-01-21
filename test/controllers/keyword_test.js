@@ -48,7 +48,32 @@ describe('Keyword Controller', function() {
 					chai.expect(res.body[0]).to.contain(expectedKeyword);
 					done();
 				});
-		});
+        });
+        
+        it('Results with no external_id are not returned', function(done) {
+            const testSubstring = "NoExt";
+            const expectedKeyword = testdata.keywords[4];
+
+            chai.request(server)
+                .get(`/api/keyword/search?substring=${testSubstring}`)
+                .end((err,res) => {
+                    chai.expect(res.status).to.equal(200);
+                    chai.expect(res.body).to.deep.equal([]);
+                    done();
+                });
+        });
+
+        it('Searches with no results are undefined', function(done) {
+            const testSubstring = "zzz";
+
+            chai.request(server)
+                .get(`/api/keyword/search?substring=${testSubstring}`)
+                .end((err,res) => {
+                    chai.expect(res.status).to.equal(200);
+                    chai.expect(res.body).to.deep.equal([]);
+                    done();
+                });
+        });
 
 		it('Number of search results is limited', function(done) {
 			const searchLimit = 20;
@@ -146,7 +171,6 @@ describe('Keyword Controller', function() {
 			chai.request(server)
 				.get(`/api/keyword/search?substring=${sillyCaseName}`)
 				.end((err, res) => {
-				console.log(res.body);
 					chai.expect(res.status).to.equal(200);
 					chai.expect(res.body).to.have.lengthOf(1);
 					chai.expect(res.body[0]).to.contain(expectedKeyword);
@@ -164,7 +188,7 @@ describe('Keyword Controller', function() {
 					chai.expect(res.text).to.equal(`'substring' is a required field`);
 					done();
 				});
-		});
+        });
 
 	});
 
