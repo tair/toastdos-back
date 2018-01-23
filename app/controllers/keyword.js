@@ -47,6 +47,7 @@ function partialKeywordMatch(req, res, next) {
 				qb.where('keyword_type_id', '=', keywordType.get('id'));
 			}
 			qb.where('name', 'LIKE', `%${req.query.substring}%`);
+			qb.orWhere('external_id', 'LIKE', `%${req.query.substring}%`);
 			qb.whereNot('is_obsolete', 1);
 			qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
 			return qb.select("*");

@@ -155,3 +155,6 @@ resources/*
 
 # Swap files
 *.swp
+
+package-lock.json
+
