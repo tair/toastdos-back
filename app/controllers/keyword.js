@@ -39,19 +39,71 @@ function partialKeywordMatch(req, res, next) {
 
 	keywordTypePromise
 		.then(keywordType => {
-            let qb = knex("keyword");
-            qb.whereNotNull('external_id');
-			if (keywordType) {
-				if(keywordType.get('name') == 'eco') {
-					qb.rightOuterJoin('keyword_mapping', 'keyword.external_id', 'keyword_mapping.eco_id');
-				}
-				qb.where('keyword_type_id', '=', keywordType.get('id'));
+			const needsEcoId = keywordType && keywordType.get('name') == 'eco';
+
+			// List of base fields for the queries
+			const baseFields = [
+				'keyword.id as id',
+				'keyword.name as name',
+				'keyword.external_id as external_id',
+				'keyword.keyword_type_id as keyword_type_id',
+				'keyword.is_obsolete as is_obsolete',
+			];
+
+			// Keyword and synonym fields
+			const keywordFields = baseFields.slice(0);
+			keywordFields.push(knex.raw('NULL as ??', ['syn']));
+
+			const synonymFields = baseFields.slice(0);
+			synonymFields.push('synonym.name as syn');
+
+			// Remove is_obsolete from the final return value.
+			const finalFields = [
+				'id',
+				'name',
+				'syn as synonym',
+				'external_id',
+				'keyword_type_id',
+			];
+
+			// Add eco id to eco terms.
+			if (needsEcoId) {
+				finalFields.push('keyword_mapping.eco_id as eco_id');
 			}
-			qb.where('name', 'LIKE', `%${req.query.substring}%`);
-			qb.orWhere('external_id', 'LIKE', `%${req.query.substring}%`);
-			qb.whereNot('is_obsolete', 1);
-			qb.offset(0).limit(KEYWORD_SEARCH_LIMIT);
-			return qb.select("*");
+			
+			// Create the subquerys for searching cannonical names and synonym names.
+			const keywordQuery = knex.select(keywordFields)
+				.from('keyword')
+				.where('keyword.name', 'LIKE', `%${req.query.substring}%`)
+				.orWhere('external_id', 'LIKE', `%${req.query.substring}%`);
+
+			const synonymQuery = knex.select(synonymFields)
+				.from('synonym')
+				.leftJoin('keyword', 'keyword.id', 'synonym.keyword_id')
+				.where('synonym.name', 'LIKE', `%${req.query.substring}%`);
+
+			// Union the results of the two query 
+			const unionQuery = keywordQuery.union(synonymQuery).as('unionQuery');
+            const finalQuery = knex.select(finalFields).from(unionQuery);
+
+			// Limit results to the keyword type, if provided.
+			if (keywordType) {
+				finalQuery.where('keyword_type_id', '=', keywordType.get('id'));
+			}
+
+			// If it's an eco, we need to add the eco_id.
+			if (needsEcoId) {
+				finalQuery.rightJoin('keyword_mapping', 'keyword.external_id', 'keyword_mapping.eco_id');
+			}
+
+			// Make sure the keyword is not obsolete and that it has an external id.
+			finalQuery.whereNot('is_obsolete', 1);
+			finalQuery.whereNotNull('external_id');
+
+			// Order the canonical results first and only show 20.
+			finalQuery.orderBy('synonym', 'desc');
+			finalQuery.offset(0).limit(KEYWORD_SEARCH_LIMIT);
+			return finalQuery;
 		})
 		.then(results => response.ok(res, results))
 		.catch(err => {
