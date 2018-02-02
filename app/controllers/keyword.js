@@ -68,9 +68,9 @@ function partialKeywordMatch(req, res, next) {
 
 			// Add eco id to eco terms.
 			if (needsEcoId) {
-				finalFields.push('keyword_mapping.eco_id as eco_id');
+				finalFields.push('keyword_mapping.evidence_code as evidence_code');
 			}
-			
+
 			// Create the subquerys for searching cannonical names and synonym names.
 			const keywordQuery = knex.select(keywordFields)
 				.from('keyword')
@@ -93,7 +93,7 @@ function partialKeywordMatch(req, res, next) {
 
 			// If it's an eco, we need to add the eco_id.
 			if (needsEcoId) {
-				finalQuery.rightJoin('keyword_mapping', 'keyword.external_id', 'keyword_mapping.eco_id');
+				finalQuery.rightJoin('keyword_mapping', 'unionQuery.external_id', 'keyword_mapping.eco_id');
 			}
 
 			// Make sure the keyword is not obsolete and that it has an external id.
