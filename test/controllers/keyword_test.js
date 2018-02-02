@@ -190,6 +190,20 @@ describe('Keyword Controller', function() {
 				});
         });
 
+		it('Keyword search will search synonyms', function(done) {
+			const synonym = 'T 001 S 001';
+			const expectedKeyword = testdata.keywords[0];
+			chai.request(server)
+				.get(`/api/keyword/search?substring=${synonym}`)
+				.end((err, res) => {
+					chai.expect(res.status).to.equal(200);
+					chai.expect(res.body).to.have.lengthOf(1);
+					chai.expect(res.body[0]).to.contain(expectedKeyword);
+					chai.expect(res.body[0].synonym).to.equal(synonym);
+					done();
+				});
+		});
+		
 	});
 
 });
