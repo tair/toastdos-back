@@ -251,7 +251,7 @@ function exportAnnotations() {
         });
 }
 
-function exportSupplimentalData() {
+function exportSupplementalData() {
     const date = new Date().toISOString().split("T")[0];
     const filePath = EXPORTS_ROOT + '/' + date + '.json';
 
@@ -373,11 +373,11 @@ function exportSupplimentalData() {
 }
 
 function exportAllData() {
-    return exportAnnotations().then(exportSupplimentalData);
+    return exportAnnotations().then(exportSupplementalData);
 }
 
 module.exports = {
     exportAllData,
     exportAnnotations,
-    exportSupplimentalData
+    exportSupplementalData
 };
