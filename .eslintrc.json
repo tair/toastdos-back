@@ -8,6 +8,7 @@
         "sourceType": "module"
     },
     "rules": {
+        "no-trailing-spaces": "error",
         "indent": [
             "error",
             4
