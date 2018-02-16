@@ -15,5 +15,6 @@ module.exports = {
 		timestamp: tsFormat
 	},
 	database: require('../knexfile').test,
-	testsecret: 'testsecret'
+	testsecret: 'testsecret',
+	resourceRoot: process.env.RESOURCEROOT
 };
