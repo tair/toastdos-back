@@ -4,5 +4,6 @@ node_js:
 install:
   - npm install
 script:
+  - ./scripts/generate_orcid_file.js
   - npm run test
 
