@@ -150,6 +150,9 @@ out
 # Keys
 *.pem
 
+# Stuff like keys and downloaded files
+resources/*
+
 # Swap files
 *.swp
 
