@@ -1,11 +1,13 @@
 const Submission = require('../models/submission');
 const { AnnotationTypeData } = require('../lib/annotation_submission_helper');
 const fs = require('fs');
+const path = require('path');
+const config = require('../../config');
 
 const PENDING_STATUS = 'pending';
 const ACCEPTED_STATUS = 'accepted';
 
-const EXPORTS_ROOT = 'resources/exports';
+const EXPORTS_ROOT = path.join(config.resourceRoot, 'exports');
 const HEADER = `!gaf-version: 2.0
 !Project_name: The Arabidopsis Information Resource (TAIR)
 !URL: http://www.arabidopsis.org

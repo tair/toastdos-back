@@ -3,6 +3,7 @@
 const {enableCORS, allowHeaders, allowMethods} = require('../middleware/utils');
 
 const express = require('express');
+const config = require('../../config');
 let router = express.Router();
 
 const response = require('../lib/responses');
@@ -20,6 +21,7 @@ router.use('/gene', require('./gene'));
 router.use('/publication', require('./publication'));
 router.use('/submission', require('./submission'));
 router.use('/draft', require('./draft'));
+router.use('/exports', require('./exports'));
 
 /**
  * Development endpoints.

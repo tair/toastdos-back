@@ -1,7 +1,9 @@
 'use strict';
 
 const request   = require('request');
-const orcidInfo = require('../../resources/orcid_app_info.json');
+const path = require('path');
+const config = require('../../config');
+const orcidInfo = require(path.join(config.resourceRoot, 'orcid_app_info.json'));
 
 const ORCID_BASE_URL = 'https://orcid.org';
 
