@@ -21,7 +21,7 @@ function getLocusByName(name) {
 			else if (response.statusCode === 404) reject(new Error(`No Locus found for name ${name.toUpperCase()}`));
 			else {
 				let body = JSON.parse(bodyJson);
-				let taxonId =  body.xrefs.results[0].taxid;
+				let taxonId =  body.xrefs[0].taxid;
 
 				NCBI.getTaxonById(taxonId).then(taxonInfo => {
 					resolve({
