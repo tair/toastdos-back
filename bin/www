@@ -10,6 +10,9 @@ const app   = require('../app');
 const debug = require('debug')('express-mvc-starter:server');
 const http  = require('http');
 
+// Start the CronJob service.
+require('../app/services/obo_importer/daemon');
+
 // Get port from environment and store in Express.
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);

@@ -20,14 +20,17 @@ const HEADER = `!gaf-version: 2.0
 const externalSourceData = {
     'TAIR': {
         db: 'TAIR',
+        prefix: 'AGI_LocusCode',
         type: 'gene_product'
     },
     'RNA Central': {
         db: 'RNACentral',
+        prefix: 'RNACentral',
         type: 'RNA'
     },
     'Uniprot': {
         db: 'UniprotKB',
+        prefix: 'UniProtKB',
         type: 'protein'
     }
 }
@@ -102,7 +105,8 @@ function exportAnnotations() {
                                 'childData.evidence.names',
                                 'childData.evidenceSymbol',
                                 'childData.evidenceWith',
-                                'childData.evidenceWith.subject.names'
+                                'childData.evidenceWith.subject.names',
+                                'childData.evidenceWith.subject.names.source'
                             ]));
                         }
                         // TODO comment annotation
@@ -140,6 +144,17 @@ function exportAnnotations() {
                     fileStream.write(field);
                 }
                 fileStream.write('\t');
+            }
+
+            /**
+             * A helper function that will generate the valid evidence with
+             * identifier for LocusName db object.
+             * @param {LocusName} locusName 
+             */
+            function getEvidenceWithFieldFromLocusName(locusName) {
+                let locusNameText = locusName.get('locus_name');
+                let sourceName = locusName.related('source').get('name');
+                return externalSourceData[sourceName].prefix + ":" + locusNameText;
             }
 
             // Loop over each annotation and start writing the entry
@@ -198,17 +213,10 @@ function exportAnnotations() {
                     writeField(EvidenceCode);
 
                     // 8. Evidence With
-                    let EvidenceWith = null;
-                    let EvidenceWithArray = [];
-                    childData.related('evidenceWith').map(ew => {
-                        if(childData.related('evidenceWith').length == 1) {
-                            EvidenceWith = (ew.related('subject').related('names').first().get('locus_name'));
-                        }
-                        else {
-                            EvidenceWithArray.push(ew.related('subject').related('names').first().get('locus_name'));
-                            EvidenceWith = EvidenceWithArray.join('|');
-                        }
-                    });
+                    let EvidenceWith =childData.related('evidenceWith')
+                        .map(ew => ew.related('subject').related('names').first())
+                        .map(getEvidenceWithFieldFromLocusName)
+                        .join('|');
                     writeField(EvidenceWith);
 
                     // 9. Aspect
@@ -238,7 +246,7 @@ function exportAnnotations() {
                     let DateField = '';
                     let parsedCreation = new Date(annotation.get('created_at'));
                     DateField += parsedCreation.getFullYear();
-                    DateField += pad(parsedCreation.getMonth());
+                    DateField += pad(parsedCreation.getMonth() + 1);
                     DateField += pad(parsedCreation.getDate());
                     writeField(DateField);
                     
@@ -319,7 +327,7 @@ function exportAnnotations() {
                     writeField(EvidenceCode);
 
                     // 8. Evidence With
-                    let EvidenceWith = locus2Name.get('locus_name');
+                    let EvidenceWith = getEvidenceWithFieldFromLocusName(locus2Name);
                     writeField(EvidenceWith);
 
                     // 9. Aspect
@@ -349,7 +357,7 @@ function exportAnnotations() {
                     let DateField = '';
                     let parsedCreation = new Date(annotation.get('created_at'));
                     DateField += parsedCreation.getFullYear();
-                    DateField += pad(parsedCreation.getMonth());
+                    DateField += pad(parsedCreation.getMonth() + 1);
                     DateField += pad(parsedCreation.getDate());
                     writeField(DateField);
 
@@ -411,7 +419,7 @@ function exportAnnotations() {
                     writeField(EvidenceCode);
 
                     // 8. Evidence With
-                    EvidenceWith = locusName.get('locus_name');
+                    EvidenceWith = getEvidenceWithFieldFromLocusName(locusName);
                     writeField(EvidenceWith);
 
                     // 9. Aspect
@@ -441,7 +449,7 @@ function exportAnnotations() {
                     DateField = '';
                     parsedCreation = new Date(annotation.get('created_at'));
                     DateField += parsedCreation.getFullYear();
-                    DateField += pad(parsedCreation.getMonth());
+                    DateField += pad(parsedCreation.getMonth() + 1);
                     DateField += pad(parsedCreation.getDate());
                     writeField(DateField);
 

@@ -70,7 +70,7 @@ const AnnotationTypeData = {
 		name: 'Temporal Expression',
 		format: AnnotationFormats.GENE_TERM,
 		keywordScope: 'plant_structure_development_stage',
-		aspect: 'D'
+		aspect: 'G'
 	},
 	PROTEIN_INTERACTION: {
 		name: 'Protein Interaction',
