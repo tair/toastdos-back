@@ -213,10 +213,11 @@ function exportAnnotations() {
                     writeField(EvidenceCode);
 
                     // 8. Evidence With
-                    let EvidenceWith =childData.related('evidenceWith')
+                    let EvidenceWithSeparator = childData.get('is_evidence_with_or') ? '|' : ',';
+                    let EvidenceWith = childData.related('evidenceWith')
                         .map(ew => ew.related('subject').related('names').first())
                         .map(getEvidenceWithFieldFromLocusName)
-                        .join('|');
+                        .join(EvidenceWithSeparator);
                     writeField(EvidenceWith);
 
                     // 9. Aspect
