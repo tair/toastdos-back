@@ -20,5 +20,5 @@ function getKeywordTypes(req, res, next) {
 
 
 module.exports = {
-	getKeywordTypes
+    getKeywordTypes
 };

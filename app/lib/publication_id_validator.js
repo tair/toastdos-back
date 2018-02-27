@@ -18,22 +18,22 @@ const PUBMED_VALIDATOR = /^(\d+)$/;
 
 
 function doiUrl(doi) {
-	return `http://doi.org/api/handles/${doi}`;
+    return `http://doi.org/api/handles/${doi}`;
 }
 
 function pubmedUrl(pmid) {
-	return `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${pmid}`;
+    return `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${pmid}`;
 }
 
 
 function isDOI(val) {
-	let text = '' + val;
-	return !!text.match(DOI_VALIDATOR);
+    let text = '' + val;
+    return !!text.match(DOI_VALIDATOR);
 }
 
 function isPubmedId(val) {
-	let text = '' + val;
-	return !!text.match(PUBMED_VALIDATOR);
+    let text = '' + val;
+    return !!text.match(PUBMED_VALIDATOR);
 }
 
 
@@ -43,20 +43,20 @@ function isPubmedId(val) {
  * @param doi
  */
 function validateDOI(doi) {
-	return new Promise((resolve, reject) => {
-		request.get(doiUrl(doi), (error, response, bodyJson) => {
-			let body = JSON.parse(bodyJson);
+    return new Promise((resolve, reject) => {
+        request.get(doiUrl(doi), (error, response, bodyJson) => {
+            let body = JSON.parse(bodyJson);
 
 			// www.doi.org is silly and redefines standard HTTP error codes.
 			// See http://www.doi.org/factsheets/DOIProxy.html
 			// All you need to know is responseCode '1' means '200 OK'.
-			if (body.responseCode === 1) {
-				resolve(body);
-			} else {
-				reject(new Error(`DOI '${doi}' did not match any publications`));
-			}
-		});
-	});
+            if (body.responseCode === 1) {
+                resolve(body);
+            } else {
+                reject(new Error(`DOI '${doi}' did not match any publications`));
+            }
+        });
+    });
 }
 
 /**
@@ -66,23 +66,23 @@ function validateDOI(doi) {
  * @param pmid
  */
 function validatePubmedId(pmid) {
-	return new Promise((resolve, reject) => {
-		request.get(pubmedUrl(pmid), (error, response, bodyJson) => {
-			let body = JSON.parse(bodyJson);
-			let pubResult = body.result[pmid];
+    return new Promise((resolve, reject) => {
+        request.get(pubmedUrl(pmid), (error, response, bodyJson) => {
+            let body = JSON.parse(bodyJson);
+            let pubResult = body.result[pmid];
 
-			if (pubResult && !pubResult.error) {
-				resolve(body);
-			} else {
-				reject(new Error(`Pubmed ID '${pmid}' did not match any publications`));
-			}
-		});
-	});
+            if (pubResult && !pubResult.error) {
+                resolve(body);
+            } else {
+                reject(new Error(`Pubmed ID '${pmid}' did not match any publications`));
+            }
+        });
+    });
 }
 
 module.exports = {
-	isDOI,
-	isPubmedId,
-	validateDOI,
-	validatePubmedId
+    isDOI,
+    isPubmedId,
+    validateDOI,
+    validatePubmedId
 };

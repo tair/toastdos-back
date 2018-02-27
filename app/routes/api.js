@@ -28,9 +28,9 @@ router.use('/exports', require('./exports'));
  * These are only available for development, as the name implies.
  */
 if (process.env.NODE_ENV === 'development') {
-	const devOnlyController = require('../controllers/dev_only');
-	router.get('/dev/token/:id', devOnlyController.makeDevToken);
-	router.post('/dev/superuser/', devOnlyController.makeSuperUser);
+    const devOnlyController = require('../controllers/dev_only');
+    router.get('/dev/token/:id', devOnlyController.makeDevToken);
+    router.post('/dev/superuser/', devOnlyController.makeSuperUser);
 }
 
 // Generate 404s
@@ -42,12 +42,12 @@ router.use((req, res, next) => {
 
 // Handle errors
 router.use((err, req, res, next) => {
-	res.status(err.status || 500);
-	(err.status === 500) ? console.log(err.stack) : null;
-	res.json({
+    res.status(err.status || 500);
+    (err.status === 500) ? console.log(err.stack) : null;
+    res.json({
     	message: err.message,
     	error: err.stack
-	});
+    });
 });
 
 module.exports = router;

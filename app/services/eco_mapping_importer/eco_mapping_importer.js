@@ -31,22 +31,22 @@ class DataImporter extends stream.Writable {
 	 *
 	 * @returns {Promise.<null>}
 	 */
-	_write(chunk, enc, next) {
-		if (!chunk) next();
-		let mapping = JSON.parse(chunk.toString('ascii'));
-		let eco_id = mapping.eco_id;
-		let evidence_code = mapping.evidence_code;
+    _write(chunk, enc, next) {
+        if (!chunk) next();
+        let mapping = JSON.parse(chunk.toString('ascii'));
+        let eco_id = mapping.eco_id;
+        let evidence_code = mapping.evidence_code;
 
-		this._addKeywordMapping(eco_id,evidence_code)
+        this._addKeywordMapping(eco_id,evidence_code)
 			.then(() => {
-				next();
+    next();
 				// TODO: investigate promise problem
-				return null;
-			})
+    return null;
+})
 			.catch((err) => {
-				next(err);
-			});
-	}
+    next(err);
+});
+    }
 
 	/**
 	 * Adds a new Keyword Mapping or updates an existing Keyword Mapping.
@@ -55,12 +55,12 @@ class DataImporter extends stream.Writable {
 	 * @param evidence_code - evidence code
 	 * @returns {Promise.<KeywordMapping>} Created or existing keyword mapping
 	 */
-	_addKeywordMapping(ecoId, evidenceCode) {
-		return KeywordMapping.addOrGet({
-			eco_id:ecoId,
-			evidence_code:evidenceCode
-		});
-	}
+    _addKeywordMapping(ecoId, evidenceCode) {
+        return KeywordMapping.addOrGet({
+            eco_id:ecoId,
+            evidence_code:evidenceCode
+        });
+    }
 }
 
 
@@ -71,26 +71,26 @@ class DataImporter extends stream.Writable {
  * @returns {Promise.<TResult>}
  */
 function loadEcoMappingIntoDB(filepath) {
-	let dataImporter = new DataImporter();
-	let eco_mapping_parser = new EcoMappingParser();
-	let lineStream = new LineStream({keepEmptyLines: true});
+    let dataImporter = new DataImporter();
+    let eco_mapping_parser = new EcoMappingParser();
+    let lineStream = new LineStream({keepEmptyLines: true});
 
 	// clear all old mapping entries
-	return KeywordMapping.clearAll().then(() => {
-		return new Promise((resolve, reject) => {
-			fs.createReadStream(filepath)
+    return KeywordMapping.clearAll().then(() => {
+        return new Promise((resolve, reject) => {
+            fs.createReadStream(filepath)
 				.pipe(lineStream)
 				.pipe(eco_mapping_parser)
 				.pipe(dataImporter)
 				.on('finish', () => resolve())
 				.on('error', err => reject(err));
-		})
+        })
 		.catch(function(err){
-			console.error(err);
-		});
-	});
+    console.error(err);
+});
+    });
 }
 
 module.exports = {
-	loadEcoMappingIntoDB
+    loadEcoMappingIntoDB
 };

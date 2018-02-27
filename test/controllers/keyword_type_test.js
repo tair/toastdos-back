@@ -32,6 +32,6 @@ describe('KeywordType Controller', function() {
                     done();
                 });
         });
-    });  
+    });
 
 });

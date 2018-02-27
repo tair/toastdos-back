@@ -31,11 +31,11 @@ const GeneGeneAnnotation = require('../../models/gene_gene_annotation');
  */
 class DataImporter extends stream.Writable {
 
-	constructor(options) {
-		super(options);
-		this.defaultKeywordTypeName = null;
-		this.keywordTypeCache = {};
-	}
+    constructor(options) {
+        super(options);
+        this.defaultKeywordTypeName = null;
+        this.keywordTypeCache = {};
+    }
 
 	/**
 	 * Cache all KeywordTypes to speed up adding Keywords.
@@ -46,25 +46,25 @@ class DataImporter extends stream.Writable {
 	 *
 	 * @returns {*|Promise.<TResult>}
 	 */
-	loadKeywordTypeCache() {
-		return KeywordType.fetchAll().then(keywordTypes => {
-			return new Promise(resolve => {
-				keywordTypes.forEach(keywordType => {
-					this.keywordTypeCache[keywordType.get('name')] = keywordType;
-				});
-				resolve();
-			});
-		});
-	}
+    loadKeywordTypeCache() {
+        return KeywordType.fetchAll().then(keywordTypes => {
+            return new Promise(resolve => {
+                keywordTypes.forEach(keywordType => {
+                    this.keywordTypeCache[keywordType.get('name')] = keywordType;
+                });
+                resolve();
+            });
+        });
+    }
 
 	/**
 	 * Process the obo header. Some terms omit the 'namespace' field,
 	 * in which case the term's namespace comes from the default in the header.
 	 */
-	processHeader(headerJson) {
-		let header = JSON.parse(headerJson);
-		this.defaultKeywordTypeName = header['default-namespace'];
-	}
+    processHeader(headerJson) {
+        let header = JSON.parse(headerJson);
+        this.defaultKeywordTypeName = header['default-namespace'];
+    }
 
 	/**
 	 * Processes a single obo "term", adding any new Keywords,
@@ -75,34 +75,34 @@ class DataImporter extends stream.Writable {
 	 * @param term - JSON object of ontology term from obo parser
 	 * @returns {Promise.<null>}
 	 */
-	_write(chunk, enc, next) {
-		let term = JSON.parse(chunk.toString());
+    _write(chunk, enc, next) {
+        let term = JSON.parse(chunk.toString());
 
 		// Catch empty objects from a newline at the end of the OBO
-		if (_.isEmpty(term)) {
-			return next();
-		}
+        if (_.isEmpty(term)) {
+            return next();
+        }
 
 		// Parse is_obsolete into a proper true or false
-		term.is_obsolete = (term.is_obsolete === 'true');
+        term.is_obsolete = (term.is_obsolete === 'true');
 
 		// Use default KeywordType if no KeywordType is specified
-		let keywordTypePromise;
-		if (term.namespace) {
-			keywordTypePromise = this._addKeywordType(term.namespace);
-		} else {
-			keywordTypePromise = this._addKeywordType(this.defaultKeywordTypeName);
-		}
+        let keywordTypePromise;
+        if (term.namespace) {
+            keywordTypePromise = this._addKeywordType(term.namespace);
+        } else {
+            keywordTypePromise = this._addKeywordType(this.defaultKeywordTypeName);
+        }
 
-		return keywordTypePromise
+        return keywordTypePromise
 			.then(keywordType => this._addKeyword(term.name, term.id, keywordType.get('id'), term.is_obsolete))
 			.then(keyword => this._addSynonyms(term.synonym, keyword.get('id')))
 			.then(() => next())
 			.catch(err => {
-				logger.error(err);
-				next();
-			});
-	}
+    logger.error(err);
+    next();
+});
+    }
 
 	/**
 	 * Adds a new KeywordType. If the KeywordType already exists,
@@ -111,20 +111,20 @@ class DataImporter extends stream.Writable {
 	 * @param name - Plain text name of KeywordType
 	 * @returns {Promise.<KeywordType>}
 	 */
-	_addKeywordType(name) {
-		if (this.keywordTypeCache[name]) {
-			return Promise.resolve(this.keywordTypeCache[name]);
-		} else {
-			return new Promise(resolve => {
-				KeywordType.forge({name: name})
+    _addKeywordType(name) {
+        if (this.keywordTypeCache[name]) {
+            return Promise.resolve(this.keywordTypeCache[name]);
+        } else {
+            return new Promise(resolve => {
+                KeywordType.forge({name: name})
 					.save()
 					.then(keywordType => {
-						this.keywordTypeCache[keywordType.get('name')] = keywordType;
-						resolve(keywordType);
-					});
-			});
-		}
-	}
+    this.keywordTypeCache[keywordType.get('name')] = keywordType;
+    resolve(keywordType);
+});
+            });
+        }
+    }
 
 	/**
 	 * Adds a new Keyword or updates an existing Keyword.
@@ -137,37 +137,37 @@ class DataImporter extends stream.Writable {
 	 * @param isObsolete - Whether or not this keyword is obsolete
 	 * @returns {Promise.<Keyword>} Created or existing keyword
 	 */
-	_addKeyword(name, externalId, keywordTypeId, isObsolete) {
+    _addKeyword(name, externalId, keywordTypeId, isObsolete) {
 		// If this Keyword was already added from an OBO file, just update it
-		return Keyword.where('external_id', externalId).fetch().then(keyword => {
-			if (keyword) {
-				return keyword.set({
-					name: name,
-					is_obsolete: isObsolete
-				}).save();
-			}
-			else {
+        return Keyword.where('external_id', externalId).fetch().then(keyword => {
+            if (keyword) {
+                return keyword.set({
+                    name: name,
+                    is_obsolete: isObsolete
+                }).save();
+            }
+            else {
 				// A user may have previously added a keyword that now appears in an OBO file
-				return Keyword.where('name', name).fetch().then(keyword => {
-					if (keyword) {
-						return keyword.set({
-							external_id: externalId,
-							is_obsolete: isObsolete
-						}).save();
-					}
-					else {
+                return Keyword.where('name', name).fetch().then(keyword => {
+                    if (keyword) {
+                        return keyword.set({
+                            external_id: externalId,
+                            is_obsolete: isObsolete
+                        }).save();
+                    }
+                    else {
 						// If none of the above, add the whole new keyword
-						return Keyword.forge({
-							name: name,
-							external_id: externalId,
-							keyword_type_id: keywordTypeId,
-							is_obsolete: isObsolete
-						}).save();
-					}
-				});
-			}
-		});
-	}
+                        return Keyword.forge({
+                            name: name,
+                            external_id: externalId,
+                            keyword_type_id: keywordTypeId,
+                            is_obsolete: isObsolete
+                        }).save();
+                    }
+                });
+            }
+        });
+    }
 
 	/**
 	 * Adds new synonyms present in the OBO file, and deletes
@@ -177,42 +177,42 @@ class DataImporter extends stream.Writable {
 	 * @param keywordId - Foreign key ID of Keyword this Synonym applies to
 	 * @returns {Promise.<Synonym>|Promise.<[Synonym]>}
 	 */
-	_addSynonyms(oboNameLines, keywordId) {
-		return Synonym.where('keyword_id', keywordId).fetchAll().then(synonyms => {
+    _addSynonyms(oboNameLines, keywordId) {
+        return Synonym.where('keyword_id', keywordId).fetchAll().then(synonyms => {
 			// Sometimes this line can be null, so just resolve
-			if (!oboNameLines) {
-				return Promise.resolve(null);
-			}
+            if (!oboNameLines) {
+                return Promise.resolve(null);
+            }
 
-			let existing = synonyms.map(synonym => synonym.get('name'));
+            let existing = synonyms.map(synonym => synonym.get('name'));
 
 			// Ensure we always have an array of obo synonym lines
-			if (!(oboNameLines instanceof Array)) {
-				oboNameLines = [oboNameLines];
-			}
+            if (!(oboNameLines instanceof Array)) {
+                oboNameLines = [oboNameLines];
+            }
 
 			// Process incoming synonym name strings
-			let provided = oboNameLines.map(oboLine => {
+            let provided = oboNameLines.map(oboLine => {
 				// Pull 'synonym name' out of 'synonym: "synonym name" RELATED [GOC:mah]'
-				let name = oboLine.split('"')[1];
+                let name = oboLine.split('"')[1];
 
 				// PostgreSQL has an issue with names longer than 255 characters
-				if (name.length > 255) {
-					name = name.substring(0, 252) + '...';
-				}
+                if (name.length > 255) {
+                    name = name.substring(0, 252) + '...';
+                }
 
-				return name;
-			});
+                return name;
+            });
 
-			let staleSynonyms = _.difference(existing, provided);
-			let newSynonyms = _.difference(provided, existing).map(name => ({name: name, keyword_id: keywordId}));
+            let staleSynonyms = _.difference(existing, provided);
+            let newSynonyms = _.difference(provided, existing).map(name => ({name: name, keyword_id: keywordId}));
 
-			return Promise.all([
-				Synonym.where('name', 'IN', staleSynonyms).destroy(),
-				Synonym.addAll(newSynonyms)
-			]);
-		});
-	}
+            return Promise.all([
+                Synonym.where('name', 'IN', staleSynonyms).destroy(),
+                Synonym.addAll(newSynonyms)
+            ]);
+        });
+    }
 
 }
 
@@ -222,105 +222,105 @@ class DataImporter extends stream.Writable {
  * See processDeletedTerms for details.
  */
 class DeletedTermHandler extends stream.Writable {
-	_write(chunk, enc, next) {
-		let term = JSON.parse(chunk.toString());
+    _write(chunk, enc, next) {
+        let term = JSON.parse(chunk.toString());
 
-		bookshelf.transaction(transaction => {
+        bookshelf.transaction(transaction => {
 			// Keyword to be deleted
-			let oldKeywordProm = Keyword.getByExtId(term.id, transaction);
+            let oldKeywordProm = Keyword.getByExtId(term.id, transaction);
 
 			// Synonym whose parent Keyword will be used to replace deleted Keyword
-			let mergeSynonymProm = Synonym
+            let mergeSynonymProm = Synonym
 				.where('name', term.name)
 				.fetch({
-					withRelated: 'keyword',
-					transacting: transaction
-				});
+    withRelated: 'keyword',
+    transacting: transaction
+});
 
 			// Used for collection.save methods called below
-			let updateParams = {
-				method: 'update',
-				require: false,
-				patch: true,
-				transacting: transaction
-			};
+            let updateParams = {
+                method: 'update',
+                require: false,
+                patch: true,
+                transacting: transaction
+            };
 
-			return Promise.all([oldKeywordProm, mergeSynonymProm])
+            return Promise.all([oldKeywordProm, mergeSynonymProm])
 				.then(([oldKeyword, mergeSynonym]) => {
 
 					// Skip Keywords we can't find in our system.
-					if (!oldKeyword) {
-						throw new Error('Skip');
-					}
+    if (!oldKeyword) {
+        throw new Error('Skip');
+    }
 
 					// We need a Keyword to merge into
-					if (!mergeSynonym || !mergeSynonym.related('keyword')) {
-						throw new Error('NoMergeFound');
-					}
+    if (!mergeSynonym || !mergeSynonym.related('keyword')) {
+        throw new Error('NoMergeFound');
+    }
 
 					// Point all Annotations referencing the deleted Keyword to the merge Keyword.
 					// Do operations one-by-one to avoid race conditions with GeneTermAnnotations.
 					// Carry this hash of Keyword IDs through each promise in this chain.
-					return Promise.resolve({
-						old: oldKeyword.get('id'),
-						merge: mergeSynonym.related('keyword').get('id')
-					});
-				})
+    return Promise.resolve({
+        old: oldKeyword.get('id'),
+        merge: mergeSynonym.related('keyword').get('id')
+    });
+})
 				.then(keywordIDs => {
 					// Update method_id on GeneTermAnnotations
-					let gtMethodProm = GeneTermAnnotation
+    let gtMethodProm = GeneTermAnnotation
 						.query(qb => qb.where('method_id', keywordIDs.old))
 						.save({method_id: keywordIDs.merge}, updateParams);
 
-					return Promise.all([Promise.resolve(keywordIDs), gtMethodProm]);
-				})
+    return Promise.all([Promise.resolve(keywordIDs), gtMethodProm]);
+})
 				.then(([keywordIDs, ignore_res]) => {
 					// Update keyword_id on GeneTermAnnotations
-					let gtKeywordProm = GeneTermAnnotation
+    let gtKeywordProm = GeneTermAnnotation
 						.query(qb => qb.where('keyword_id', keywordIDs.old))
 						.save({keyword_id: keywordIDs.merge}, updateParams);
 
-					return Promise.all([Promise.resolve(keywordIDs), gtKeywordProm]);
-				})
+    return Promise.all([Promise.resolve(keywordIDs), gtKeywordProm]);
+})
 				.then(([keywordIDs, ignore_res]) => {
 					// Update method_id on GeneGeneAnnotations
-					let ggMethodProm = GeneGeneAnnotation
+    let ggMethodProm = GeneGeneAnnotation
 						.query(qb => qb.where('method_id', keywordIDs.old))
 						.save({method_id: keywordIDs.merge}, updateParams);
 
-					return Promise.all([Promise.resolve(keywordIDs), ggMethodProm]);
-				})
+    return Promise.all([Promise.resolve(keywordIDs), ggMethodProm]);
+})
 				.then(([keywordIDs, ignore_res]) => {
 					// Delete removed Synonyms
-					let synProm = Synonym
+    let synProm = Synonym
 						.where('keyword_id', keywordIDs.old)
 						.destroy({transacting: transaction});
 
-					return Promise.all([Promise.resolve(keywordIDs), synProm]);
-				})
+    return Promise.all([Promise.resolve(keywordIDs), synProm]);
+})
 				.then(([keywordIDs, ignore_res]) => {
 					// Delete removed Keyword
-					return Keyword
+    return Keyword
 						.where('id', keywordIDs.old)
 						.destroy({transacting: transaction});
-				});
-		})
+});
+        })
 		.then(() => next()) // Transaction commits automatically
 		.catch(err => {
 			// Transaction rolls back automatically on error
 
 			// Log errors, but move onto next term
-			if (err.message === 'Skip') {
-				logger.warn(`Tried to delete Keyword with ID "${term.id}", but could not find it in our system.`);
-			} else if (err.message === 'NoMergeFound') {
-				logger.error('Found no keyword to merge into when deleting term: %j', term);
-			} else {
-				logger.error(err);
-			}
+    if (err.message === 'Skip') {
+        logger.warn(`Tried to delete Keyword with ID "${term.id}", but could not find it in our system.`);
+    } else if (err.message === 'NoMergeFound') {
+        logger.error('Found no keyword to merge into when deleting term: %j', term);
+    } else {
+        logger.error(err);
+    }
 
-			next();
-		});
-	}
+    next();
+});
+    }
 }
 
 
@@ -331,24 +331,24 @@ class DeletedTermHandler extends stream.Writable {
  * @returns {Promise.<TResult>}
  */
 function loadOboIntoDB(filepath) {
-	return new Promise((resolve, reject) => {
-		let dataImporter = new DataImporter();
+    return new Promise((resolve, reject) => {
+        let dataImporter = new DataImporter();
 
 		// Sets 'this' in the header callback to the DataImporter instead of the OboParser
-		let boundHeaderParser = dataImporter.processHeader.bind(dataImporter);
+        let boundHeaderParser = dataImporter.processHeader.bind(dataImporter);
 
-		let oboParser = new OboParser(boundHeaderParser);
-		let lineStream = new LineStream({keepEmptyLines: true});
+        let oboParser = new OboParser(boundHeaderParser);
+        let lineStream = new LineStream({keepEmptyLines: true});
 
-		dataImporter.loadKeywordTypeCache().then(() => {
-			fs.createReadStream(filepath)
+        dataImporter.loadKeywordTypeCache().then(() => {
+            fs.createReadStream(filepath)
 				.pipe(lineStream)
 				.pipe(oboParser)
 				.pipe(dataImporter)
 				.on('finish', () => resolve())
 				.on('error', err => reject(err));
-		});
-	});
+        });
+    });
 }
 
 /**
@@ -368,38 +368,38 @@ function loadOboIntoDB(filepath) {
  * @returns {Promise.<TResult>}
  */
 function processDeletedTerms(newOboPath, oldOboPath) {
-	let cachedPath = oldOboPath;
+    let cachedPath = oldOboPath;
 
 	// Use cached obo if no old obo is specified
-	if (!oldOboPath) {
+    if (!oldOboPath) {
 		// Separate filename from filepath
-		let splitPath = newOboPath.split('/');
-		let filename = splitPath.pop();
-		let filePath = splitPath.join('/');
+        let splitPath = newOboPath.split('/');
+        let filename = splitPath.pop();
+        let filePath = splitPath.join('/');
 
-		cachedPath = `${filePath}/cache/${filename}`;
-	}
+        cachedPath = `${filePath}/cache/${filename}`;
+    }
 
 	// Make sure our obo files actually exist
-	if (!fs.existsSync(newOboPath)) {
-		return Promise.reject(new Error(`File "${newOboPath}" does not exist`));
-	}
-	if (!fs.existsSync(cachedPath)) {
-		return Promise.reject(new Error(`File "${cachedPath}" does not exist`));
-	}
+    if (!fs.existsSync(newOboPath)) {
+        return Promise.reject(new Error(`File "${newOboPath}" does not exist`));
+    }
+    if (!fs.existsSync(cachedPath)) {
+        return Promise.reject(new Error(`File "${cachedPath}" does not exist`));
+    }
 
 	// Set up the processing pipeline
-	return new Promise((resolve, reject) => {
-		unixDiff.unixDiff(cachedPath, newOboPath)
+    return new Promise((resolve, reject) => {
+        unixDiff.unixDiff(cachedPath, newOboPath)
 			.pipe(new DeletedOboTermExtractor())
 			.pipe(new OboParser())
 			.pipe(new DeletedTermHandler())
 			.on('finish', data => resolve(data))
 			.on('error', err => reject(err));
-	});
+    });
 }
 
 module.exports = {
-	loadOboIntoDB,
-	processDeletedTerms
+    loadOboIntoDB,
+    processDeletedTerms
 };

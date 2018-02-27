@@ -13,12 +13,12 @@ let publicCert = '';
 
 // Use a basic JWT secret while testing
 if (process.env.NODE_ENV === 'test') {
-	const testConfig = require('../../config/test');
-	privateCert = publicCert = testConfig.testsecret;
+    const testConfig = require('../../config/test');
+    privateCert = publicCert = testConfig.testsecret;
 } else {
-	const fs = require('fs');
-	privateCert = fs.readFileSync(JWT_PRIVATE_CERT_FILE);
-	publicCert = fs.readFileSync(JWT_PUBLIC_CERT_FILE);
+    const fs = require('fs');
+    privateCert = fs.readFileSync(JWT_PRIVATE_CERT_FILE);
+    publicCert = fs.readFileSync(JWT_PUBLIC_CERT_FILE);
 }
 
 /**
@@ -27,7 +27,7 @@ if (process.env.NODE_ENV === 'test') {
  * @param  {Function} callback  - the callback
  */
 function signToken(tokenData, callback) {
-	return jwt.sign(tokenData, privateCert, config.jwt, callback);
+    return jwt.sign(tokenData, privateCert, config.jwt, callback);
 }
 
 /**
@@ -36,11 +36,11 @@ function signToken(tokenData, callback) {
  * @param  {Function} 	callback - the callback
  */
 function verifyToken(token, callback) {
-	return jwt.verify(token, publicCert, callback);
+    return jwt.verify(token, publicCert, callback);
 }
 
 
 module.exports = {
-	signToken,
-	verifyToken
+    signToken,
+    verifyToken
 };

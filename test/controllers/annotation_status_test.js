@@ -12,25 +12,25 @@ const testdata = require('../../seeds/test/test_data.json');
 
 describe('Annotation Status Controller', function() {
 
-	before('Setup SQLite memory database', function() {
-		return knex.migrate.latest();
-	});
+    before('Setup SQLite memory database', function() {
+        return knex.migrate.latest();
+    });
 
-	beforeEach('Populate SQLite memory DB with fresh test data', function() {
-		return knex.seed.run();
-	});
+    beforeEach('Populate SQLite memory DB with fresh test data', function() {
+        return knex.seed.run();
+    });
 
-	describe('GET /api/annotationstatus/', function() {
+    describe('GET /api/annotationstatus/', function() {
 
-		it('Successfully retrieves all statuses', function(done) {
-			chai.request(server)
+        it('Successfully retrieves all statuses', function(done) {
+            chai.request(server)
 				.get('/api/annotationstatus/')
 				.end((err, res) => {
-					chai.expect(res.status).to.equal(200);
-					chai.expect(res.body).to.containSubset(testdata.annotation_statuses);
-					done();
-				});
-		});
-	});
+    chai.expect(res.status).to.equal(200);
+    chai.expect(res.body).to.containSubset(testdata.annotation_statuses);
+    done();
+});
+        });
+    });
 
 });

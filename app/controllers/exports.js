@@ -15,16 +15,16 @@ const EXPORTS_PATH = path.join(config.resourceRoot, 'exports');
  * 500 can't read the exports directory
  */
 function list(req, res, next) {
-	fs.readdir(EXPORTS_PATH, function(err, items) {
-		if (!err) {
-			response.ok(res, items);
-		} else {
-			response.serverError(res, "Error reading exports directory.");
-		}
-	});
+    fs.readdir(EXPORTS_PATH, function(err, items) {
+        if (!err) {
+            response.ok(res, items);
+        } else {
+            response.serverError(res, "Error reading exports directory.");
+        }
+    });
 }
 
 
 module.exports = {
-	list
+    list
 };

@@ -11,18 +11,18 @@ const locusHelper = require('../lib/locus_submission_helper');
  * 404 if we find nothing
  */
 function getByLocusName(req, res, next) {
-	locusHelper.verifyLocus(req.params.name)
+    locusHelper.verifyLocus(req.params.name)
 		.then(locus => response.ok(res, locus))
 		.catch(err => {
-			if (err.message === `No Locus found for name ${req.params.name}`) {
-				return response.notFound(res, `No Locus found for name ${req.params.name}`);
-			} else {
-				return response.defaultServerError(res, err);
-			}
-		});
+    if (err.message === `No Locus found for name ${req.params.name}`) {
+        return response.notFound(res, `No Locus found for name ${req.params.name}`);
+    } else {
+        return response.defaultServerError(res, err);
+    }
+});
 }
 
 
 module.exports = {
-	getByLocusName
+    getByLocusName
 };

@@ -11,12 +11,12 @@ const response = require('../lib/responses');
  * 500 on internal error
  */
 function getAnnotationStatuses(req, res, next) {
-	AnnotationStatus.fetchAll()
+    AnnotationStatus.fetchAll()
 		.then(statuses => response.ok(res, statuses))
 		.catch(err => response.defaultServerError(res, err));
 }
 
 
 module.exports = {
-	getAnnotationStatuses
+    getAnnotationStatuses
 };

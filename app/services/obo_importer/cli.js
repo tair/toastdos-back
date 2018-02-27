@@ -21,35 +21,35 @@ const eco_mapping_importer = require('../eco_mapping_importer/eco_mapping_import
  * Returns a Promise that resolves when complete, or rejects on error
  */
 function loadTarget(target) {
-	if (!target) {
-		return Promise.reject('Bad target');
-	}
-	else if (target === 'eco') {
-		return updater.updateKeywordsUsing('https://raw.githubusercontent.com/evidenceontology/evidenceontology/master/eco.obo');
-	}
-	else if (target === 'ecomap') {
-		return eco_mapping_updater.updateKeywordMappingsUsing('https://raw.githubusercontent.com/evidenceontology/evidenceontology/master/gaf-eco-mapping-derived.txt');
-	}
-	else if (target === 'po') {
-		return updater.updateKeywordsUsing('http://purl.obolibrary.org/obo/po.obo');
-	}
-	else if (target === 'go') {
-		return updater.updateKeywordsUsing('http://www.geneontology.org/ontology/go.obo');
-	}
-	else if (fs.existsSync(target)) {
-		console.log(`Running import on file '${target}'`);
-		return importer.loadOboIntoDB(target);
-	}
-	else {
-		return updater.updateKeywordsUsing(target);
-	}
+    if (!target) {
+        return Promise.reject('Bad target');
+    }
+    else if (target === 'eco') {
+        return updater.updateKeywordsUsing('https://raw.githubusercontent.com/evidenceontology/evidenceontology/master/eco.obo');
+    }
+    else if (target === 'ecomap') {
+        return eco_mapping_updater.updateKeywordMappingsUsing('https://raw.githubusercontent.com/evidenceontology/evidenceontology/master/gaf-eco-mapping-derived.txt');
+    }
+    else if (target === 'po') {
+        return updater.updateKeywordsUsing('http://purl.obolibrary.org/obo/po.obo');
+    }
+    else if (target === 'go') {
+        return updater.updateKeywordsUsing('http://www.geneontology.org/ontology/go.obo');
+    }
+    else if (fs.existsSync(target)) {
+        console.log(`Running import on file '${target}'`);
+        return importer.loadOboIntoDB(target);
+    }
+    else {
+        return updater.updateKeywordsUsing(target);
+    }
 }
 
 loadTarget(process.argv[2])
 	.then(() => process.exit(0))
 	.catch(err => {
-		if (err === 'Bad target') console.log('Usage: npm run import <target>');
-		else console.error(err);
+    if (err === 'Bad target') console.log('Usage: npm run import <target>');
+    else console.error(err);
 
-		process.exit(1);
-	});
+    process.exit(1);
+});

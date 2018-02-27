@@ -33,11 +33,11 @@ const externalSourceData = {
         prefix: 'UniProtKB',
         type: 'protein'
     }
-}
+};
 
 /**
  * A simple leading 0 number padding helper function
- * @param {Number} n 
+ * @param {Number} n
  */
 function pad(n){
     return n < 10 ? '0' + n : '' + n;
@@ -128,7 +128,7 @@ function exportAnnotations() {
                                 'childData.locus2'
                             ]));
                         }
-                    })
+                    });
             });
             return Promise.all(annotationsToExport);
         }).then(annotationsToExport => {
@@ -137,7 +137,7 @@ function exportAnnotations() {
 
             /**
              * A helper function that will null check writing a field to the fileStream
-             * @param {String|null|undefined} field 
+             * @param {String|null|undefined} field
              */
             function writeField(field) {
                 if (typeof field !== 'undefined' && field !== null && field !== '') {
@@ -149,7 +149,7 @@ function exportAnnotations() {
             /**
              * A helper function that will generate the valid evidence with
              * identifier for LocusName db object.
-             * @param {LocusName} locusName 
+             * @param {LocusName} locusName
              */
             function getEvidenceWithFieldFromLocusName(locusName) {
                 let locusNameText = locusName.get('locus_name');
@@ -165,7 +165,7 @@ function exportAnnotations() {
                     const childData = annotation.related('childData');
                     const locusName = annotation.related('locus').related('names').shift();
                     const locusSymbol = annotation.related('locusSymbol');
-                    const externalSourceName = locusName.related('source').get('name')
+                    const externalSourceName = locusName.related('source').get('name');
                     const sourceData = externalSourceData[externalSourceName];
                     if (!sourceData) {
                         throw new Error('No Source Data for source name: ' + externalSourceName);
@@ -182,7 +182,7 @@ function exportAnnotations() {
                     // 3. DB Object Symbol
                     let DBObjectSymbol;
                     if (locusSymbol && locusSymbol.get('symbol')) {
-                        DBObjectSymbol = locusSymbol.get('symbol')
+                        DBObjectSymbol = locusSymbol.get('symbol');
                     } else {
                         DBObjectSymbol = DBObjectID;
                     }
@@ -250,11 +250,11 @@ function exportAnnotations() {
                     DateField += pad(parsedCreation.getMonth() + 1);
                     DateField += pad(parsedCreation.getDate());
                     writeField(DateField);
-                    
+
                     //15. Assigned By
                     let AssignedBy = 'ORCID:' + annotation.related('submitter').get('orcid_id');
                     writeField(AssignedBy);
-                    
+
                     //16. Annotation Extension
                     let AnnotationExtension = null;
                     writeField(AnnotationExtension);
@@ -297,7 +297,7 @@ function exportAnnotations() {
                     // 3. DB Object Symbol
                     let DBObjectSymbol;
                     if (locusSymbol && locusSymbol.get('symbol')) {
-                        DBObjectSymbol = locusSymbol.get('symbol')
+                        DBObjectSymbol = locusSymbol.get('symbol');
                     } else {
                         DBObjectSymbol = DBObjectID;
                     }
@@ -375,7 +375,7 @@ function exportAnnotations() {
                     writeField(GeneProductFormID);
 
                     fileStream.write('\n');
-                    
+
                     //Data for second locus with first as evidence
 
                     // 1. The DB field
@@ -389,7 +389,7 @@ function exportAnnotations() {
                     // 3. DB Object Symbol
                     DBObjectSymbol;
                     if (locus2Symbol && locus2Symbol.get('symbol')) {
-                        DBObjectSymbol = locus2Symbol.get('symbol')
+                        DBObjectSymbol = locus2Symbol.get('symbol');
                     } else {
                         DBObjectSymbol = DBObjectID;
                     }
@@ -556,10 +556,10 @@ function exportSupplementalData() {
 
                 const locusName = annotation.related('locus').related('names').shift();
                 const locusKey = annotation.related('locus').get('id') + ':' + DBReference;
-                
+
                 if (!lociMap.hasOwnProperty(locusKey)) {
                     const locusSymbol = annotation.related('locusSymbol');
-                    const externalSourceName = locusName.related('source').get('name')
+                    const externalSourceName = locusName.related('source').get('name');
                     const sourceData = externalSourceData[externalSourceName];
 
                     let DBObjectName = null;
@@ -568,9 +568,9 @@ function exportSupplementalData() {
                     }
                     let DBObjectSymbol = null;
                     if (locusSymbol && locusSymbol.get('symbol')) {
-                        DBObjectSymbol = locusSymbol.get('symbol')
+                        DBObjectSymbol = locusSymbol.get('symbol');
                     }
-                
+
                     lociMap[locusKey] = {
                         publication: DBReference,
                         locus: locusName.get('locus_name'),
