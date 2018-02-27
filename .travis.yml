@@ -24,4 +24,15 @@ deploy:
     upload-dir: "back/$TRAVIS_BRANCH"
     on:
       branch: development
+  - provider: codedeploy
+    access_key_id: $AWS_ACCESS_KEY
+    secret_access_key: $AWS_SECRET_KEY
+    application: $AWS_APP_NAME
+    deployment_group: $AWS_DEPLOYMENT_GROUP
+    region: $AWS_REGION
+    bucket: $AWS_BUCKET
+    key: "back/$TRAVIS_BRANCH/$TRAVIS_COMMIT.zip"
+    wait-until-deployed: true
+    on:
+      branch: development
 
