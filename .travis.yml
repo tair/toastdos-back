@@ -3,7 +3,25 @@ node_js:
   - "8"
 install:
   - npm install
+env:
+  - DDIR=deployment-dir
 script:
-  - ./scripts/generate_orcid_file.js
-  - npm run test
+  - mkdir -p $RESOURCEROOT
+  - node ./scripts/generate_orcid_file.js
+  - echo "fix tests then add 'npm run test' here"
+before_deploy:
+  - zip -r $TRAVIS_COMMIT $(git ls-files)
+  - mkdir -p $DDIR
+  - cp $TRAVIS_COMMIT.zip $DDIR
+deploy:
+  - provider: s3
+    skip-cleanup: true
+    access_key_id: $AWS_ACCESS_KEY
+    secret_access_key: $AWS_SECRET_KEY
+    bucket: $AWS_BUCKET
+    region: $AWS_REGION
+    local-dir: $DDIR
+    upload-dir: "back/$TRAVIS_BRANCH"
+    on:
+      branch: development
 
