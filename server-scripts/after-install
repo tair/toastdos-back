@@ -6,14 +6,14 @@
 # export NODE_ENV=production
 # export RESOURCEROOT=/home/ec2-user/resources
 
-cd /home/ec2-user/codedeploy-back-landingpad/
+cd /home/ec2-user/codedeploy-landingpad/back/
 # npm install
 # npm run migrate
 # npm run exec knex seed:run
 
 # Replace the old deployment files with the new ones
 # rm -rf /home/ec2-user/deployments/toastdos-back
-# cp -r /home/ec2-user/codedeploy-back-landingpad/ /home/ec2-user/deployments/toastdos-back
+# cp -r /home/ec2-user/codedeploy-landingpad/back/ /home/ec2-user/deployments/toastdos-back
 
 # Restart the service
 # sudo /usr/bin/systemctl restart toastdos-back
