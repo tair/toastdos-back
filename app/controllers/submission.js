@@ -690,6 +690,8 @@ function generateAnnotationSubmissionList(annotationList) {
 				evidenceCode: annotation.related('childData').related('method').related('keywordMapping').get('evidence_code')
 			};
 
+			refinedAnn.data.isEvidenceWithOr = annotation.related('childData').get('is_evidence_with_or');
+
 			refinedAnn.data.keyword = {
 				id: annotation.related('childData').related('keyword').get('id'),
 				name: annotation.related('childData').related('keyword').get('name'),
