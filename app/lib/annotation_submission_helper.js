@@ -22,7 +22,7 @@ const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'
 const AnnotationFormats = {
 	GENE_TERM: {
 		name: 'gene_term_annotation',
-		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidenceWith']),
+		fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidenceWith', 'isEvidenceWithOr']),
 		optionalFields: ['evidenceWith'],
 		verifyReferences: verifyGeneTermFields,
 		createRecords: createGeneTermRecords
@@ -299,7 +299,8 @@ function verifyCommentFields(annotation, locusMap) {
 function createGeneTermRecords(isCuration, annotation, locusMap, transaction) {
 	let subAnnotation = {
 		method_id: annotation.data.method.id,
-		keyword_id: annotation.data.keyword.id
+		keyword_id: annotation.data.keyword.id,
+		is_evidence_with_or: !!annotation.data.isEvidenceWithOr
 	};
 
 	if (isCuration) {
