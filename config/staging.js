@@ -20,5 +20,6 @@ module.exports = {
 	jwt: {
 		algorithm: 'RS256',
 		expiresIn: '1800000', // expire after 1 hour
-	}
+	},
+	resourceRoot: process.env.RESOURCEROOT
 };

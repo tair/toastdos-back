@@ -5,8 +5,10 @@ const md5file = require('md5-file');
 
 const oboHelper   = require('./obo_downloader');
 const oboImporter = require('./obo_importer');
+const path = require('path');
+const config = require('../../../config');
 
-const OBO_ROOT = 'resources/obo';
+const OBO_ROOT = path.join(config.resourceRoot, 'obo');
 
 /**
  * Updates our database with new keywords from obo files.
