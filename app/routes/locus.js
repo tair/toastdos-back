@@ -1,6 +1,6 @@
 'use strict';
 
-const geneController = require('../controllers/gene');
+const geneController = require('../controllers/locus');
 
 const express = require('express');
 let router = express.Router();

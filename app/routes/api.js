@@ -17,7 +17,7 @@ router.use('/login', require('./login'));
 router.use('/keywordtype', require('./keyword_type'));
 router.use('/keyword', require('./keyword'));
 router.use('/annotationstatus', require('./annotation_status'));
-router.use('/gene', require('./gene'));
+router.use('/locus', require('./locus'));
 router.use('/publication', require('./publication'));
 router.use('/submission', require('./submission'));
 router.use('/draft', require('./draft'));
