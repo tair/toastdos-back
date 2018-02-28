@@ -1,6 +1,5 @@
 'use strict';
 
-const Keyword     = require('../models/keyword');
 const KeywordType = require('../models/keyword_type');
 
 const response = require('../lib/responses');
@@ -20,7 +19,7 @@ const KEYWORD_SEARCH_LIMIT = 20;
  * 200 with search results
  * 400 for invalid substring or keyword_scope
  */
-function partialKeywordMatch(req, res, next) {
+function partialKeywordMatch(req, res) {
     if (!req.query.substring) {
         return response.badRequest(res, `'substring' is a required field`);
     }

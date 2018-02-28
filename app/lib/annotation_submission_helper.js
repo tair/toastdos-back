@@ -11,8 +11,6 @@ const AnnotationType     = require('../models/annotation_type');
 const Keyword            = require('../models/keyword');
 const EvidenceWith       = require('../models/evidence_with');
 
-const knex = require('../lib/bookshelf').knex;
-
 const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'];
 
 /* This is a bastardized strategy pattern to change

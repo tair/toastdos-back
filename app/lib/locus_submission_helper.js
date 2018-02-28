@@ -6,7 +6,6 @@ const Uniprot   = require('../lib/uniprot_api');
 const RNACental = require('../lib/rna_central_api');
 const TAIR      = require('../lib/tair_api');
 
-const Locus      = require('../models/locus');
 const LocusName  = require('../models/locus_name');
 const GeneSymbol = require('../models/gene_symbol');
 
@@ -129,7 +128,7 @@ function verifyLocus(name) {
     if (aggregateError.every(err => err.message.includes('No Locus found'))) {
         reject(new Error(`No Locus found for name ${name}`));
     } else {
-        reject(err);
+        reject(aggregateError);
     }
 });
         }
@@ -145,7 +144,7 @@ function verifyLocus(name) {
     if (aggregateError.every(err => err.message.includes('No Locus found'))) {
         reject(new Error(`No Locus found for name ${name}`));
     } else {
-        reject(err);
+        reject(aggregateError);
     }
 });
         }

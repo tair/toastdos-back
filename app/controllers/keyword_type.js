@@ -11,11 +11,11 @@ const response = require('../lib/responses');
  * 200 with list of keyword types
  * 500 on internal server error
  */
-function getKeywordTypes(req, res, next) {
+function getKeywordTypes(req, res) {
     return KeywordType
-	    .fetchAll()
-	    .then(keywordtypes => response.ok(res, keywordtypes))
-	    .catch(err => response.defaultServerError(res, err));
+        .fetchAll()
+        .then(keywordtypes => response.ok(res, keywordtypes))
+        .catch(err => response.defaultServerError(res, err));
 }
 
 

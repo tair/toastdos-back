@@ -473,7 +473,7 @@ function exportAnnotations() {
 
             // Close the file and wait for it to be finished before resolving this promise.
             fileStream.end();
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 fileStream
                     .on('finish', () => {
                         console.log('Sucessfully finished writing the GAF export file');
@@ -526,7 +526,7 @@ function exportSupplementalData() {
             // Make a flat array for each annotation
             const annotationsToExport = [];
             sortedSubCollection.map(submission => {
-                let annotationPromises = submission
+                submission
                     .related('annotations')
                     .filter(ann => ann.related('status').get('name') === ACCEPTED_STATUS)
                     .map(annotation => {

@@ -7,14 +7,9 @@
 const stream     = require('stream');
 const fs         = require('fs');
 const LineStream = require('byline').LineStream;
-const _          = require('lodash');
 
 const EcoMappingParser   = require('../../lib/eco_mapping_parser').EcoMappingParser;
 
-const logger = require('../logger');
-
-const bookshelf          = require('../../lib/bookshelf');
-const Keyword            = require('../../models/keyword');
 const KeywordMapping     = require('../../models/keyword_mapping');
 
 

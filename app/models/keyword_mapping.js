@@ -49,7 +49,7 @@ const KeywordMapping = bookshelf.model('KeywordMapping', {
                 }
             });
     },
-    clearAll: function(params, transaction) {
+    clearAll: function() {
         return bookshelf.knex('keyword_mapping').truncate();
     }
 });

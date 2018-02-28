@@ -16,7 +16,7 @@ const Role = require('../models/role');
  * JWT signed with that user ID.
  * This sidesteps the need to manually login / validate through the orcid site.
  */
-function makeDevToken(req, res, next) {
+function makeDevToken(req, res) {
     User.where({id: req.params.id})
 		.fetch()
 		.then(fetchedUser => {
@@ -44,7 +44,7 @@ function makeDevToken(req, res, next) {
  * Makes a user with all roles.
  * Responds with created user.
  */
-function makeSuperUser(req, res, next) {
+function makeSuperUser(req, res) {
     let getRolesProm = Role.fetchAll();
 
 	// Make a new user with a random Orcid ID.

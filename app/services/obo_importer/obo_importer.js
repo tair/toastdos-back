@@ -274,7 +274,7 @@ class DeletedTermHandler extends stream.Writable {
 
     return Promise.all([Promise.resolve(keywordIDs), gtMethodProm]);
 })
-				.then(([keywordIDs, ignore_res]) => {
+				.then(([keywordIDs]) => {
 					// Update keyword_id on GeneTermAnnotations
     let gtKeywordProm = GeneTermAnnotation
 						.query(qb => qb.where('keyword_id', keywordIDs.old))
@@ -282,7 +282,7 @@ class DeletedTermHandler extends stream.Writable {
 
     return Promise.all([Promise.resolve(keywordIDs), gtKeywordProm]);
 })
-				.then(([keywordIDs, ignore_res]) => {
+				.then(([keywordIDs]) => {
 					// Update method_id on GeneGeneAnnotations
     let ggMethodProm = GeneGeneAnnotation
 						.query(qb => qb.where('method_id', keywordIDs.old))
@@ -290,7 +290,7 @@ class DeletedTermHandler extends stream.Writable {
 
     return Promise.all([Promise.resolve(keywordIDs), ggMethodProm]);
 })
-				.then(([keywordIDs, ignore_res]) => {
+				.then(([keywordIDs]) => {
 					// Delete removed Synonyms
     let synProm = Synonym
 						.where('keyword_id', keywordIDs.old)
@@ -298,7 +298,7 @@ class DeletedTermHandler extends stream.Writable {
 
     return Promise.all([Promise.resolve(keywordIDs), synProm]);
 })
-				.then(([keywordIDs, ignore_res]) => {
+				.then(([keywordIDs]) => {
 					// Delete removed Keyword
     return Keyword
 						.where('id', keywordIDs.old)

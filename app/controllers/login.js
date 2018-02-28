@@ -17,7 +17,7 @@ const response = require('../lib/responses');
  * 400 if an OAuth code is not provided
  * 500 if there's a problem authenticating with ORCID
  */
-function login(req, res, next) {
+function login(req, res) {
     if (!req.body.code) {
         return response.badRequest(res, 'Missing field: code');
     }

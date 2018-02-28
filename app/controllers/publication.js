@@ -12,7 +12,7 @@ const validator = require('../lib/publication_id_validator');
  * 200 with publication information
  * 404 if we can't find a publication
  */
-function validatePublicationId(req, res, next) {
+function validatePublicationId(req, res) {
     const pubId = req.body.publication_id;
 
     if (validator.isDOI(pubId)) {

@@ -52,7 +52,6 @@ describe('Keyword Controller', function() {
 
         it('Results with no external_id are not returned', function(done) {
             const testSubstring = "NoExt";
-            const expectedKeyword = testdata.keywords[4];
 
             chai.request(server)
                 .get(`/api/keyword/search?substring=${testSubstring}`)

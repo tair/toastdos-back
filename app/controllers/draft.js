@@ -12,7 +12,7 @@ const response = require('../lib/responses');
  * 404 if user has no drafts.
  * 500 on internal error.
  */
-function getDraftsForUser(req, res, next) {
+function getDraftsForUser(req, res) {
     return Draft.where('submitter_id', req.user.get('id'))
 		.fetch({require: true})
 		.then(draft => {
@@ -36,7 +36,7 @@ function getDraftsForUser(req, res, next) {
  * 400 if missing wip_state.
  * 500 on internal error.
  */
-function createDraft(req, res, next){
+function createDraft(req, res){
     if (!req.body.wip_state) {
         return response.badRequest(res, `Draft (wip state) is missing or invalid`);
     }
@@ -59,7 +59,7 @@ function createDraft(req, res, next){
  * 403 if deleted draft doesn't belong to requesting user.
  * 500 on internal error.
  */
-function deleteDraft(req, res, next) {
+function deleteDraft(req, res) {
     Draft.where({id: req.params.id})
 		.fetch({require: true})
 		.then(draft => {

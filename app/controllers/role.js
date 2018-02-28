@@ -10,7 +10,7 @@ const response = require('../lib/responses');
  * @param  {Express.Response}  res  - the response object
  * @param  {Function} next - pass to next route handler
  */
-function getRoles(req, res, next) {
+function getRoles(req, res) {
     return Role.fetchAll()
 		.then(collection => response.ok(res, collection.serialize()))
 		.catch(err => response.defaultServerError(res, err));
@@ -22,7 +22,7 @@ function getRoles(req, res, next) {
  * @param  {Express.Response}   res  - the response object
  * @param  {Function} next - pass to next route handler
  */
-function createRole(req, res, next) {
+function createRole(req, res) {
     return Role.forge(req.body)
 		.save()
 		.then(role => response.ok(res, role.serialize()))
@@ -35,7 +35,7 @@ function createRole(req, res, next) {
  * @param  {Express.Response}   res  - the response object
  * @param  {Function} next - pass to the next route handler
  */
-function getRoleUsers(req, res, next) {
+function getRoleUsers(req, res) {
     return Role.forge({id: req.params.id})
 		.fetch({withRelated: 'users'})
 		.then(role => response.ok(res, role.related('users')))

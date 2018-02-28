@@ -40,7 +40,7 @@ const Keyword = bookshelf.model('Keyword', {
     if (keyword) {
         return Promise.resolve(keyword);
     } else {
-        return addNew(params, transaction);
+        return this.addNew(params, transaction);
     }
 });
     },

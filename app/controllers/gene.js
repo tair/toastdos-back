@@ -10,7 +10,7 @@ const locusHelper = require('../lib/locus_submission_helper');
  * 200 if we successfully find the gene
  * 404 if we find nothing
  */
-function getByLocusName(req, res, next) {
+function getByLocusName(req, res) {
     locusHelper.verifyLocus(req.params.name)
 		.then(locus => response.ok(res, locus))
 		.catch(err => {

@@ -5,13 +5,13 @@
  */
 
 const _              = require('lodash');
-const authentication = require('../lib/authentication');
 const bookshelf      = require('../lib/bookshelf');
 const response       = require('../lib/responses');
 
 const User = require('../models/user');
 
 // Shamelessly ripped off from http://stackoverflow.com/a/11630569
+// eslint-disable-next-line
 const TERRIFYING_EMAIL_VALIDATING_REGEX = /(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
 
 /**
@@ -21,7 +21,7 @@ const TERRIFYING_EMAIL_VALIDATING_REGEX = /(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.
  * 200 with list of all users
  * 500 on internal server error
  */
-function getUsers(req, res, next) {
+function getUsers(req, res) {
     return User.fetchAll()
 		.then(collection  => response.ok(res, collection.serialize()))
 		.catch(err => response.defaultServerError(res, err));
@@ -37,7 +37,7 @@ function getUsers(req, res, next) {
  * 404 if a user matching the given ID isn't found
  * 500 on internal server error
  */
-function getUserById(req, res, next) {
+function getUserById(req, res) {
     return User.where('id', req.params.id).fetch({
         require: true,
         withRelated: req.query['withRelated']
@@ -45,6 +45,7 @@ function getUserById(req, res, next) {
 		.then(user => res.json(user.serialize()))
 		.catch(err => {
     let regMatch;
+    //eslint-disable-next-line
     if (regMatch = err.message.match(/([a-zA-Z]*) is not defined on the model/)) {
         return response.badRequest(res, `'${regMatch[1]}' is not a valid relation on this model.`);
     }
@@ -68,7 +69,7 @@ function getUserById(req, res, next) {
  * 404 if a user matching the ID isn't found
  * 500 on internal server error
  */
-function updateUserById(req, res, next) {
+function updateUserById(req, res) {
     let mutableFields = ['email_address'];
 
 	// Validate we're only trying to update mutable fields
@@ -105,14 +106,14 @@ function updateUserById(req, res, next) {
  * 404 if a user matching the ID isn't found
  * 500 on internal server error
  */
-function deleteUserById(req, res, next) {
+function deleteUserById(req, res) {
     return User.where('id', req.params.id)
 		.fetch({
     require: true,
     withRelated: req.query['withRelated']
 })
 		.then(user => user.destroy())
-		.then(result => response.ok(res))
+		.then(() => response.ok(res))
 		.catch(err => {
     if (err.message === 'EmptyResponse') {
         return response.notFound(res, 'User not found');
@@ -129,7 +130,7 @@ function deleteUserById(req, res, next) {
  * 200 on successful add / removal
  * 500 on internal server error
  */
-function setRoles(req, res, next) {
+function setRoles(req, res) {
     let target_user = User.forge({id: req.params.id});
     target_user
 		.fetch({withRelated: ['roles']})
@@ -141,7 +142,7 @@ function setRoles(req, res, next) {
         return Promise.all(promises);
     });
 })
-		.then(result => {
+		.then(() => {
     return target_user.fetch({
         withRelated: ['roles']
     });

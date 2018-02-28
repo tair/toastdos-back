@@ -24,15 +24,18 @@ class OboParser extends stream.Transform {
     }
 
     _transform(chunk, encoding, next) {
-        let line = chunk.toString();
 
         chunk.toString().split('\n').forEach(line => {
+
+            let headerParts, blockStart;
+            let blockStart2, parts, key, newValue;
+            let blockStart3;
 
             switch (this.state) {
 
 				// Parse initial header until we see a new line
             case State.HEADER:
-                let headerParts = line.match(KEY_VALUE);
+                headerParts = line.match(KEY_VALUE);
                 if (headerParts) {
                     this.currentTerm[headerParts[1]] = headerParts[2];
                 }
@@ -44,7 +47,7 @@ class OboParser extends stream.Transform {
                     this.currentTerm = {};
 
 						// Is this a newline or the start of a block? If there is no header, this is the entry point (sorry, this is filthy, I know.)
-                    let blockStart = line.match(BLOCK_START);
+                    blockStart = line.match(BLOCK_START);
                     if (blockStart) {
                         if (blockStart[1] === 'Term') {
                             this.state = State.PARSING;
@@ -61,7 +64,7 @@ class OboParser extends stream.Transform {
 
 
             case State.PARSING:
-                let blockStart2 = line.match(BLOCK_START);
+                blockStart2 = line.match(BLOCK_START);
                 if (blockStart2) {
 						// If this block isn't a term, ignore everything until the Next term
                     if (blockStart2[1] !== 'Term') {
@@ -75,9 +78,9 @@ class OboParser extends stream.Transform {
                 }
                 else {
 						// Save the current line's key-value to the term
-                    let parts = line.match(KEY_VALUE);
-                    let key = parts[1];
-                    let newValue = parts[2];
+                    parts = line.match(KEY_VALUE);
+                    key = parts[1];
+                    newValue = parts[2];
 
 						// If the key already exists, add (or convert) to array
                     if (this.currentTerm[key]) {
@@ -97,7 +100,7 @@ class OboParser extends stream.Transform {
 
             case State.IGNORE:
 					// Ignore data until we find the next term
-                let blockStart3 = line.match(BLOCK_START);
+                blockStart3 = line.match(BLOCK_START);
                 if (blockStart3 && blockStart3[1] === 'Term') {
                     this.state = State.PARSING;
                 }

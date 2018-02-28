@@ -3,10 +3,7 @@
 const {enableCORS, allowHeaders, allowMethods} = require('../middleware/utils');
 
 const express = require('express');
-const config = require('../../config');
 let router = express.Router();
-
-const response = require('../lib/responses');
 
 // enable cors
 router.use(enableCORS, allowHeaders, allowMethods);
@@ -35,18 +32,18 @@ if (process.env.NODE_ENV === 'development') {
 
 // Generate 404s
 router.use((req, res, next) => {
- 	let err = new Error('Not Found');
- 	err.status = 404;
- 	next(err);
+    let err = new Error('Not Found');
+    err.status = 404;
+    next(err);
 });
 
 // Handle errors
-router.use((err, req, res, next) => {
+router.use((err, req, res) => {
     res.status(err.status || 500);
     (err.status === 500) ? console.log(err.stack) : null;
     res.json({
-    	message: err.message,
-    	error: err.stack
+        message: err.message,
+        error: err.stack
     });
 });
 

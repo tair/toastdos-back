@@ -1,10 +1,7 @@
 'use strict';
 
-const config        = require('../config');
-
 const express       = require('express');
 const path          = require('path');
-const favicon       = require('serve-favicon');
 const logger        = require('morgan');
 const cookieParser  = require('cookie-parser');
 const bodyParser    = require('body-parser');
@@ -42,7 +39,7 @@ if (app.get('env') === 'development') {
 
   // development error handler
   // will print stacktrace
-    app.use(function(err, req, res, next) {
+    app.use(function(err, req, res) {
         res.status(err.status || 500);
         res.render('error', {
             message: err.message,
@@ -55,7 +52,7 @@ if (app.get('env') === 'development') {
 
 // production error handler
 // no stacktraces leaked to user
-app.use(function(err, req, res, next) {
+app.use(function(err, req, res) {
     res.status(err.status || 500);
     res.render('error', {
         message: err.message,

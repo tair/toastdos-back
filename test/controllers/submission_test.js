@@ -284,7 +284,7 @@ describe('Submission Controller', function() {
 				.post('/api/submission/')
 				.send(this.test.submission)
 				.set({Authorization: `Bearer ${testToken}`})
-				.end((err, res) => {
+				.end((err) => {
     chai.expect(err).to.not.exist;
 
 					// Use a combination of fields to uniquely identify an annotation we just created
@@ -993,7 +993,7 @@ describe('Submission Controller', function() {
 				.post(`/api/submission/${this.test.submissionId}/curate`)
 				.send(this.test.submission)
 				.set({Authorization: `Bearer ${testToken}`})
-				.end((err, res) => {
+				.end(() => {
     Promise.all([
         Submission.where({id: this.test.submissionId}).fetch(),
         Publication.where({pubmed_id: newPubId}).fetch(),

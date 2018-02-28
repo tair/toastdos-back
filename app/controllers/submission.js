@@ -9,7 +9,6 @@ const annotationHelper     = require('../lib/annotation_submission_helper');
 const publicationValidator = require('../lib/publication_id_validator');
 
 const Publication = require('../models/publication');
-const Annotation  = require('../models/annotation');
 const Keyword     = require('../models/keyword');
 const Submission  = require('../models/submission');
 
@@ -24,7 +23,7 @@ const METHOD_KEYWORD_TYPE_NAME = 'eco';
  */
 function isValidationError(err) {
     return (
-		   err instanceof ValidationError
+            err instanceof ValidationError
 		|| err.message.includes('No Locus found')
 		|| err.message.includes('Invalid annotation types')
 		|| err.message.match(/(Missing|Invalid) .* fields/)
@@ -103,7 +102,7 @@ function validateSubmissionRequest(submission) {
  * 400 with text describing problem with request.
  * 500 if something blows up on our end.
  */
-function submitGenesAndAnnotations(req, res, next) {
+function submitGenesAndAnnotations(req, res) {
 
     handleSubmissionOrCurationResponse(res, validateSubmissionRequest(req.body).then(validationResult => {
 		// Submission-only validation
@@ -328,7 +327,7 @@ function getSubmissionWithData(id) {
  * 400 with text describing problem with request.
  * 500 if something blows up on our end.
  */
-function curateGenesAndAnnotations(req, res, next) {
+function curateGenesAndAnnotations(req, res) {
     handleSubmissionOrCurationResponse(res, getSubmissionWithData(req.params.id)
 		.then(([curSubmission, curAnnotations]) => {
 			// Do first-pass request structure validation
@@ -433,7 +432,7 @@ function addNewKeywords(annotations, transaction) {
  * 200 with submission list in body
  * 500 if something internally goes wrong
  */
-function generateSubmissionSummary(req, res, next) {
+function generateSubmissionSummary(req, res) {
 
 	// Constrain / validate pagination values
     let itemsPerPage;
@@ -580,7 +579,7 @@ function generateSubmissionSummary(req, res, next) {
  * 404 if given ID doesn't exist
  * 500 if something goes wrong internally
  */
-function getSingleSubmission(req, res, next) {
+function getSingleSubmission(req, res) {
     getSubmissionWithData(req.params.id)
 		.then(([submission, loadedAnnotations]) => {
 

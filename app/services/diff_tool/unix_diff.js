@@ -10,7 +10,7 @@ const START_OF_GROUP = /^(?:[0-9]+,)?[0-9]+[acd][0-9]+(?:,[0-9]+)?$/;
  */
 class DiffChunker extends stream.Transform {
 
-    _transform(chunk, encoding, next) {
+    _transform(chunk) {
         let curGroup;
 
         chunk.toString().split('\n').forEach(line => {
