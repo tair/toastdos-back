@@ -20,7 +20,7 @@ describe('NCBI API', function() {
 
     it('Bad Taxon ID responds with error', function() {
         const badTaxonId = 99999999;
-        return NCBI.getTaxonById(badTaxonId).then(info => {
+        return NCBI.getTaxonById(badTaxonId).then(() => {
             throw new Error('Returned taxon info with a bad ID');
         }).catch(err => {
             chai.expect(err.message).to.equal(`No Taxon matches id ${badTaxonId}`);
@@ -42,7 +42,7 @@ describe('NCBI API', function() {
 
     it('Bad Taxon scientific name responds with error', function() {
         const badTaxonName = 'Bad Taxon Name';
-        return NCBI.getTaxonByScientificName(badTaxonName).then(info => {
+        return NCBI.getTaxonByScientificName(badTaxonName).then(() => {
             throw new Error('Returned taxon info with a bad scientific name');
         }).catch(err => {
             chai.expect(err.message).to.equal(`No Taxon matches name ${badTaxonName}`);
@@ -51,7 +51,7 @@ describe('NCBI API', function() {
 
     it('Taxon name that returns multiple results responds with error', function() {
         const multipleResponseName = 'yersinia';
-        return NCBI.getTaxonByScientificName(multipleResponseName).then(info => {
+        return NCBI.getTaxonByScientificName(multipleResponseName).then(() => {
             throw new Error('Returned taxon info for multiple things');
         }).catch(err => {
             chai.expect(err.message).to.equal(`Multiple Taxa found for name ${multipleResponseName}`);

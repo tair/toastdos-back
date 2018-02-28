@@ -8,7 +8,7 @@ describe('RNA Central API', function () {
 
     it('Bad Locus name responds with error', function() {
         const badLocusName = 'URS';
-        return RNACentral.getLocusByName(badLocusName).then(result => {
+        return RNACentral.getLocusByName(badLocusName).then(() => {
             throw new Error('Successfully returned with a bad Locus name');
         }).catch(err => {
             chai.expect(err.message).to.equal(`No Locus found for name ${badLocusName}`);

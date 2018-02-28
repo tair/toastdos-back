@@ -11,7 +11,6 @@ const annotationHelper = rewire('../../app/lib/annotation_submission_helper');
 const Locus      = require('../../app/models/locus');
 const LocusName  = require('../../app/models/locus_name');
 const GeneSymbol = require('../../app/models/gene_symbol');
-const Keyword    = require('../../app/models/keyword');
 
 const testdata = require('../../seeds/test/test_data.json');
 
@@ -56,7 +55,7 @@ describe('Submission helper', function() {
 
         it('Totally non-existent Locus name responds with error', function() {
             const fakeLocus = 'FakeLocus';
-            return locusHelper.verifyLocus(fakeLocus).then(locus => {
+            return locusHelper.verifyLocus(fakeLocus).then(() => {
                 throw new Error('Somehow found the fake locus');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`No Locus found for name ${fakeLocus}`);
@@ -90,7 +89,7 @@ describe('Submission helper', function() {
                 symbol: locusSymbol,
                 submitter_id: submitterId
             })
-				.then(([createdLocus, createdSymbol]) => {
+				.then(([createdLocus]) => {
     let createdLocusId = createdLocus.related('locus').get('id');
 
     return Locus.where({id: createdLocusId})
@@ -122,14 +121,14 @@ describe('Submission helper', function() {
                 symbol: locusSymbol,
                 submitter_id: submitterId
             })
-				.then(([addedLocus, addedSymbol]) => {
+				.then(([addedLocus]) => {
     return locusHelper.addLocusRecords({
         name: locusName,
         full_name: locusFullname,
         symbol: locusSymbol,
         submitter_id: submitterId
     })
-						.then(([sameLocus, unusedSymbol]) => {
+						.then(([sameLocus]) => {
     chai.expect(addedLocus.toJSON()).to.deep.equal(sameLocus.toJSON());
 });
 });
@@ -156,7 +155,7 @@ describe('Submission helper', function() {
                 symbol: newSymbol,
                 submitter_id: newSubmitter.id
             })
-				.then(([modifiedLocus, createdSymbol]) => {
+				.then(([modifiedLocus]) => {
     return Locus.where({id: modifiedLocus.related('locus').attributes.id})
 						.fetch({withRelated: 'symbols'})
 						.then(res => {
@@ -174,7 +173,7 @@ describe('Submission helper', function() {
                 symbol: 'IG',
                 submitter_id: 1
             })
-				.then(createdLocus => {
+				.then(() => {
     throw new Error('Created Locus record using a bad name');
 })
 				.catch(err => {
@@ -232,7 +231,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(res => {
+            return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
 				// NOTE that 'evidence' is not picked up here.
@@ -255,7 +254,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(res => {
+            return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Invalid ${testType} fields: ${invalidFieldName}`);
@@ -276,7 +275,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return annotationHelper.addAnnotationRecords(testCAnnotation, this.test.locusMap).then(res => {
+            return annotationHelper.addAnnotationRecords(testCAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Invalid ${testType} fields: ${invalidFieldName}`);
@@ -291,7 +290,7 @@ describe('Submission helper', function() {
                 data: {}
             };
 
-            return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(res => {
+            return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Missing fields were not detected');
             }).catch(err => {
                 chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
@@ -308,7 +307,7 @@ describe('Submission helper', function() {
                 data: {}
             };
 
-            return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(res => {
+            return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Missing fields were not detected');
             }).catch(err => {
                 chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
@@ -324,7 +323,7 @@ describe('Submission helper', function() {
                 data: {}
             };
 
-            return annotationHelper.addAnnotationRecords(testCAnnotation, this.test.locusMap).then(res => {
+            return annotationHelper.addAnnotationRecords(testCAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Missing fields were not detected');
             }).catch(err => {
                 chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
@@ -346,7 +345,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(res => {
+            return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal('id xor name required for Keywords');
@@ -365,7 +364,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(res => {
+            return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
@@ -383,7 +382,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return verifyGeneGeneFields(partialGGAnnotation, this.test.locusMap).then(res => {
+            return verifyGeneGeneFields(partialGGAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
@@ -400,7 +399,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return verifyCommentFields(partialCAnnotation, this.test.locusMap).then(res => {
+            return verifyCommentFields(partialCAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
@@ -419,7 +418,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(res => {
+            return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Method id ${badMethodId} does not reference an existing Keyword`);
@@ -438,7 +437,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(res => {
+            return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Keyword id ${badMethodId} does not reference an existing Keyword`);
@@ -457,7 +456,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(res => {
+            return verifyGeneTermFields(partialGTAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);
@@ -475,7 +474,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return verifyGeneGeneFields(partialGGAnnotation, this.test.locusMap).then(res => {
+            return verifyGeneGeneFields(partialGGAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Method id ${badMethodId} does not reference an existing Keyword`);
@@ -493,7 +492,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return verifyGeneGeneFields(partialGGAnnotation, this.test.locusMap).then(res => {
+            return verifyGeneGeneFields(partialGGAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Locus ${badLocusName} not present in submission`);

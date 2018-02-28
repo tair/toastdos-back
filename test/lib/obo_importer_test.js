@@ -21,7 +21,7 @@ describe('OBO Data Importer', function() {
         return knex.migrate.latest()
 			.then(() => oboImporter.loadOboIntoDB('./test/lib/test_terms.obo'))
 			.then(() => oboImporter.loadOboIntoDB('./test/lib/test_terms.obo'));
-			 // Do it twice to ensure no duplicates
+            // Do it twice to ensure no duplicates
     });
 
     it('KeywordTypes added from basic term', function() {
@@ -274,7 +274,7 @@ describe('OBO Data Importer', function() {
 
 			// Verify annotations have changed once we've run the importer
             return Promise.all([modelProm, importProm])
-				.then(([model, importRes]) => {
+				.then(([model]) => {
     let [gt1, gt2, gg] = model;
 
 					// Get updated versions of these annotations

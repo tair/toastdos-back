@@ -9,7 +9,7 @@ describe('TAIR API', function() {
 
     it('Non-existing Locus name returns an error', function() {
         const badLocusName = 'AT1';
-        return Tair.getLocusByName(badLocusName).then(locus => {
+        return Tair.getLocusByName(badLocusName).then(() => {
             throw new Error('Did not reject promise with bad Locus name');
         }).catch(err => {
             chai.expect(err.message).to.equal(`No Locus found for name ${badLocusName}`);
@@ -46,7 +46,7 @@ describe('TAIR API', function() {
 
     it('Non-existing symbol returns an error', function() {
         const badSymbol = 'FAKE';
-        return Tair.getSymbolsByName(badSymbol).then(symbols => {
+        return Tair.getSymbolsByName(badSymbol).then(() => {
             throw new Error('Non-existing symbol did not throw an error');
         }).catch(err => {
             chai.expect(err.message).to.equal(`No Loci for symbol ${badSymbol}`);

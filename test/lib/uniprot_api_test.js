@@ -24,7 +24,7 @@ describe('Uniprot API', function () {
 
     it('Partial existing ID causes error because it doesn\'t exist', function() {
         const validPartialId = 'Q131';
-        return Uniprot.getLocusByName(validPartialId).then(result => {
+        return Uniprot.getLocusByName(validPartialId).then(() => {
             throw new Error('Did not reject with partial result');
         }).catch(err => {
             chai.expect(err.message).to.equal(`No Locus found for name ${validPartialId}`);
@@ -33,7 +33,7 @@ describe('Uniprot API', function () {
 
     it('Non-existing name causes error due to no records', function() {
         const fakeName = 'fakename';
-        return Uniprot.getLocusByName(fakeName).then(result => {
+        return Uniprot.getLocusByName(fakeName).then(() => {
             throw new Error('Returned a gene for a fake name');
         }).catch(err => {
             chai.expect(err.message).to.equal(`No Locus found for name ${fakeName}`);

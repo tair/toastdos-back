@@ -14,7 +14,7 @@ class TestString extends stream.Readable {
         this.string = string;
     }
 
-    _read(n) {
+    _read() {
         this.push(this.string);
         this.push(null);
     }
