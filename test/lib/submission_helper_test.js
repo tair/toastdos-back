@@ -5,11 +5,11 @@ chai.use(require('chai-subset'));
 const knex = require('../../app/lib/bookshelf').knex;
 const rewire = require('rewire'); // To access private functions in modules
 
-const locusHelper      = require('../../app/lib/locus_submission_helper');
+const locusHelper = require('../../app/lib/locus_submission_helper');
 const annotationHelper = rewire('../../app/lib/annotation_submission_helper');
 
-const Locus      = require('../../app/models/locus');
-const LocusName  = require('../../app/models/locus_name');
+const Locus = require('../../app/models/locus');
+const LocusName = require('../../app/models/locus_name');
 const GeneSymbol = require('../../app/models/gene_symbol');
 
 const testdata = require('../../seeds/test/test_data.json');
@@ -50,7 +50,7 @@ describe('Submission helper', function() {
             });
         });
 
-		// FIXME I have no idea how to test this, but it's really something we should test
+        // FIXME I have no idea how to test this, but it's really something we should test
         it('Falls back to other sources when guessed source does not contain locus name');
 
         it('Totally non-existent Locus name responds with error', function() {
@@ -72,8 +72,12 @@ describe('Submission helper', function() {
             const locusFullname = 'Jupiter the Red Fox';
             const submitterId = 1;
 
-            const expectedSource = {name: 'Uniprot'};
-            const expectedLocusName = { locus_name: locusName };
+            const expectedSource = {
+                name: 'Uniprot'
+            };
+            const expectedLocusName = {
+                locus_name: locusName
+            };
             const expectedGeneSymbol = {
                 symbol: locusSymbol,
                 full_name: locusFullname
@@ -89,24 +93,32 @@ describe('Submission helper', function() {
                 symbol: locusSymbol,
                 submitter_id: submitterId
             })
-				.then(([createdLocus]) => {
-    let createdLocusId = createdLocus.related('locus').get('id');
+                .then(([createdLocus]) => {
+                    let createdLocusId = createdLocus.related('locus').get('id');
 
-    return Locus.where({id: createdLocusId})
-						.fetch({withRelated: ['taxon', 'names', 'symbols']})
-						.then(res => {
-    let actual = res.toJSON();
-    chai.expect(actual.taxon).to.contain(expectedTaxon);
-    chai.expect(actual.names[0]).to.contain(expectedLocusName);
-    chai.expect(actual.symbols[0]).to.contain(expectedGeneSymbol);
+                    return Locus.where({
+                        id: createdLocusId
+                    })
+                        .fetch({
+                            withRelated: ['taxon', 'names', 'symbols']
+                        })
+                        .then(res => {
+                            let actual = res.toJSON();
+                            chai.expect(actual.taxon).to.contain(expectedTaxon);
+                            chai.expect(actual.names[0]).to.contain(expectedLocusName);
+                            chai.expect(actual.symbols[0]).to.contain(expectedGeneSymbol);
 
-    return LocusName.where({id: actual.names[0].id}).fetch({withRelated: 'source'});
-})
-						.then(res => {
-    let actual = res.toJSON();
-    chai.expect(actual.source).to.contain(expectedSource);
-});
-});
+                            return LocusName.where({
+                                id: actual.names[0].id
+                            }).fetch({
+                                withRelated: 'source'
+                            });
+                        })
+                        .then(res => {
+                            let actual = res.toJSON();
+                            chai.expect(actual.source).to.contain(expectedSource);
+                        });
+                });
         });
 
         it('Creating new Loci and updating existing Loci return the same values', function() {
@@ -121,17 +133,17 @@ describe('Submission helper', function() {
                 symbol: locusSymbol,
                 submitter_id: submitterId
             })
-				.then(([addedLocus]) => {
-    return locusHelper.addLocusRecords({
-        name: locusName,
-        full_name: locusFullname,
-        symbol: locusSymbol,
-        submitter_id: submitterId
-    })
-						.then(([sameLocus]) => {
-    chai.expect(addedLocus.toJSON()).to.deep.equal(sameLocus.toJSON());
-});
-});
+                .then(([addedLocus]) => {
+                    return locusHelper.addLocusRecords({
+                        name: locusName,
+                        full_name: locusFullname,
+                        symbol: locusSymbol,
+                        submitter_id: submitterId
+                    })
+                        .then(([sameLocus]) => {
+                            chai.expect(addedLocus.toJSON()).to.deep.equal(sameLocus.toJSON());
+                        });
+                });
         });
 
         it('New symbols for existing loci are created', function() {
@@ -144,8 +156,8 @@ describe('Submission helper', function() {
             const expectedGeneSymbols = [
                 existingGeneSymbol,
                 {
-                    symbol : newSymbol,
-                    full_name : newFullName
+                    symbol: newSymbol,
+                    full_name: newFullName
                 }
             ];
 
@@ -155,14 +167,18 @@ describe('Submission helper', function() {
                 symbol: newSymbol,
                 submitter_id: newSubmitter.id
             })
-				.then(([modifiedLocus]) => {
-    return Locus.where({id: modifiedLocus.related('locus').attributes.id})
-						.fetch({withRelated: 'symbols'})
-						.then(res => {
-    let actual = res.toJSON();
-    chai.expect(actual.symbols).to.containSubset(expectedGeneSymbols);
-});
-});
+                .then(([modifiedLocus]) => {
+                    return Locus.where({
+                        id: modifiedLocus.related('locus').attributes.id
+                    })
+                        .fetch({
+                            withRelated: 'symbols'
+                        })
+                        .then(res => {
+                            let actual = res.toJSON();
+                            chai.expect(actual.symbols).to.containSubset(expectedGeneSymbols);
+                        });
+                });
         });
 
         it('Invalid locus does not create records', function() {
@@ -173,33 +189,35 @@ describe('Submission helper', function() {
                 symbol: 'IG',
                 submitter_id: 1
             })
-				.then(() => {
-    throw new Error('Created Locus record using a bad name');
-})
-				.catch(err => {
-    chai.expect(err.message).to.equal(`No Locus found for name ${invalidLocusName}`);
-});
+                .then(() => {
+                    throw new Error('Created Locus record using a bad name');
+                })
+                .catch(err => {
+                    chai.expect(err.message).to.equal(`No Locus found for name ${invalidLocusName}`);
+                });
         });
 
     });
 
-	/**
-	 * We use a module to give us access to the private functions in the
-	 * submission helper so we can isolate tests just to the functions they cover.
-	 * If we went through the standard workflow for each test, one failure
-	 * would cause a bunch of unrelated downstream failures.
-	 *
-	 * The submission tests go through the whole workflow properly.
-	 *
-	 * Also:
-	 * GT - Gene Term
-	 * GG - Gene Gene
-	 * C  - Comment
-	 */
+    /**
+     * We use a module to give us access to the private functions in the
+     * submission helper so we can isolate tests just to the functions they cover.
+     * If we went through the standard workflow for each test, one failure
+     * would cause a bunch of unrelated downstream failures.
+     *
+     * The submission tests go through the whole workflow properly.
+     *
+     * Also:
+     * GT - Gene Term
+     * GG - Gene Gene
+     * C  - Comment
+     */
     describe('Add Annotation', function() {
 
-        beforeEach('Build locus map from test data', function () {
-            return LocusName.fetchAll({withRelated: 'locus'}).then(locusNames => {
+        beforeEach('Build locus map from test data', function() {
+            return LocusName.fetchAll({
+                withRelated: 'locus'
+            }).then(locusNames => {
                 return GeneSymbol.fetchAll().then(geneSymbols => {
                     this.currentTest.locusMap = locusNames.map(locus => {
 
@@ -224,8 +242,12 @@ describe('Submission helper', function() {
                     internalPublicationId: testdata.publications[0].id,
                     submitterId: testdata.users[0].id,
                     locusName: testdata.locus_name[0].locus_name,
-                    method: { id: testdata.keywords[0].id },
-                    keyword: { name: 'New Keyword Name'},
+                    method: {
+                        id: testdata.keywords[0].id
+                    },
+                    keyword: {
+                        name: 'New Keyword Name'
+                    },
                     evidence: testdata.locus_name[1].locus_name,
                     [invalidFieldName]: 'I am an invalid field'
                 }
@@ -234,7 +256,7 @@ describe('Submission helper', function() {
             return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
-				// NOTE that 'evidence' is not picked up here.
+                // NOTE that 'evidence' is not picked up here.
                 chai.expect(err.message).to.equal(`Invalid ${testType} fields: ${invalidFieldName}`);
             });
         });
@@ -248,7 +270,9 @@ describe('Submission helper', function() {
                     internalPublicationId: testdata.publications[0].id,
                     submitterId: testdata.users[0].id,
                     locusName: testdata.locus_name[0].locus_name,
-                    method: { id: testdata.keywords[0].id },
+                    method: {
+                        id: testdata.keywords[0].id
+                    },
                     locusName2: testdata.locus_name[1].locus_name,
                     [invalidFieldName]: 'I am an invalid field'
                 }
@@ -333,7 +357,9 @@ describe('Submission helper', function() {
 
         it('Method keywords must specify an id XOR name', function() {
             const testType = 'PROTEIN_INTERACTION'; // GG type
-            const badMethod = { badField: 'Not id or name' };
+            const badMethod = {
+                badField: 'Not id or name'
+            };
             const testGGAnnotation = {
                 type: testType,
                 data: {
@@ -358,8 +384,12 @@ describe('Submission helper', function() {
             const partialGTAnnotation = {
                 data: {
                     locusName: badLocusName,
-                    method: { id: testdata.keywords[0].id },
-                    keyword: { id: testdata.keywords[0].id },
+                    method: {
+                        id: testdata.keywords[0].id
+                    },
+                    keyword: {
+                        id: testdata.keywords[0].id
+                    },
                     evidence: testdata.locus[1].locus_name
                 }
             };
@@ -377,7 +407,9 @@ describe('Submission helper', function() {
             const partialGGAnnotation = {
                 data: {
                     locusName: badLocusName,
-                    method: { id: testdata.keywords[0].id },
+                    method: {
+                        id: testdata.keywords[0].id
+                    },
                     locusName2: testdata.locus[1].locus_name
                 }
             };
@@ -412,8 +444,12 @@ describe('Submission helper', function() {
             const partialGTAnnotation = {
                 data: {
                     locusName: testdata.locus_name[0].locus_name,
-                    method: { id: badMethodId },
-                    keyword: { id: testdata.keywords[0].id },
+                    method: {
+                        id: badMethodId
+                    },
+                    keyword: {
+                        id: testdata.keywords[0].id
+                    },
                     evidence: testdata.locus_name[1].locus_name
                 }
             };
@@ -431,8 +467,12 @@ describe('Submission helper', function() {
             const partialGTAnnotation = {
                 data: {
                     locusName: testdata.locus_name[0].locus_name,
-                    method: { id: testdata.keywords[0].id },
-                    keyword: { id: badMethodId },
+                    method: {
+                        id: testdata.keywords[0].id
+                    },
+                    keyword: {
+                        id: badMethodId
+                    },
                     evidence: testdata.locus_name[1].locus_name
                 }
             };
@@ -450,8 +490,12 @@ describe('Submission helper', function() {
             const partialGTAnnotation = {
                 data: {
                     locusName: testdata.locus_name[0].locus_name,
-                    method: { id: testdata.keywords[0].id },
-                    keyword: { id: testdata.keywords[0].id },
+                    method: {
+                        id: testdata.keywords[0].id
+                    },
+                    keyword: {
+                        id: testdata.keywords[0].id
+                    },
                     evidence: badLocusName
                 }
             };
@@ -469,7 +513,9 @@ describe('Submission helper', function() {
             const partialGGAnnotation = {
                 data: {
                     locusName: testdata.locus_name[0].locus_name,
-                    method: { id: badMethodId },
+                    method: {
+                        id: badMethodId
+                    },
                     locusName2: testdata.locus_name[1].locus_name
                 }
             };
@@ -487,7 +533,9 @@ describe('Submission helper', function() {
             const partialGGAnnotation = {
                 data: {
                     locusName: testdata.locus_name[0].locus_name,
-                    method: { id: testdata.keywords[0].id },
+                    method: {
+                        id: testdata.keywords[0].id
+                    },
                     locusName2: badLocusName
                 }
             };
@@ -507,20 +555,26 @@ describe('Submission helper', function() {
             const expectedKeyword = testdata.keywords[0];
             const expectedEvidenceLocus = testdata.locus[1];
 
-			// Loci can have multiple symbols, so we assume the map generator picks the first one it sees
+            // Loci can have multiple symbols, so we assume the map generator picks the first one it sees
             const expectedEvidenceSymbol = testdata.gene_symbol[2];
 
             const partialGTAnnotation = {
                 data: {
                     locusName: testdata.locus_name[0].locus_name,
-                    method: { id: expectedMethod.id },
-                    keyword: { id: expectedKeyword.id },
+                    method: {
+                        id: expectedMethod.id
+                    },
+                    keyword: {
+                        id: expectedKeyword.id
+                    },
                     evidence: testdata.locus_name[1].locus_name
                 }
             };
 
             return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, unusedKeywordScope).then(gtAnn => {
-                return gtAnn.fetch({withRelated: ['method', 'keyword', 'evidence', 'evidenceSymbol']});
+                return gtAnn.fetch({
+                    withRelated: ['method', 'keyword', 'evidence', 'evidenceSymbol']
+                });
             }).then(fullGTAnnotation => {
                 let fullGTObj = fullGTAnnotation.toJSON();
 
@@ -538,19 +592,23 @@ describe('Submission helper', function() {
             const expectedMethod = testdata.keywords[2];
             const expectedLocus2 = testdata.locus[1];
 
-			// Loci can have multiple symbols, so we assume the map generator picks the first one it sees
+            // Loci can have multiple symbols, so we assume the map generator picks the first one it sees
             const expectedLocus2Symbol = testdata.gene_symbol[2];
 
             const partialGGAnnotation = {
                 data: {
                     locusName: testdata.locus_name[0].locus_name,
-                    method: { id: expectedMethod.id },
+                    method: {
+                        id: expectedMethod.id
+                    },
                     locusName2: testdata.locus_name[1].locus_name
                 }
             };
 
             return createGeneGeneRecords(partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
-                return ggAnn.fetch({withRelated: ['method', 'locus2', 'locus2Symbol']});
+                return ggAnn.fetch({
+                    withRelated: ['method', 'locus2', 'locus2Symbol']
+                });
             }).then(fullGGAnnotation => {
                 let fullGGObj = fullGGAnnotation.toJSON();
 

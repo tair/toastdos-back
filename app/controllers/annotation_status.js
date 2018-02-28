@@ -12,8 +12,8 @@ const response = require('../lib/responses');
  */
 function getAnnotationStatuses(req, res) {
     AnnotationStatus.fetchAll()
-		.then(statuses => response.ok(res, statuses))
-		.catch(err => response.defaultServerError(res, err));
+        .then(statuses => response.ok(res, statuses))
+        .catch(err => response.defaultServerError(res, err));
 }
 
 

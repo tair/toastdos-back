@@ -4,7 +4,9 @@ const CronJob = require('cron').CronJob;
 
 const updater = require('./obo_updater');
 const eco_mapping_updater = require('../eco_mapping_importer/eco_mapping_updater');
-const { exportAllData } = require('../export_data');
+const {
+    exportAllData
+} = require('../export_data');
 
 // Every day at 00:00
 let ecoJob = new CronJob('0 0 0 * * *', () => {

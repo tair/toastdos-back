@@ -12,8 +12,10 @@ const KeywordType = bookshelf.model('KeywordType', {
 }, {
     getByName: function(name, transaction) {
         return bookshelf.model('KeywordType')
-			.where('name', name)
-			.fetch({transacting: transaction});
+            .where('name', name)
+            .fetch({
+                transacting: transaction
+            });
     }
 });
 

@@ -1,6 +1,6 @@
 'use strict';
 
-const auth     = require('../lib/authentication');
+const auth = require('../lib/authentication');
 const response = require('../lib/responses');
 
 const User = require('../models/user');
@@ -15,21 +15,21 @@ const CURATOR_ROLE = 'Curator';
  */
 function validateAuthentication(req, res, next) {
 
-	// Validate an authorization header was provided
+    // Validate an authorization header was provided
     let authHeader = req.get('Authorization');
-    if(!authHeader) {
+    if (!authHeader) {
         return response.unauthorized(res, 'No authorization header provided.');
     }
 
-	// Validate that authorization header contains a token
+    // Validate that authorization header contains a token
     let authMatch = authHeader.match(TOKEN_MATCHER);
-    if(!authMatch) {
+    if (!authMatch) {
         return response.unauthorized(res, 'No authorization token provided in header.');
     }
 
     return auth.verifyToken(authMatch[1], (err, tokenBody) => {
-        if(err) {
-            if(err.name === 'TokenExpiredError') {
+        if (err) {
+            if (err.name === 'TokenExpiredError') {
                 return response.unauthorized(res, 'JWT expired');
             } else {
                 return response.unauthorized(res, 'JWT malformed');
@@ -40,17 +40,21 @@ function validateAuthentication(req, res, next) {
             return response.unauthorized(res, 'No user_id in JWT');
         }
 
-		// Embed the retrieved user in the request object so controllers
-		// down the line know what user is making the request
-        User.where({id: tokenBody.user_id})
-			.fetch({withRelated: 'roles'})
-			.then(user => {
-    req.user = user;
-    next();
-})
-			.catch(err => {
-    response.defaultServerError(res, err);
-});
+        // Embed the retrieved user in the request object so controllers
+        // down the line know what user is making the request
+        User.where({
+            id: tokenBody.user_id
+        })
+            .fetch({
+                withRelated: 'roles'
+            })
+            .then(user => {
+                req.user = user;
+                next();
+            })
+            .catch(err => {
+                response.defaultServerError(res, err);
+            });
     });
 }
 
@@ -60,7 +64,7 @@ function validateAuthentication(req, res, next) {
  */
 function validateUser(req, res, next) {
 
-	// Assume the token itself has been validated and user_id has been attached already
+    // Assume the token itself has been validated and user_id has been attached already
     if (!req.user || !req.params.id || req.params.id != req.user.attributes.id) {
         return response.unauthorized(res, 'Unauthorized to view requested user');
     }

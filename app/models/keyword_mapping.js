@@ -13,14 +13,18 @@ const KeywordMapping = bookshelf.model('KeywordMapping', {
 }, {
     getByEcoId: function(eco_id, transaction) {
         return bookshelf.model('KeywordMapping')
-			.where('eco_id', eco_id)
-			.fetch({transacting: transaction});
+            .where('eco_id', eco_id)
+            .fetch({
+                transacting: transaction
+            });
     },
     addNew: function(params, transaction) {
         // Check if eco_id exists in Keyword as an external_id
         return bookshelf.model('Keyword')
             .where('external_id', params.eco_id)
-            .fetch({transacting: transaction})
+            .fetch({
+                transacting: transaction
+            })
             .then(keyword => {
                 // Add keywordMapping if eco_id exists as external_id
                 if (keyword) {
@@ -29,8 +33,11 @@ const KeywordMapping = bookshelf.model('KeywordMapping', {
                             eco_id: params.eco_id,
                             evidence_code: params.evidence_code
                         })
-                        .save(null, {transacting: transaction, method: 'insert'});
-                // Skip this eco_id
+                        .save(null, {
+                            transacting: transaction,
+                            method: 'insert'
+                        });
+                    // Skip this eco_id
                 } else {
                     return Promise.resolve();
                 }
@@ -39,7 +46,9 @@ const KeywordMapping = bookshelf.model('KeywordMapping', {
     addOrGet: function(params, transaction) {
         return bookshelf.model('KeywordMapping')
             .where('eco_id', params.eco_id)
-            .fetch({transacting: transaction})
+            .fetch({
+                transacting: transaction
+            })
             .then(keywordMapping => {
                 // GET if keywordMapping exists
                 if (keywordMapping) {

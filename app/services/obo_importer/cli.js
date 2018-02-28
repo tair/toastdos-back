@@ -7,9 +7,9 @@
  *     filepath    - run import on specified file, if exists
  *     url         - download / run update with obo at URL
  */
-const fs       = require('fs');
-const updater  = require('./obo_updater');
-const eco_mapping_updater  = require('../eco_mapping_importer/eco_mapping_updater');
+const fs = require('fs');
+const updater = require('./obo_updater');
+const eco_mapping_updater = require('../eco_mapping_importer/eco_mapping_updater');
 const importer = require('./obo_importer');
 
 /**
@@ -22,33 +22,27 @@ const importer = require('./obo_importer');
 function loadTarget(target) {
     if (!target) {
         return Promise.reject('Bad target');
-    }
-    else if (target === 'eco') {
+    } else if (target === 'eco') {
         return updater.updateKeywordsUsing('https://raw.githubusercontent.com/evidenceontology/evidenceontology/master/eco.obo');
-    }
-    else if (target === 'ecomap') {
+    } else if (target === 'ecomap') {
         return eco_mapping_updater.updateKeywordMappingsUsing('https://raw.githubusercontent.com/evidenceontology/evidenceontology/master/gaf-eco-mapping-derived.txt');
-    }
-    else if (target === 'po') {
+    } else if (target === 'po') {
         return updater.updateKeywordsUsing('http://purl.obolibrary.org/obo/po.obo');
-    }
-    else if (target === 'go') {
+    } else if (target === 'go') {
         return updater.updateKeywordsUsing('http://www.geneontology.org/ontology/go.obo');
-    }
-    else if (fs.existsSync(target)) {
+    } else if (fs.existsSync(target)) {
         console.log(`Running import on file '${target}'`);
         return importer.loadOboIntoDB(target);
-    }
-    else {
+    } else {
         return updater.updateKeywordsUsing(target);
     }
 }
 
 loadTarget(process.argv[2])
-	.then(() => process.exit(0))
-	.catch(err => {
-    if (err === 'Bad target') console.log('Usage: npm run import <target>');
-    else console.error(err);
+    .then(() => process.exit(0))
+    .catch(err => {
+        if (err === 'Bad target') console.log('Usage: npm run import <target>');
+        else console.error(err);
 
-    process.exit(1);
-});
+        process.exit(1);
+    });

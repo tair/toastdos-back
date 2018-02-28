@@ -1,4 +1,6 @@
-const { exportAllData } = require('./export_data');
+const {
+    exportAllData
+} = require('./export_data');
 
 exportAllData()
     .then(() => process.exit(0))

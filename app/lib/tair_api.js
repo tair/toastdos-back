@@ -45,14 +45,13 @@ function getLocusByName(name) {
                     locus_name: body.locusName
                 };
 
-				/* Most of the time TAIR will be giving us 'Arabidopsis thaliana' as a
-				 * taxon name, so we can save a request to NCBI by hard-coding the response.
-				 */
+                /* Most of the time TAIR will be giving us 'Arabidopsis thaliana' as a
+                 * taxon name, so we can save a request to NCBI by hard-coding the response.
+                 */
                 if (body.taxon === DEFAULT_TAXON.taxon_name) {
                     resolve(Object.assign(partialTaxon, DEFAULT_TAXON));
-                }
-                else {
-					// For other taxa we need to get the maching ID from NCBI
+                } else {
+                    // For other taxa we need to get the maching ID from NCBI
                     NCBI.getTaxonByScientificName(body.taxon).then(taxonInfo => {
                         resolve(Object.assign(partialTaxon, {
                             taxon_name: body.taxon,

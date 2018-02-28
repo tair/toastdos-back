@@ -11,9 +11,13 @@ const Synonym = bookshelf.model('Synonym', {
     }
 }, {
     addAll: function(modelList, transaction) {
-        let SynonymSet = bookshelf.Collection.extend({model: Synonym});
+        let SynonymSet = bookshelf.Collection.extend({
+            model: Synonym
+        });
         let synonyms = SynonymSet.forge(modelList);
-        return synonyms.invokeThen('save', null, {transacting: transaction});
+        return synonyms.invokeThen('save', null, {
+            transacting: transaction
+        });
     }
 });
 

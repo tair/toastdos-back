@@ -20,12 +20,12 @@ describe('Gene Controller', function() {
             };
 
             chai.request(server)
-				.get(`/api/gene/verify/${uniprotGeneName}`)
-				.end((err, res) => {
-    chai.expect(res.status).to.equal(200);
-    chai.expect(res.body).to.deep.equal(expectedBody);
-    done();
-});
+                .get(`/api/gene/verify/${uniprotGeneName}`)
+                .end((err, res) => {
+                    chai.expect(res.status).to.equal(200);
+                    chai.expect(res.body).to.deep.equal(expectedBody);
+                    done();
+                });
         });
 
         it('Successfully retrieves a single Gene from RNA Central', function(done) {
@@ -38,12 +38,12 @@ describe('Gene Controller', function() {
             };
 
             chai.request(server)
-				.get(`/api/gene/verify/${rnaGeneName}`)
-				.end((err, res) => {
-    chai.expect(res.status).to.equal(200);
-    chai.expect(res.body).to.deep.equal(expectedResponse);
-    done();
-});
+                .get(`/api/gene/verify/${rnaGeneName}`)
+                .end((err, res) => {
+                    chai.expect(res.status).to.equal(200);
+                    chai.expect(res.body).to.deep.equal(expectedResponse);
+                    done();
+                });
         });
 
         it('Successfully retrieves a single Gene from TAIR', function(done) {
@@ -56,23 +56,23 @@ describe('Gene Controller', function() {
             };
 
             chai.request(server)
-				.get(`/api/gene/verify/${tairGeneName}`)
-				.end((err, res) => {
-    chai.expect(res.status).to.equal(200);
-    chai.expect(res.body).to.deep.equal(expectedResponse);
-    done();
-});
+                .get(`/api/gene/verify/${tairGeneName}`)
+                .end((err, res) => {
+                    chai.expect(res.status).to.equal(200);
+                    chai.expect(res.body).to.deep.equal(expectedResponse);
+                    done();
+                });
         });
 
         it('A name that returns no values responds with Not Found', function(done) {
             let badGeneName = 'Totally Fake Gene';
             chai.request(server)
-				.get(`/api/gene/verify/${badGeneName}`)
-				.end((err, res) => {
-    chai.expect(res.status).to.equal(404);
-    chai.expect(res.text).to.equal(`No Locus found for name ${badGeneName}`);
-    done();
-});
+                .get(`/api/gene/verify/${badGeneName}`)
+                .end((err, res) => {
+                    chai.expect(res.status).to.equal(404);
+                    chai.expect(res.text).to.equal(`No Locus found for name ${badGeneName}`);
+                    done();
+                });
         });
 
     });
