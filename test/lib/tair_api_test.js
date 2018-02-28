@@ -31,11 +31,11 @@ describe('TAIR API', function() {
     });
 
     it('Total list of symbols returns successfully', function() {
-		// This thing just takes a while to respond. It's a lot of data.
+        // This thing just takes a while to respond. It's a lot of data.
         this.timeout(5000);
 
-		// The total number of entries probably changes all the time,
-		// so we'll just make sure we're getting several results.
+        // The total number of entries probably changes all the time,
+        // so we'll just make sure we're getting several results.
         const THIS_MANY = 10;
 
         return Tair.getAllSymbols().then(symbolList => {

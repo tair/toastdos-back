@@ -1,5 +1,7 @@
 const Submission = require('../models/submission');
-const { AnnotationTypeData } = require('../lib/annotation_submission_helper');
+const {
+    AnnotationTypeData
+} = require('../lib/annotation_submission_helper');
 const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
@@ -39,7 +41,7 @@ const externalSourceData = {
  * A simple leading 0 number padding helper function
  * @param {Number} n
  */
-function pad(n){
+function pad(n) {
     return n < 10 ? '0' + n : '' + n;
 }
 
@@ -64,14 +66,16 @@ function exportAnnotations() {
 
     return Submission
         .query(() => {})
-        .fetchAll({withRelated: ['publication', 'submitter', 'annotations.status']})
+        .fetchAll({
+            withRelated: ['publication', 'submitter', 'annotations.status']
+        })
         .then(submissions => {
             console.log(`Got ${submissions.length} total submissions`);
 
             let sortedSubCollection = submissions.sortBy(elem => {
                 // Sort each submission by the date it was created
                 let milliseconds = Date.parse(elem.get('created_at'));
-                return  -milliseconds;
+                return -milliseconds;
             }).filter(sub => {
                 // Only include submission's who's annotations are all not pending.
                 let annotations = sub.related('annotations');
@@ -499,21 +503,24 @@ function exportSupplementalData() {
     // TODO reduce duplication of initial d
     return Submission
         .query(() => {})
-        .fetchAll({withRelated: [
-            'publication',
-            'submitter',
-            'annotations.childData',
-            'annotations.status',
-            'annotations.locus.names',
-            'annotations.locus.names.source',
-            'annotations.locusSymbol',]})
+        .fetchAll({
+            withRelated: [
+                'publication',
+                'submitter',
+                'annotations.childData',
+                'annotations.status',
+                'annotations.locus.names',
+                'annotations.locus.names.source',
+                'annotations.locusSymbol',
+            ]
+        })
         .then(submissions => {
             console.log(`Got ${submissions.length} total submissions`);
 
             let sortedSubCollection = submissions.sortBy(elem => {
                 // Sort each submission by the date it was created
                 let milliseconds = Date.parse(elem.get('created_at'));
-                return  -milliseconds;
+                return -milliseconds;
             }).filter(sub => {
                 // Only include submission's who's annotations are all not pending.
                 let annotations = sub.related('annotations');
@@ -593,7 +600,7 @@ function exportSupplementalData() {
             return new Promise((resolve, reject) => {
 
                 fs.writeFile(filePath, JSON.stringify(additionalData), 'utf8', (err) => {
-                    if(!err) {
+                    if (!err) {
                         console.log('Sucessfully finished writing the json export file');
                         resolve();
                     } else {

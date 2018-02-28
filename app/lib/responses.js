@@ -50,7 +50,7 @@ function defaultServerError(res, err) {
     return res.status(INTERNAL_SERVER_ERROR).send('Internal Server Error');
 }
 
-module.exports ={
+module.exports = {
     ok,
     created,
     badRequest,

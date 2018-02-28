@@ -1,9 +1,9 @@
 'use strict';
 
-const fs      = require('fs');
+const fs = require('fs');
 const md5file = require('md5-file');
 
-const oboHelper   = require('./obo_downloader');
+const oboHelper = require('./obo_downloader');
 const oboImporter = require('./obo_importer');
 const path = require('path');
 const config = require('../../../config');
@@ -33,17 +33,15 @@ function updateKeywordsUsing(oboURI) {
 
                 console.log('File has changed, importing updates...');
                 return oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
-					.then(() => oboImporter.processDeletedTerms(`${OBO_ROOT}/${oboName}`, `${OBO_ROOT}/cache/${oboName}`))
-					.then(() => console.log(`Finished importing ${oboName}`));
-            }
-            else {
+                    .then(() => oboImporter.processDeletedTerms(`${OBO_ROOT}/${oboName}`, `${OBO_ROOT}/cache/${oboName}`))
+                    .then(() => console.log(`Finished importing ${oboName}`));
+            } else {
                 console.log('No difference found. Stopping.');
             }
-        }
-        else {
+        } else {
             console.log('No cached version found. Running initial import...');
             return oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
-				.then(() => console.log(`Finished importing ${oboName}`));
+                .then(() => console.log(`Finished importing ${oboName}`));
         }
     });
 }

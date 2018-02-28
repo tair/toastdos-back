@@ -1,6 +1,6 @@
 'use strict';
 
-const response    = require('../lib/responses');
+const response = require('../lib/responses');
 const locusHelper = require('../lib/locus_submission_helper');
 
 /**
@@ -12,14 +12,14 @@ const locusHelper = require('../lib/locus_submission_helper');
  */
 function getByLocusName(req, res) {
     locusHelper.verifyLocus(req.params.name)
-		.then(locus => response.ok(res, locus))
-		.catch(err => {
-    if (err.message === `No Locus found for name ${req.params.name}`) {
-        return response.notFound(res, `No Locus found for name ${req.params.name}`);
-    } else {
-        return response.defaultServerError(res, err);
-    }
-});
+        .then(locus => response.ok(res, locus))
+        .catch(err => {
+            if (err.message === `No Locus found for name ${req.params.name}`) {
+                return response.notFound(res, `No Locus found for name ${req.params.name}`);
+            } else {
+                return response.defaultServerError(res, err);
+            }
+        });
 }
 
 

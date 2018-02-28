@@ -12,20 +12,26 @@ const Taxon = bookshelf.model('Taxon', {
 }, {
     addOrGet: function(params, transaction) {
         return Taxon
-			.where({taxon_id: params.taxon_id})
-			.fetch({transacting: transaction})
-			.then(existingTaxon => {
-    if (existingTaxon) {
-        return Promise.resolve(existingTaxon);
-    } else {
-        return Taxon
-						.forge({
-    taxon_id: params.taxon_id,
-    name: params.name
-})
-						.save(null, {transacting: transaction});
-    }
-});
+            .where({
+                taxon_id: params.taxon_id
+            })
+            .fetch({
+                transacting: transaction
+            })
+            .then(existingTaxon => {
+                if (existingTaxon) {
+                    return Promise.resolve(existingTaxon);
+                } else {
+                    return Taxon
+                        .forge({
+                            taxon_id: params.taxon_id,
+                            name: params.name
+                        })
+                        .save(null, {
+                            transacting: transaction
+                        });
+                }
+            });
     }
 });
 

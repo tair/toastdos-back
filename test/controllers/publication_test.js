@@ -17,26 +17,30 @@ describe('Publication Controller', function() {
             };
 
             chai.request(server)
-				.post('/api/publication/')
-				.send({publication_id: testDOI})
-				.end((err, res) => {
-    chai.expect(res.status).to.equal(200);
-    chai.expect(res.body).to.deep.equal(expectedResponse);
-    done();
-});
+                .post('/api/publication/')
+                .send({
+                    publication_id: testDOI
+                })
+                .end((err, res) => {
+                    chai.expect(res.status).to.equal(200);
+                    chai.expect(res.body).to.deep.equal(expectedResponse);
+                    done();
+                });
         });
 
         it('Non-existing DOI responds with error', function(done) {
             const testDOI = '10.1234/IM.A.FAKE.DOI';
 
             chai.request(server)
-				.post('/api/publication/')
-				.send({publication_id: testDOI})
-				.end((err, res) => {
-    chai.expect(res.status).to.equal(404);
-    chai.expect(res.text).to.equal(`DOI '${testDOI}' did not match any publications`);
-    done();
-});
+                .post('/api/publication/')
+                .send({
+                    publication_id: testDOI
+                })
+                .end((err, res) => {
+                    chai.expect(res.status).to.equal(404);
+                    chai.expect(res.text).to.equal(`DOI '${testDOI}' did not match any publications`);
+                    done();
+                });
         });
 
         it('Successfully retrieves Pubmed ID information', function(done) {
@@ -48,26 +52,30 @@ describe('Publication Controller', function() {
             };
 
             chai.request(server)
-				.post('/api/publication/')
-				.send({publication_id: testPubmedID})
-				.end((err, res) => {
-    chai.expect(res.status).to.equal(200);
-    chai.expect(res.body).to.deep.equal(expectedResponse);
-    done();
-});
+                .post('/api/publication/')
+                .send({
+                    publication_id: testPubmedID
+                })
+                .end((err, res) => {
+                    chai.expect(res.status).to.equal(200);
+                    chai.expect(res.body).to.deep.equal(expectedResponse);
+                    done();
+                });
         });
 
         it('Non-existing Pubmed ID responds with error', function(done) {
             const testPubmedID = 999999999;
 
             chai.request(server)
-				.post('/api/publication/')
-				.send({publication_id: testPubmedID})
-				.end((err, res) => {
-    chai.expect(res.status).to.equal(404);
-    chai.expect(res.text).to.equal(`Pubmed ID '${testPubmedID}' did not match any publications`);
-    done();
-});
+                .post('/api/publication/')
+                .send({
+                    publication_id: testPubmedID
+                })
+                .end((err, res) => {
+                    chai.expect(res.status).to.equal(404);
+                    chai.expect(res.text).to.equal(`Pubmed ID '${testPubmedID}' did not match any publications`);
+                    done();
+                });
         });
 
     });

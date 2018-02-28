@@ -1,6 +1,6 @@
 'use strict';
 
-const response  = require('../lib/responses');
+const response = require('../lib/responses');
 const validator = require('../lib/publication_id_validator');
 
 /**
@@ -17,26 +17,24 @@ function validatePublicationId(req, res) {
 
     if (validator.isDOI(pubId)) {
         validator.validateDOI(pubId)
-			.then(query => {
-    response.ok(res, {
-        type: 'doi',
-        url: query.values[0].data.value
-    });
-})
-			.catch(err => response.notFound(res, err.message));
-    }
-    else if (validator.isPubmedId(pubId)) {
+            .then(query => {
+                response.ok(res, {
+                    type: 'doi',
+                    url: query.values[0].data.value
+                });
+            })
+            .catch(err => response.notFound(res, err.message));
+    } else if (validator.isPubmedId(pubId)) {
         validator.validatePubmedId(pubId)
-			.then(query => {
-    response.ok(res, {
-        type: 'pubmed_id',
-        title: query.result[pubId].title,
-        author: query.result[pubId].authors[0].name
-    });
-})
-			.catch(err => response.notFound(res, err.message));
-    }
-    else {
+            .then(query => {
+                response.ok(res, {
+                    type: 'pubmed_id',
+                    title: query.result[pubId].title,
+                    author: query.result[pubId].authors[0].name
+                });
+            })
+            .catch(err => response.notFound(res, err.message));
+    } else {
         return response.notFound(res, `Invalid publication ID ${pubId}`);
     }
 }

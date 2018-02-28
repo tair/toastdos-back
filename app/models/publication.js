@@ -20,17 +20,21 @@ const Publication = bookshelf.model('Publication', {
         if (params.pubmed_id) query.pubmed_id = params.pubmed_id;
 
         return bookshelf.model('Publication')
-			.where(query)
-			.fetch({transacting: transaction})
-			.then(existingPublication => {
-    if (existingPublication) {
-        return Promise.resolve(existingPublication);
-    } else {
-        return bookshelf.model('Publication')
-						.forge(query)
-						.save(null, {transacting: transaction});
-    }
-});
+            .where(query)
+            .fetch({
+                transacting: transaction
+            })
+            .then(existingPublication => {
+                if (existingPublication) {
+                    return Promise.resolve(existingPublication);
+                } else {
+                    return bookshelf.model('Publication')
+                        .forge(query)
+                        .save(null, {
+                            transacting: transaction
+                        });
+                }
+            });
     }
 });
 

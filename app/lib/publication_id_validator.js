@@ -47,9 +47,9 @@ function validateDOI(doi) {
         request.get(doiUrl(doi), (error, response, bodyJson) => {
             let body = JSON.parse(bodyJson);
 
-			// www.doi.org is silly and redefines standard HTTP error codes.
-			// See http://www.doi.org/factsheets/DOIProxy.html
-			// All you need to know is responseCode '1' means '200 OK'.
+            // www.doi.org is silly and redefines standard HTTP error codes.
+            // See http://www.doi.org/factsheets/DOIProxy.html
+            // All you need to know is responseCode '1' means '200 OK'.
             if (body.responseCode === 1) {
                 resolve(body);
             } else {

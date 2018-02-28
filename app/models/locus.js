@@ -20,8 +20,12 @@ const Locus = bookshelf.model('Locus', {
 }, {
     addNew: function(params, transaction) {
         return bookshelf.model('Locus')
-			.forge({taxon_id: params.taxon_id})
-			.save(null, {transacting: transaction});
+            .forge({
+                taxon_id: params.taxon_id
+            })
+            .save(null, {
+                transacting: transaction
+            });
     }
 });
 

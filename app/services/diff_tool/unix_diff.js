@@ -1,4 +1,4 @@
-const spawn  = require('child_process').spawn;
+const spawn = require('child_process').spawn;
 const stream = require('stream');
 
 const START_OF_GROUP = /^(?:[0-9]+,)?[0-9]+[acd][0-9]+(?:,[0-9]+)?$/;
@@ -35,7 +35,7 @@ class DiffChunker extends stream.Transform {
 function unixDiff(file1, file2) {
     let diff = spawn('diff', [file1, file2]);
 
-	// Emit error output as an error event on the returned stdout stream
+    // Emit error output as an error event on the returned stdout stream
     diff.stderr.on('data', err => {
         diff.stdout.emit('error', err.toString('utf8'));
     });
@@ -51,7 +51,7 @@ function chunkedUnixDiff(file1, file2) {
     let chunker = new DiffChunker();
     let diff = unixDiff(file1, file2);
 
-	// Forward errors so the consumer can deal with them
+    // Forward errors so the consumer can deal with them
     diff.on('error', err => {
         chunker.emit('error', err);
     });

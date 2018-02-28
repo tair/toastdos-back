@@ -1,6 +1,10 @@
 'use strict';
 
-const {enableCORS, allowHeaders, allowMethods} = require('../middleware/utils');
+const {
+    enableCORS,
+    allowHeaders,
+    allowMethods
+} = require('../middleware/utils');
 
 const express = require('express');
 let router = express.Router();
@@ -40,7 +44,7 @@ router.use((req, res, next) => {
 // Handle errors
 router.use((err, req, res) => {
     res.status(err.status || 500);
-    (err.status === 500) ? console.log(err.stack) : null;
+    (err.status === 500) ? console.log(err.stack): null;
     res.json({
         message: err.message,
         error: err.stack

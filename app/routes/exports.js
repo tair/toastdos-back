@@ -7,13 +7,13 @@ const express = require('express');
 let router = express.Router();
 
 router.get(
-	'/',
-	exportsController.list
+    '/',
+    exportsController.list
 );
 
 router.use(
-	'/files',
-	express.static(path.join(config.resourceRoot, 'exports'))
+    '/files',
+    express.static(path.join(config.resourceRoot, 'exports'))
 );
 
 module.exports = router;

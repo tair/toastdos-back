@@ -1,12 +1,12 @@
 'use strict';
 
-const jwt    = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const config = require('../../config');
 const path = require('path');
 
 
 const JWT_PRIVATE_CERT_FILE = path.join(config.resourceRoot, 'privkey.pem');
-const JWT_PUBLIC_CERT_FILE  = path.join(config.resourceRoot, 'pubkey.pem');
+const JWT_PUBLIC_CERT_FILE = path.join(config.resourceRoot, 'pubkey.pem');
 
 let privateCert = '';
 let publicCert = '';

@@ -6,7 +6,7 @@ class EcoMappingParser extends stream.Transform {
 
     constructor() {
         super({
-            readableObjectMode : true,
+            readableObjectMode: true,
             writableObjectMode: true
         });
     }
@@ -15,9 +15,9 @@ class EcoMappingParser extends stream.Transform {
         let line = chunk.toString();
         let parts = line.split('\t');
 
-        if (parts.length != 3){
+        if (parts.length != 3) {
             return next();
-			//return next(new Error("Invalid input"));
+            //return next(new Error("Invalid input"));
         }
 
         let [eco_id, evidence_code, comment] = parts;
@@ -27,7 +27,7 @@ class EcoMappingParser extends stream.Transform {
             'comment': comment
         });
 
-        next(null,mapStr);
+        next(null, mapStr);
     }
 }
 

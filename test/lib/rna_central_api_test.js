@@ -4,7 +4,7 @@ const chai = require('chai');
 
 const RNACentral = require('../../app/lib/rna_central_api');
 
-describe('RNA Central API', function () {
+describe('RNA Central API', function() {
 
     it('Bad Locus name responds with error', function() {
         const badLocusName = 'URS';

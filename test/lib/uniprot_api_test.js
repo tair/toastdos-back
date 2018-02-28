@@ -4,7 +4,7 @@ const chai = require('chai');
 
 const Uniprot = require('../../app/lib/uniprot_api');
 
-describe('Uniprot API', function () {
+describe('Uniprot API', function() {
 
     it('Whole existing ID returns single Gene', function() {
         const validId = 'Q6XXX8';

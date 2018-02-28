@@ -1,6 +1,6 @@
 'use strict';
 
-const request   = require('request');
+const request = require('request');
 const path = require('path');
 const config = require('../../config');
 const orcidInfo = require(path.join(config.resourceRoot, 'orcid_app_info.json'));
@@ -24,9 +24,9 @@ function getUserToken(authCode) {
                 code: authCode
             }
         },
-			(error, response, body) => {
-    error ? reject(error) : resolve(JSON.parse(body));
-});
+            (error, response, body) => {
+                error ? reject(error) : resolve(JSON.parse(body));
+            });
     });
 }
 

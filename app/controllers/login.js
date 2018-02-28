@@ -1,9 +1,9 @@
 'use strict';
 
-const User     = require('../models/user');
-const Role     = require('../models/role');
-const auth     = require('../lib/authentication');
-const Orcid    = require('../lib/orcid_api');
+const User = require('../models/user');
+const Role = require('../models/role');
+const auth = require('../lib/authentication');
+const Orcid = require('../lib/orcid_api');
 const response = require('../lib/responses');
 
 /**
@@ -22,7 +22,7 @@ function login(req, res) {
         return response.badRequest(res, 'Missing field: code');
     }
 
-	// First we complete the OAuth process started on the frontend
+    // First we complete the OAuth process started on the frontend
     Orcid.getUserToken(req.body.code).then(userTokenRes => {
         if (!userTokenRes.orcid) {
             return response.serverError(res, `Orcid error: "${userTokenRes.error_description}"`);
@@ -31,42 +31,49 @@ function login(req, res) {
         let orcidId = userTokenRes.orcid;
         let userName = userTokenRes.name;
 
-		// Try to find the user associated with the orcid_id
+        // Try to find the user associated with the orcid_id
         return User.where('orcid_id', orcidId).fetch().then(user => {
 
-			// Return that user if they exist
+            // Return that user if they exist
             if (user) {
-				// Update the user's name if it's been changed in the ORCID system
+                // Update the user's name if it's been changed in the ORCID system
                 let userPromise;
-                if(user.get('name') !== userName){
-                    userPromise = user.set({name: userName}).save();
+                if (user.get('name') !== userName) {
+                    userPromise = user.set({
+                        name: userName
+                    }).save();
                 } else {
                     userPromise = Promise.resolve(user);
                 }
                 return userPromise.then(resolvedUser => {
-                    auth.signToken({user_id: resolvedUser.get('id')}, (err, userJwt) => {
+                    auth.signToken({
+                        user_id: resolvedUser.get('id')
+                    }, (err, userJwt) => {
                         return response.ok(res, {
                             jwt: userJwt
                         });
                     });
                 });
-            }
-            else {
-				// Make the user if they don't exist
+            } else {
+                // Make the user if they don't exist
                 return User.forge({
                     name: userName,
                     orcid_id: orcidId
                 }).save().then(newUser => {
-                    Role.forge({name: 'Researcher'}).fetch().then(
-						role => newUser.roles().attach(role)
-					).then(
-						() =>
-							auth.signToken({user_id: newUser.get('id')}, (err, userJwt) => {
-    return response.created(res, {
-        jwt: userJwt
-    });
-})
-					);
+                    Role.forge({
+                        name: 'Researcher'
+                    }).fetch().then(
+                        role => newUser.roles().attach(role)
+                    ).then(
+                        () =>
+                        auth.signToken({
+                            user_id: newUser.get('id')
+                        }, (err, userJwt) => {
+                            return response.created(res, {
+                                jwt: userJwt
+                            });
+                        })
+                    );
                 });
             }
         });
