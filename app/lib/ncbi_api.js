@@ -11,18 +11,18 @@ const BASE_URL = 'http://www.ebi.ac.uk/ena/data/taxonomy/v1/taxon';
  * @returns {Promise}
  */
 function getTaxonById(id) {
-	return new Promise((resolve, reject) => {
-		let requestUrl = `${BASE_URL}/tax-id/${id}`;
-		request.get(requestUrl, (error, response, bodyJson) => {
-			if (error) reject(new Error(error));
-			else if (response.statusCode === 404) reject(new Error(`No Taxon matches id ${id}`));
-			else {
-				let body = JSON.parse(bodyJson);
-				body.taxId = Number(body.taxId);
-				resolve(body);
-			}
-		});
-	});
+    return new Promise((resolve, reject) => {
+        let requestUrl = `${BASE_URL}/tax-id/${id}`;
+        request.get(requestUrl, (error, response, bodyJson) => {
+            if (error) reject(new Error(error));
+            else if (response.statusCode === 404) reject(new Error(`No Taxon matches id ${id}`));
+            else {
+                let body = JSON.parse(bodyJson);
+                body.taxId = Number(body.taxId);
+                resolve(body);
+            }
+        });
+    });
 }
 
 /**
@@ -33,25 +33,25 @@ function getTaxonById(id) {
  * @param name
  */
 function getTaxonByScientificName(name) {
-	return new Promise((resolve, reject) => {
-		let requestUrl = `${BASE_URL}/scientific-name/${name}`;
-		request.get(requestUrl, (error, response, bodyJson) => {
-			if (error) reject(new Error(error));
-			else if (response.statusCode === 404) reject(new Error(`No Taxon matches name ${name}`));
-			else {
-				let body = JSON.parse(bodyJson);
-				if (body.length > 1) reject(new Error(`Multiple Taxa found for name ${name}`));
-				else {
-					let taxon = body[0];
-					taxon.taxId = Number(taxon.taxId);
-					resolve(taxon);
-				}
-			}
-		});
-	});
+    return new Promise((resolve, reject) => {
+        let requestUrl = `${BASE_URL}/scientific-name/${name}`;
+        request.get(requestUrl, (error, response, bodyJson) => {
+            if (error) reject(new Error(error));
+            else if (response.statusCode === 404) reject(new Error(`No Taxon matches name ${name}`));
+            else {
+                let body = JSON.parse(bodyJson);
+                if (body.length > 1) reject(new Error(`Multiple Taxa found for name ${name}`));
+                else {
+                    let taxon = body[0];
+                    taxon.taxId = Number(taxon.taxId);
+                    resolve(taxon);
+                }
+            }
+        });
+    });
 }
 
 module.exports = {
-	getTaxonById,
-	getTaxonByScientificName
+    getTaxonById,
+    getTaxonByScientificName
 };

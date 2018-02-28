@@ -10,19 +10,19 @@ const START_OF_GROUP = /^(?:[0-9]+,)?[0-9]+[acd][0-9]+(?:,[0-9]+)?$/;
  */
 class DiffChunker extends stream.Transform {
 
-	_transform(chunk, encoding, next) {
-		let curGroup;
+    _transform(chunk) {
+        let curGroup;
 
-		chunk.toString().split('\n').forEach(line => {
-			if (line.match(START_OF_GROUP)) {
-				if (curGroup) {
-					this.push(curGroup);
-				}
-				curGroup = '';
-			}
-			curGroup += line + '\n';
-		});
-	}
+        chunk.toString().split('\n').forEach(line => {
+            if (line.match(START_OF_GROUP)) {
+                if (curGroup) {
+                    this.push(curGroup);
+                }
+                curGroup = '';
+            }
+            curGroup += line + '\n';
+        });
+    }
 
 }
 
@@ -33,14 +33,14 @@ class DiffChunker extends stream.Transform {
  * Errors are emitted on that stream
  */
 function unixDiff(file1, file2) {
-	let diff = spawn('diff', [file1, file2]);
+    let diff = spawn('diff', [file1, file2]);
 
 	// Emit error output as an error event on the returned stdout stream
-	diff.stderr.on('data', err => {
-		diff.stdout.emit('error', err.toString('utf8'));
-	});
+    diff.stderr.on('data', err => {
+        diff.stdout.emit('error', err.toString('utf8'));
+    });
 
-	return diff.stdout;
+    return diff.stdout;
 }
 
 /**
@@ -48,19 +48,19 @@ function unixDiff(file1, file2) {
  * from the stream contains a single diff group.
  */
 function chunkedUnixDiff(file1, file2) {
-	let chunker = new DiffChunker();
-	let diff = unixDiff(file1, file2);
+    let chunker = new DiffChunker();
+    let diff = unixDiff(file1, file2);
 
 	// Forward errors so the consumer can deal with them
-	diff.on('error', err => {
-		chunker.emit('error', err);
-	});
+    diff.on('error', err => {
+        chunker.emit('error', err);
+    });
 
-	diff.pipe(chunker);
-	return chunker;
+    diff.pipe(chunker);
+    return chunker;
 }
 
 module.exports = {
-	unixDiff,
-	chunkedUnixDiff
+    unixDiff,
+    chunkedUnixDiff
 };

@@ -3,10 +3,7 @@
 const {enableCORS, allowHeaders, allowMethods} = require('../middleware/utils');
 
 const express = require('express');
-const config = require('../../config');
 let router = express.Router();
-
-const response = require('../lib/responses');
 
 // enable cors
 router.use(enableCORS, allowHeaders, allowMethods);
@@ -28,26 +25,26 @@ router.use('/exports', require('./exports'));
  * These are only available for development, as the name implies.
  */
 if (process.env.NODE_ENV === 'development') {
-	const devOnlyController = require('../controllers/dev_only');
-	router.get('/dev/token/:id', devOnlyController.makeDevToken);
-	router.post('/dev/superuser/', devOnlyController.makeSuperUser);
+    const devOnlyController = require('../controllers/dev_only');
+    router.get('/dev/token/:id', devOnlyController.makeDevToken);
+    router.post('/dev/superuser/', devOnlyController.makeSuperUser);
 }
 
 // Generate 404s
 router.use((req, res, next) => {
- 	let err = new Error('Not Found');
- 	err.status = 404;
- 	next(err);
+    let err = new Error('Not Found');
+    err.status = 404;
+    next(err);
 });
 
 // Handle errors
-router.use((err, req, res, next) => {
-	res.status(err.status || 500);
-	(err.status === 500) ? console.log(err.stack) : null;
-	res.json({
-    	message: err.message,
-    	error: err.stack
-	});
+router.use((err, req, res) => {
+    res.status(err.status || 500);
+    (err.status === 500) ? console.log(err.stack) : null;
+    res.json({
+        message: err.message,
+        error: err.stack
+    });
 });
 
 module.exports = router;

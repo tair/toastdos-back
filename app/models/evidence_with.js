@@ -6,9 +6,9 @@ require('./locus');
 require('./gene_term_annotation');
 
 const EvidenceWith = bookshelf.model('EvidenceWith', {
-	tableName: 'evidence_with',
-	subject: function() {
-		return this.morphTo('subject', 'Locus');
+    tableName: 'evidence_with',
+    subject: function() {
+        return this.morphTo('subject', 'Locus');
     }
 });
 

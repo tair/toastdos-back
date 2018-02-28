@@ -22,32 +22,32 @@ const OBO_ROOT = path.join(config.resourceRoot, 'obo');
  * so the cached obo file represents the current state of our database.
  */
 function updateKeywordsUsing(oboURI) {
-	console.log(`Downloading from ${oboURI}`);
-	return oboHelper.downloadObo(OBO_ROOT, oboURI).then((oboName) => {
+    console.log(`Downloading from ${oboURI}`);
+    return oboHelper.downloadObo(OBO_ROOT, oboURI).then((oboName) => {
 
-		console.log(`Downloaded ${oboName}`);
+        console.log(`Downloaded ${oboName}`);
 
-		if (fs.existsSync(`${OBO_ROOT}/cache/${oboName}`)) {
-			console.log('Checking for differences with cached version...');
-			if (md5file.sync(`${OBO_ROOT}/${oboName}`) !== md5file.sync(`${OBO_ROOT}/cache/${oboName}`)) {
+        if (fs.existsSync(`${OBO_ROOT}/cache/${oboName}`)) {
+            console.log('Checking for differences with cached version...');
+            if (md5file.sync(`${OBO_ROOT}/${oboName}`) !== md5file.sync(`${OBO_ROOT}/cache/${oboName}`)) {
 
-				console.log('File has changed, importing updates...');
-				return oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
+                console.log('File has changed, importing updates...');
+                return oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
 					.then(() => oboImporter.processDeletedTerms(`${OBO_ROOT}/${oboName}`, `${OBO_ROOT}/cache/${oboName}`))
 					.then(() => console.log(`Finished importing ${oboName}`));
-			}
-			else {
-				console.log('No difference found. Stopping.');
-			}
-		}
-		else {
-			console.log('No cached version found. Running initial import...');
-			return oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
+            }
+            else {
+                console.log('No difference found. Stopping.');
+            }
+        }
+        else {
+            console.log('No cached version found. Running initial import...');
+            return oboImporter.loadOboIntoDB(`${OBO_ROOT}/${oboName}`)
 				.then(() => console.log(`Finished importing ${oboName}`));
-		}
-	});
+        }
+    });
 }
 
 module.exports = {
-	updateKeywordsUsing
+    updateKeywordsUsing
 };

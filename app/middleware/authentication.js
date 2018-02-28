@@ -16,42 +16,42 @@ const CURATOR_ROLE = 'Curator';
 function validateAuthentication(req, res, next) {
 
 	// Validate an authorization header was provided
-	let authHeader = req.get('Authorization');
-	if(!authHeader) {
-		return response.unauthorized(res, 'No authorization header provided.');
-	}
+    let authHeader = req.get('Authorization');
+    if(!authHeader) {
+        return response.unauthorized(res, 'No authorization header provided.');
+    }
 
 	// Validate that authorization header contains a token
-	let authMatch = authHeader.match(TOKEN_MATCHER);
-	if(!authMatch) {
-		return response.unauthorized(res, 'No authorization token provided in header.');
-	}
+    let authMatch = authHeader.match(TOKEN_MATCHER);
+    if(!authMatch) {
+        return response.unauthorized(res, 'No authorization token provided in header.');
+    }
 
-	return auth.verifyToken(authMatch[1], (err, tokenBody) => {
-		if(err) {
-			if(err.name === 'TokenExpiredError') {
-				return response.unauthorized(res, 'JWT expired');
-			} else {
-				return response.unauthorized(res, 'JWT malformed');
-			}
-		}
+    return auth.verifyToken(authMatch[1], (err, tokenBody) => {
+        if(err) {
+            if(err.name === 'TokenExpiredError') {
+                return response.unauthorized(res, 'JWT expired');
+            } else {
+                return response.unauthorized(res, 'JWT malformed');
+            }
+        }
 
-		if (!tokenBody.user_id) {
-			return response.unauthorized(res, 'No user_id in JWT');
-		}
+        if (!tokenBody.user_id) {
+            return response.unauthorized(res, 'No user_id in JWT');
+        }
 
 		// Embed the retrieved user in the request object so controllers
 		// down the line know what user is making the request
-		User.where({id: tokenBody.user_id})
+        User.where({id: tokenBody.user_id})
 			.fetch({withRelated: 'roles'})
 			.then(user => {
-				req.user = user;
-				next();
-			})
+    req.user = user;
+    next();
+})
 			.catch(err => {
-				response.defaultServerError(res, err);
-			});
-	});
+    response.defaultServerError(res, err);
+});
+    });
 }
 
 /**
@@ -61,41 +61,41 @@ function validateAuthentication(req, res, next) {
 function validateUser(req, res, next) {
 
 	// Assume the token itself has been validated and user_id has been attached already
-	if (!req.user || !req.params.id || req.params.id != req.user.attributes.id) {
-		return response.unauthorized(res, 'Unauthorized to view requested user');
-	}
+    if (!req.user || !req.params.id || req.params.id != req.user.attributes.id) {
+        return response.unauthorized(res, 'Unauthorized to view requested user');
+    }
 
-	return next();
+    return next();
 }
 
 /**
  * Middleware that ensures the requesting user is a researcher
  */
 function requireResearcher(req, res, next) {
-	let roleNames = req.user.related('roles').pluck('name');
-	if (roleNames.includes(RESEARCHER_ROLE)) {
-		next();
-	} else {
-		response.unauthorized(res, 'Only Researchers may access this resource');
-	}
+    let roleNames = req.user.related('roles').pluck('name');
+    if (roleNames.includes(RESEARCHER_ROLE)) {
+        next();
+    } else {
+        response.unauthorized(res, 'Only Researchers may access this resource');
+    }
 }
 
 /**
  * Middleware that ensures the requesting user is a curator
  */
 function requireCurator(req, res, next) {
-	let roleNames = req.user.related('roles').pluck('name');
-	if (roleNames.includes(CURATOR_ROLE)) {
-		next();
-	} else {
-		response.unauthorized(res, 'Only Curators may access this resource');
-	}
+    let roleNames = req.user.related('roles').pluck('name');
+    if (roleNames.includes(CURATOR_ROLE)) {
+        next();
+    } else {
+        response.unauthorized(res, 'Only Curators may access this resource');
+    }
 }
 
 
 module.exports = {
-	validateAuthentication,
-	validateUser,
-	requireResearcher,
-	requireCurator
+    validateAuthentication,
+    validateUser,
+    requireResearcher,
+    requireCurator
 };

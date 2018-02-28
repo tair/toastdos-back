@@ -6,7 +6,6 @@ const Uniprot   = require('../lib/uniprot_api');
 const RNACental = require('../lib/rna_central_api');
 const TAIR      = require('../lib/tair_api');
 
-const Locus      = require('../models/locus');
 const LocusName  = require('../models/locus_name');
 const GeneSymbol = require('../models/gene_symbol');
 
@@ -37,37 +36,37 @@ const UNIPROT_NAME_REGEX     = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][
  */
 function addLocusRecords(locus, transaction) {
 	// Try to find an existing record for this locus
-	return LocusName.getByNameWithRelated(locus.name, transaction)
+    return LocusName.getByNameWithRelated(locus.name, transaction)
 		.then(existingLocusName => {
-			if (existingLocusName) {
-				return Promise.resolve(existingLocusName);
-			} else {
-				return verifyLocus(locus.name).then(locusData => {
-					return LocusName.addNew(locusData, transaction);
-				}).then(locusName => locusName.fetch({
-						withRelated: ['locus', 'source'],
-						transacting: transaction
-					})
+    if (existingLocusName) {
+        return Promise.resolve(existingLocusName);
+    } else {
+        return verifyLocus(locus.name).then(locusData => {
+            return LocusName.addNew(locusData, transaction);
+        }).then(locusName => locusName.fetch({
+            withRelated: ['locus', 'source'],
+            transacting: transaction
+        })
 				);
-			}
-		})
+    }
+})
 		.then(locusName => {
 			// New GeneSymbols can be added for existing Loci
-			let symbolPromise;
-			if (locus.full_name || locus.symbol) {
-				symbolPromise = GeneSymbol.addOrGet({
-					full_name: locus.full_name,
-					symbol: locus.symbol,
-					submitter_id: locus.submitter_id,
-					locus_id: locusName.get('locus_id'),
-					source_id: locusName.get('source_id')
-				}, transaction);
-			} else {
-				symbolPromise = Promise.resolve(null);
-			}
+    let symbolPromise;
+    if (locus.full_name || locus.symbol) {
+        symbolPromise = GeneSymbol.addOrGet({
+            full_name: locus.full_name,
+            symbol: locus.symbol,
+            submitter_id: locus.submitter_id,
+            locus_id: locusName.get('locus_id'),
+            source_id: locusName.get('source_id')
+        }, transaction);
+    } else {
+        symbolPromise = Promise.resolve(null);
+    }
 
-			return Promise.all([Promise.resolve(locusName), symbolPromise]);
-		});
+    return Promise.all([Promise.resolve(locusName), symbolPromise]);
+});
 }
 
 /**
@@ -81,78 +80,78 @@ function addLocusRecords(locus, transaction) {
  * or rejects with an error message.
  */
 function verifyLocus(name) {
-	let locusLookup;
-	let locusLookupFallback1;
-	let locusLookupFallback2;
-	let locusLookupFallback3;
+    let locusLookup;
+    let locusLookupFallback1;
+    let locusLookupFallback2;
+    let locusLookupFallback3;
 
 	// Use Locus name to Guess which external source we should query first
-	if (name.match(TAIR_NAME_REGEX)) {
-		locusLookup = TAIR.getLocusByName;
-		locusLookupFallback1 = RNACental.getLocusByName;
-		locusLookupFallback2 = Uniprot.getLocusByName;
-	}
-	else if (name.match(RNA_CENTRAL_NAME_REGEX)) {
-		locusLookup = RNACental.getLocusByName;
-		locusLookupFallback1 = TAIR.getLocusByName;
-		locusLookupFallback2 = Uniprot.getLocusByName;
-	}
-	else if (name.match(UNIPROT_NAME_REGEX)) {
-		locusLookup = Uniprot.getLocusByName;
-		locusLookupFallback1 = TAIR.getLocusByName;
-		locusLookupFallback2 = RNACental.getLocusByName;
-	}
-	else {
-		locusLookupFallback1 = TAIR.getLocusByName;
-		locusLookupFallback2 = Uniprot.getLocusByName;
-		locusLookupFallback3 = RNACental.getLocusByName;
-	}
+    if (name.match(TAIR_NAME_REGEX)) {
+        locusLookup = TAIR.getLocusByName;
+        locusLookupFallback1 = RNACental.getLocusByName;
+        locusLookupFallback2 = Uniprot.getLocusByName;
+    }
+    else if (name.match(RNA_CENTRAL_NAME_REGEX)) {
+        locusLookup = RNACental.getLocusByName;
+        locusLookupFallback1 = TAIR.getLocusByName;
+        locusLookupFallback2 = Uniprot.getLocusByName;
+    }
+    else if (name.match(UNIPROT_NAME_REGEX)) {
+        locusLookup = Uniprot.getLocusByName;
+        locusLookupFallback1 = TAIR.getLocusByName;
+        locusLookupFallback2 = RNACental.getLocusByName;
+    }
+    else {
+        locusLookupFallback1 = TAIR.getLocusByName;
+        locusLookupFallback2 = Uniprot.getLocusByName;
+        locusLookupFallback3 = RNACental.getLocusByName;
+    }
 
-	return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
 
 		// Check the guessed Locus source first
-		if (locusLookup) {
-			locusLookup(name)
+        if (locusLookup) {
+            locusLookup(name)
 				.then(locus => resolve(locus))
 				.catch(err => {
-					if (err.message.includes('No Locus found')) {
-						return Bluebird.any([
-							locusLookupFallback1(name),
-							locusLookupFallback2(name)
-						]);
-					} else {
-						reject(err);
-					}
-				})
+    if (err.message.includes('No Locus found')) {
+        return Bluebird.any([
+            locusLookupFallback1(name),
+            locusLookupFallback2(name)
+        ]);
+    } else {
+        reject(err);
+    }
+})
 				.then(locus => resolve(locus))
 				.catch(aggregateError => {
-					if (aggregateError.every(err => err.message.includes('No Locus found'))) {
-						reject(new Error(`No Locus found for name ${name}`));
-					} else {
-						reject(err);
-					}
-				});
-		}
-		else {
+    if (aggregateError.every(err => err.message.includes('No Locus found'))) {
+        reject(new Error(`No Locus found for name ${name}`));
+    } else {
+        reject(aggregateError);
+    }
+});
+        }
+        else {
 			// If we can't reliably guess a source, just search all our external sources for the Locus.
-			Bluebird.any([
-				locusLookupFallback1(name),
-				locusLookupFallback2(name),
-				locusLookupFallback3(name)
-			])
+            Bluebird.any([
+                locusLookupFallback1(name),
+                locusLookupFallback2(name),
+                locusLookupFallback3(name)
+            ])
 				.then(locus => resolve(locus))
 				.catch(aggregateError => {
-					if (aggregateError.every(err => err.message.includes('No Locus found'))) {
-						reject(new Error(`No Locus found for name ${name}`));
-					} else {
-						reject(err);
-					}
-				});
-		}
-	});
+    if (aggregateError.every(err => err.message.includes('No Locus found'))) {
+        reject(new Error(`No Locus found for name ${name}`));
+    } else {
+        reject(aggregateError);
+    }
+});
+        }
+    });
 }
 
 module.exports = {
-	addLocusRecords,
-	verifyLocus
+    addLocusRecords,
+    verifyLocus
 };

@@ -9,6 +9,7 @@
     },
     "rules": {
         "no-trailing-spaces": "error",
+        "no-console": 0,
         "indent": [
             "error",
             4
@@ -21,5 +22,14 @@
             "error",
             "always"
         ]
+    },
+    "globals": {
+        "__dirname": false,
+        "it": true,
+        "xit": true,
+        "before": true,
+        "beforeEach": true,
+        "info": true,
+        "describe": true
     }
 }

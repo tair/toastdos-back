@@ -11,14 +11,14 @@ const ECOMAP_ROOT = path.join(config.resourceRoot, 'ecomap');
  * Updates our database with new keyword mappings.
  */
 function updateKeywordMappingsUsing(ecoMapURI) {
-	console.log(`Downloading from ${ecoMapURI}`);
-	return ecoMapHelper.downloadEcoMapping(ECOMAP_ROOT, ecoMapURI).then((ecoMapName) => {
-		console.log(`Downloaded ${ecoMapName}`);
-		return ecoMapImporter.loadEcoMappingIntoDB(path.join(ECOMAP_ROOT, ecoMapName))
+    console.log(`Downloading from ${ecoMapURI}`);
+    return ecoMapHelper.downloadEcoMapping(ECOMAP_ROOT, ecoMapURI).then((ecoMapName) => {
+        console.log(`Downloaded ${ecoMapName}`);
+        return ecoMapImporter.loadEcoMappingIntoDB(path.join(ECOMAP_ROOT, ecoMapName))
 			.then(() => console.log(`Finished importing ${ecoMapName}`));
-	});
+    });
 }
 
 module.exports = {
-	updateKeywordMappingsUsing
+    updateKeywordMappingsUsing
 };

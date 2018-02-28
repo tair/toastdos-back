@@ -10,13 +10,13 @@ const response = require('../lib/responses');
  * 200 with list of all Annotation statuses
  * 500 on internal error
  */
-function getAnnotationStatuses(req, res, next) {
-	AnnotationStatus.fetchAll()
+function getAnnotationStatuses(req, res) {
+    AnnotationStatus.fetchAll()
 		.then(statuses => response.ok(res, statuses))
 		.catch(err => response.defaultServerError(res, err));
 }
 
 
 module.exports = {
-	getAnnotationStatuses
+    getAnnotationStatuses
 };

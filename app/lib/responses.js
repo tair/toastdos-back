@@ -11,52 +11,52 @@ const INTERNAL_SERVER_ERROR = 500;
 const logger = require("../services/logger");
 
 function ok(res, object) {
-	logger.debug(object);
-	return res.status(OK).json(object);
+    logger.debug(object);
+    return res.status(OK).json(object);
 }
 
 function created(res, object) {
-	logger.debug(object);
-	return res.status(CREATED).json(object);
+    logger.debug(object);
+    return res.status(CREATED).json(object);
 }
 
 function badRequest(res, message) {
-	logger.info(message);
-	return res.status(BAD_REQUEST).send(message);
+    logger.info(message);
+    return res.status(BAD_REQUEST).send(message);
 }
 
 function unauthorized(res, message) {
-	logger.info(message);
-	return res.status(UNAUTHORIZED).send(message);
+    logger.info(message);
+    return res.status(UNAUTHORIZED).send(message);
 }
 
 function forbidden(res, message) {
-	logger.info(message);
-	return res.status(FORBIDDEN).send(message);
+    logger.info(message);
+    return res.status(FORBIDDEN).send(message);
 }
 
 function notFound(res, message) {
-	logger.info(message);
-	return res.status(NOT_FOUND).send(message);
+    logger.info(message);
+    return res.status(NOT_FOUND).send(message);
 }
 
 function serverError(res, message) {
-	logger.error(message);
-	return res.status(INTERNAL_SERVER_ERROR).send(message);
+    logger.error(message);
+    return res.status(INTERNAL_SERVER_ERROR).send(message);
 }
 
 function defaultServerError(res, err) {
-	logger.error(err);
-	return res.status(INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    logger.error(err);
+    return res.status(INTERNAL_SERVER_ERROR).send('Internal Server Error');
 }
 
 module.exports ={
-	ok,
-	created,
-	badRequest,
-	unauthorized,
-	forbidden,
-	notFound,
-	serverError,
-	defaultServerError
+    ok,
+    created,
+    badRequest,
+    unauthorized,
+    forbidden,
+    notFound,
+    serverError,
+    defaultServerError
 };
