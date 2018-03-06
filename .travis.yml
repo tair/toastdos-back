@@ -9,7 +9,7 @@ script:
   - mkdir -p $RESOURCEROOT
   - node ./scripts/generate_orcid_file.js
   - npm run eslint
-  - echo "fix tests then add 'npm run test' here"
+  - if [ "$TRAVIS_BRANCH" = "development" ]; then npm run test; fi
 before_deploy:
   - zip -r $TRAVIS_COMMIT $(git ls-files)
   - mkdir -p $DDIR

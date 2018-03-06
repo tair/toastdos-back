@@ -23,6 +23,7 @@ const testdata = require('../../seeds/test/test_data.json');
 describe('Submission Controller', function() {
 
     let testToken = '';
+    this.timeout(10000);
 
     // Make a token so tests can authenticate
     before('Generate test JWT', function(done) {
@@ -86,6 +87,7 @@ describe('Submission Controller', function() {
                     keyword: {
                         name: 'New keyword'
                     },
+                    isEvidenceWithOr: 1,
                     evidenceWith: ['URS00000EF184']
                 }
             },
@@ -99,6 +101,7 @@ describe('Submission Controller', function() {
                     keyword: {
                         name: 'New keyword'
                     },
+                    isEvidenceWithOr: 1,
                     evidenceWith: ['URS00000EF184']
                 }
             }
@@ -246,7 +249,6 @@ describe('Submission Controller', function() {
         });
 
         it('Only one Keyword record is created when two annotations try to add the same new Keyword', function(done) {
-            this.timeout(5000);
             chai.request(server)
                 .post('/api/submission/')
                 .send(this.test.submission)
@@ -269,7 +271,7 @@ describe('Submission Controller', function() {
         });
 
         it('Well-formed submission request makes correct records', function(done) {
-            this.timeout(5000);
+
             chai.request(server)
                 .post('/api/submission/')
                 .send(this.test.submission)
@@ -708,6 +710,7 @@ describe('Submission Controller', function() {
                             externalId: testdata.keywords[1].external_id
                         },
                         evidenceWith: [testdata.locus_name[0].locus_name],
+                        isEvidenceWithOr: 1
                     }
                 },
                 {
@@ -834,6 +837,7 @@ describe('Submission Controller', function() {
                     status: 'pending',
                     data: {
                         locusName: 'Test Locus 1',
+                        isEvidenceWithOr: 1,
                         method: {
                             id: 1
                         },
@@ -848,6 +852,7 @@ describe('Submission Controller', function() {
                     status: 'pending',
                     data: {
                         locusName: 'Test Locus 1',
+                        isEvidenceWithOr: 1,
                         method: {
                             id: 1
                         },

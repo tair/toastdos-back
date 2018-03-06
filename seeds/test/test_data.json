@@ -243,12 +243,14 @@
     {
       "id" : 1,
       "method_id" : 1,
-      "keyword_id" : 2
+      "keyword_id" : 2,
+      "is_evidence_with_or": 1
     },
     {
       "id" : 2,
       "method_id" : 1,
-      "keyword_id" : 2
+      "keyword_id" : 2,
+      "is_evidence_with_or": 1
     }
   ],
 

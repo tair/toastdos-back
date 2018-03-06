@@ -2,8 +2,10 @@
 
 const request = require('request');
 const path = require('path');
-const config = require('../../config');
-const orcidInfo = require(path.join(config.resourceRoot, 'orcid_app_info.json'));
+const orcidInfo = require(
+    path.join(path.resolve(process.env.RESOURCEROOT),
+    'orcid_app_info.json')
+);
 
 const ORCID_BASE_URL = 'https://orcid.org';
 

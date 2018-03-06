@@ -139,9 +139,10 @@ describe('OBO Data Importer', function() {
 
         // Dump test DB so the above term is the only added one
         return oboImporter.loadOboIntoDB(badOboName)
-            .then(() => knex('synonym').truncate())
-            .then(() => knex('keyword').truncate())
-            .then(() => oboImporter.loadOboIntoDB(badOboName))
+            .then(() => {
+                knex('synonym').truncate();
+                knex('keyword').truncate();
+            }).then(()=> oboImporter.loadOboIntoDB(badOboName))
             .then(() => Keyword.where('external_id', goodId).fetch())
             .then(keyword => chai.expect(keyword).to.exist)
             .then(() => fs.unlinkSync(badOboName))

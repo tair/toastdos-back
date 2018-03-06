@@ -33,7 +33,7 @@ function getLocusByName(name) {
                 try {
                     body = JSON.parse(bodyJson);
                 } catch (e) {
-                    console.error(e);
+                    return reject(new Error(`No Locus found for name ${name}`));
                 }
 
                 if (!body) {
@@ -77,7 +77,18 @@ function getAllSymbols() {
             if (error) {
                 reject(new Error(error));
             } else {
-                resolve(JSON.parse(bodyJson));
+                let body = null;
+                let isError = false;
+                try {
+                    body = JSON.parse(bodyJson);
+                } catch (e) {
+                    isError = true;
+                }
+                if (isError || !body || body.length === 0) {
+                    reject(new Error("Unable to get all symbols."));
+                } else {
+                    resolve(body);
+                }
             }
         });
     });
@@ -93,8 +104,14 @@ function getSymbolsByName(symbol) {
             if (error) {
                 reject(new Error(error));
             } else {
-                let body = JSON.parse(bodyJson);
-                if (body.length === 0) {
+                let body = null;
+                let isError = false;
+                try {
+                    body = JSON.parse(bodyJson);
+                } catch (e) {
+                    isError = true;
+                }
+                if (isError || !body || body.length === 0) {
                     reject(new Error(`No Loci for symbol ${symbol}`));
                 } else {
                     resolve(body);

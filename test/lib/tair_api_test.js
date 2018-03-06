@@ -6,6 +6,7 @@ chai.use(require('chai-subset'));
 const Tair = require('../../app/lib/tair_api');
 
 describe('TAIR API', function() {
+    this.timeout(10000);
 
     it('Non-existing Locus name returns an error', function() {
         const badLocusName = 'AT1';
@@ -32,7 +33,7 @@ describe('TAIR API', function() {
 
     it('Total list of symbols returns successfully', function() {
         // This thing just takes a while to respond. It's a lot of data.
-        this.timeout(5000);
+        this.timeout(10000);
 
         // The total number of entries probably changes all the time,
         // so we'll just make sure we're getting several results.

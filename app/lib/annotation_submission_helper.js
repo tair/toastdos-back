@@ -272,7 +272,7 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
         for (const subject of annotation.data.evidenceWith) {
             if (subject && !locusMap[subject]) {
                 verificationPromises.push(
-                    Promise.reject(new Error(`Locus ${annotation.data.evidence} not present in submission`))
+                    Promise.reject(new Error(`Locus ${annotation.data.evidenceWith} not present in submission`))
                 );
             }
         }
