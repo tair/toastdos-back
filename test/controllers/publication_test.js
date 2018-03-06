@@ -6,6 +6,7 @@ chai.use(require('chai-http'));
 const server = require('../../app/index');
 
 describe('Publication Controller', function() {
+    this.timeout(10000);
 
     describe('POST /api/publication/', function() {
 

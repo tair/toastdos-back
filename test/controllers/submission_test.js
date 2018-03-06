@@ -23,7 +23,7 @@ const testdata = require('../../seeds/test/test_data.json');
 describe('Submission Controller', function() {
 
     let testToken = '';
-    this.timeout(5000);
+    this.timeout(10000);
 
     // Make a token so tests can authenticate
     before('Generate test JWT', function(done) {
@@ -249,7 +249,6 @@ describe('Submission Controller', function() {
         });
 
         it('Only one Keyword record is created when two annotations try to add the same new Keyword', function(done) {
-            this.timeout(5000);
             chai.request(server)
                 .post('/api/submission/')
                 .send(this.test.submission)
@@ -272,7 +271,7 @@ describe('Submission Controller', function() {
         });
 
         it('Well-formed submission request makes correct records', function(done) {
-            this.timeout(5000);
+
             chai.request(server)
                 .post('/api/submission/')
                 .send(this.test.submission)

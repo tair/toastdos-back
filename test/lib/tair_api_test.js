@@ -6,6 +6,7 @@ chai.use(require('chai-subset'));
 const Tair = require('../../app/lib/tair_api');
 
 describe('TAIR API', function() {
+    this.timeout(10000);
 
     it('Non-existing Locus name returns an error', function() {
         const badLocusName = 'AT1';

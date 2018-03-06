@@ -9,7 +9,7 @@ const server = require('../../app/index');
 describe('Gene Controller', function() {
 
     describe('GET /api/gene/verify/:name', function() {
-        this.timeout(5000);
+        this.timeout(10000);
 
         it('Successfully retrieves a single Gene from Uniprot', function(done) {
             const uniprotGeneName = 'Q6XXX8';
