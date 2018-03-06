@@ -566,37 +566,24 @@ describe('Models', function() {
                 });
         });
 
-        it('Evidence Locus for Annotation can be retrieved', function() {
+        // I'm not sure if these tests are relevant after evidenceWith changes
+        it('Evidence Locus for Annotation can be retrieved');
+        it('GeneSymbol for evidence Locus of Annotation can be retrieved');
+
+        it('Evidence With for Annotation can be retrieved', function() {
             let testAnnotation = testdata.gene_term_annotations[0];
-            let expectedLocus = testdata.locus[0];
+            let expectedEvidenceWith = testdata.locus[0];
 
             return GeneTermAnnotation.where({
                 id: testAnnotation.id
             })
                 .fetch({
-                    withRelated: 'evidence'
+                    withRelated: 'evidenceWith'
                 })
                 .then(res => {
                     if (!res) throw new Error('No models were returned');
                     let actual = res.toJSON();
-                    chai.expect(actual.evidence).to.contain(expectedLocus);
-                });
-        });
-
-        it('GeneSymbol for evidence Locus of Annotation can be retrieved', function() {
-            let testAnnotation = testdata.gene_term_annotations[0];
-            let expectedSymbol = testdata.gene_symbol[0];
-
-            return GeneTermAnnotation.where({
-                id: testAnnotation.id
-            })
-                .fetch({
-                    withRelated: 'evidenceSymbol'
-                })
-                .then(res => {
-                    if (!res) throw new Error('No models were returned');
-                    let actual = res.toJSON();
-                    chai.expect(actual.evidenceSymbol).to.contain(expectedSymbol);
+                    chai.expect(actual.evidenceWith[0].id).to.equal(expectedEvidenceWith.id);
                 });
         });
 
