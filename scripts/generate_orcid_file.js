@@ -19,4 +19,4 @@ let jsonStructure = {
 
 fs.writeFileSync(path.join(DESTINATION_DIR, FILENAME), JSON.stringify(jsonStructure, null, 4));
 
-console.log('File created in \'resouces/orcid_app_info.json\', be sure to replace the values with values from your ORCID account app.');
+console.log('File created in \''+DESTINATION_DIR+'/orcid_app_info.json\', be sure to replace the values with values from your ORCID account app.');
