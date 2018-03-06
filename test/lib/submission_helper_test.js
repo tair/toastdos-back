@@ -14,7 +14,11 @@ const GeneSymbol = require('../../app/models/gene_symbol');
 
 const testdata = require('../../seeds/test/test_data.json');
 
+
 describe('Submission helper', function() {
+
+    // set test timeout to 5000 instead of 2000 default
+    this.timeout(5000);
 
     before('Setup SQLite memory database', function() {
         return knex.migrate.latest();

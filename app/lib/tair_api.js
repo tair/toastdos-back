@@ -33,7 +33,7 @@ function getLocusByName(name) {
                 try {
                     body = JSON.parse(bodyJson);
                 } catch (e) {
-                    console.error(e);
+                    return reject(new Error(`No Locus found for name ${name}`));
                 }
 
                 if (!body) {
