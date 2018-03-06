@@ -248,12 +248,12 @@ describe('Submission helper', function() {
                     keyword: {
                         name: 'New Keyword Name'
                     },
-                    evidence: testdata.locus_name[1].locus_name,
+                    evidenceWith: [testdata.locus_name[1].locus_name],
                     [invalidFieldName]: 'I am an invalid field'
                 }
             };
 
-            return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(() => {
+            return annotationHelper.addAnnotationRecords(false, testGTAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 // NOTE that 'evidence' is not picked up here.
@@ -278,7 +278,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(() => {
+            return annotationHelper.addAnnotationRecords(false, testGGAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Invalid ${testType} fields: ${invalidFieldName}`);
@@ -299,7 +299,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return annotationHelper.addAnnotationRecords(testCAnnotation, this.test.locusMap).then(() => {
+            return annotationHelper.addAnnotationRecords(false, testCAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal(`Invalid ${testType} fields: ${invalidFieldName}`);
@@ -314,7 +314,7 @@ describe('Submission helper', function() {
                 data: {}
             };
 
-            return annotationHelper.addAnnotationRecords(testGTAnnotation, this.test.locusMap).then(() => {
+            return annotationHelper.addAnnotationRecords(false, testGTAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Missing fields were not detected');
             }).catch(err => {
                 chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
@@ -331,7 +331,7 @@ describe('Submission helper', function() {
                 data: {}
             };
 
-            return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(() => {
+            return annotationHelper.addAnnotationRecords(false, testGGAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Missing fields were not detected');
             }).catch(err => {
                 chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
@@ -347,7 +347,7 @@ describe('Submission helper', function() {
                 data: {}
             };
 
-            return annotationHelper.addAnnotationRecords(testCAnnotation, this.test.locusMap).then(() => {
+            return annotationHelper.addAnnotationRecords(false, testCAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Missing fields were not detected');
             }).catch(err => {
                 chai.expect(err.message).to.contain(`Missing ${testType} fields:`);
@@ -371,7 +371,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return annotationHelper.addAnnotationRecords(testGGAnnotation, this.test.locusMap).then(() => {
+            return annotationHelper.addAnnotationRecords(false, testGGAnnotation, this.test.locusMap).then(() => {
                 throw new Error('Invalid fields were not rejected');
             }).catch(err => {
                 chai.expect(err.message).to.equal('id xor name required for Keywords');
@@ -496,7 +496,7 @@ describe('Submission helper', function() {
                     keyword: {
                         id: testdata.keywords[0].id
                     },
-                    evidence: badLocusName
+                    evidenceWith: [badLocusName]
                 }
             };
 
@@ -549,14 +549,9 @@ describe('Submission helper', function() {
 
         it('GT sub-annotation is properly added', function() {
             const createGeneTermRecords = annotationHelper.__get__('createGeneTermRecords');
-            const unusedKeywordScope = testdata.keyword_types[0].name;
 
             const expectedMethod = testdata.keywords[2];
             const expectedKeyword = testdata.keywords[0];
-            const expectedEvidenceLocus = testdata.locus[1];
-
-            // Loci can have multiple symbols, so we assume the map generator picks the first one it sees
-            const expectedEvidenceSymbol = testdata.gene_symbol[2];
 
             const partialGTAnnotation = {
                 data: {
@@ -567,21 +562,20 @@ describe('Submission helper', function() {
                     keyword: {
                         id: expectedKeyword.id
                     },
-                    evidence: testdata.locus_name[1].locus_name
+                    evidenceWith: [testdata.locus_name[1].locus_name]
                 }
             };
 
-            return createGeneTermRecords(partialGTAnnotation, this.test.locusMap, unusedKeywordScope).then(gtAnn => {
+            return createGeneTermRecords(false, partialGTAnnotation, this.test.locusMap).then(gtAnn => {
                 return gtAnn.fetch({
-                    withRelated: ['method', 'keyword', 'evidence', 'evidenceSymbol']
+                    withRelated: ['method', 'keyword', 'evidenceWith']
                 });
             }).then(fullGTAnnotation => {
                 let fullGTObj = fullGTAnnotation.toJSON();
 
                 chai.expect(fullGTObj.method).to.contain(expectedMethod);
                 chai.expect(fullGTObj.keyword).to.contain(expectedKeyword);
-                chai.expect(fullGTObj.evidence).to.contain(expectedEvidenceLocus);
-                chai.expect(fullGTObj.evidenceSymbol).to.contain(expectedEvidenceSymbol);
+                chai.expect(fullGTObj.evidenceWith).to.exist;
             });
         });
 
@@ -605,7 +599,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return createGeneGeneRecords(partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
+            return createGeneGeneRecords(false, partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
                 return ggAnn.fetch({
                     withRelated: ['method', 'locus2', 'locus2Symbol']
                 });
@@ -629,7 +623,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return createCommentRecords(partialCAnnotation, this.test.locusMap, unusedKeywordScope).then(cAnn => {
+            return createCommentRecords(false, partialCAnnotation, this.test.locusMap, unusedKeywordScope).then(cAnn => {
                 chai.expect(cAnn.attributes.id).to.exist;
                 chai.expect(cAnn.attributes.text).to.be.a('string');
             });
