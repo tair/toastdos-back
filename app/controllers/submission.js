@@ -417,6 +417,18 @@ function addNewKeywords(annotations, transaction) {
 }
 
 /**
+ * Gets a normalized subset of user info as a simple object
+ * @param {User} submitter
+ */
+function getSubmitterInfo(submitter) {
+    return {
+        email_address: submitter.get('email_address'),
+        name: submitter.get('name'),
+        orcid_id: submitter.get('orcid_id')
+    };
+}
+
+/**
  * Gets a list of submissions.
  * Submissions are a transient model in our system. They're represented by the
  * list of all annotations that share a publication id, submitter id, and
@@ -554,7 +566,8 @@ function generateSubmissionSummary(req, res) {
                         document: publication.get('doi') || publication.get('pubmed_id'),
                         total: annotations.size(),
                         pending: annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length,
-                        submission_date: new Date(submissionModel.get('created_at')).toISOString()
+                        submission_date: new Date(submissionModel.get('created_at')).toISOString(),
+                        submitter: getSubmitterInfo(submissionModel.related('submitter'))
                     };
                 })
             );
@@ -590,20 +603,12 @@ function getSingleSubmission(req, res) {
             let annotationList = generateAnnotationSubmissionList(submission.related('annotations'));
             let publication = submission.related('publication').get('doi') || submission.related('publication').get('pubmed_id');
 
-            let submitter = submission.related('submitter');
-
-            let submitterObj = {
-                email_address: submitter.get('email_address'),
-                name: submitter.get('name'),
-                orcid_id: submitter.get('orcid_id')
-            };
-
             let sub = {
                 id: submission.get('id'),
                 publicationId: publication,
                 genes: locusList,
                 annotations: annotationList,
-                submitter: submitterObj,
+                submitter: getSubmitterInfo(submission.related('submitter')),
                 submitted_at: submission.get('created_at')
             };
 
