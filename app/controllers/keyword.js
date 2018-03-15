@@ -97,7 +97,7 @@ function partialKeywordMatch(req, res) {
             // If it's an eco, we need to add the eco_id.
             if (needsEcoId) {
                 finalQuery.leftJoin('keyword_mapping', 'unionQuery.external_id', 'keyword_mapping.eco_id');
-                finalQuery.whereNotNull('keyword_mapping.eco_id');
+                finalQuery.whereNotNull('keyword_mapping.evidence_code');
             }
 
             // Make sure the keyword is not obsolete and that it has an external id.
