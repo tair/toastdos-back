@@ -105,7 +105,7 @@ function partialKeywordMatch(req, res) {
             finalQuery.whereNotNull('external_id');
 
             // Order the canonical results first and only show 20.
-            finalQuery.orderBy('synonym', 'desc');
+            finalQuery.orderByRaw('?? IS NOT NULL, LENGTH(??) ASC', ['syn', 'name']);
             finalQuery.offset(0).limit(KEYWORD_SEARCH_LIMIT);
             return finalQuery;
         })
