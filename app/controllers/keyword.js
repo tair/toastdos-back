@@ -5,8 +5,8 @@ const { AnnotationTypeData } = require('../lib/annotation_submission_helper');
 
 const response = require('../lib/responses');
 const knex = require('../lib/bookshelf').knex;
+const { insensitiveLikeOperator: ILIKE_OPERATOR } = require('../../config');
 
-const KEYWORD_SUBSTRING_MIN_LENGTH = 3;
 const KEYWORD_SEARCH_LIMIT = 20;
 
 /**
@@ -81,13 +81,13 @@ function partialKeywordMatch(req, res) {
             // Create the subquerys for searching cannonical names and synonym names.
             const keywordQuery = knex.select(keywordFields)
                 .from('keyword')
-                .where('keyword.name', 'LIKE', `%${req.query.substring}%`)
-                .orWhere('external_id', 'LIKE', `%${req.query.substring}%`);
+                .where('keyword.name', ILIKE_OPERATOR, `%${req.query.substring}%`)
+                .orWhere('external_id', ILIKE_OPERATOR, `%${req.query.substring}%`);
 
             const synonymQuery = knex.select(synonymFields)
                 .from('synonym')
                 .leftJoin('keyword', 'keyword.id', 'synonym.keyword_id')
-                .where('synonym.name', 'LIKE', `%${req.query.substring}%`);
+                .where('synonym.name', ILIKE_OPERATOR, `%${req.query.substring}%`);
 
             // Union the results of the two query
             const unionQuery = keywordQuery.union(synonymQuery).as('unionQuery');
