@@ -44,35 +44,41 @@ const AnnotationTypeData = {
         name: 'Molecular Function',
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'molecular_function',
-        aspect: 'F'
+        aspect: 'F',
+        allowedEvidenceCodes: ['IDA', 'IPI', 'IGI', 'IMP', 'EXP']
     },
     BIOLOGICAL_PROCESS: {
         name: 'Biological Process',
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'biological_process',
-        aspect: 'P'
+        aspect: 'P',
+        allowedEvidenceCodes: ['IDA', 'IPI', 'IGI', 'IMP', 'EXP', 'IEP']
     },
     SUBCELLULAR_LOCATION: {
         name: 'Subcellular Location',
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'cellular_component',
-        aspect: 'C'
+        aspect: 'C',
+        allowedEvidenceCodes: ['IDA', 'IEP', 'EXP']
     },
     ANATOMICAL_LOCATION: {
         name: 'Anatomical Location',
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'plant_anatomy',
-        aspect: 'S'
+        aspect: 'S',
+        allowedEvidenceCodes: ['IDA', 'IEP', 'EXP']
     },
     TEMPORAL_EXPRESSION: {
         name: 'Temporal Expression',
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'plant_structure_development_stage',
-        aspect: 'G'
+        aspect: 'G',
+        allowedEvidenceCodes: ['IDA', 'IEP', 'EXP']
     },
     PROTEIN_INTERACTION: {
         name: 'Protein Interaction',
-        format: AnnotationFormats.GENE_GENE
+        format: AnnotationFormats.GENE_GENE,
+        allowedEvidenceCodes: ['IPI']
     },
     COMMENT: {
         name: 'Comment',

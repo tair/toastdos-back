@@ -205,24 +205,6 @@ describe('Keyword Controller', function() {
                 });
         });
 
-        /*it('Well-formed search responds with correct data', function(done) {
-            const testKeywordScope = testdata.keyword_types[0].name;
-            const testSubstr = 'Test Term 00';
-            const expectedKeywords = [
-                testdata.keywords[0],
-                testdata.keywords[1]
-            ];
-
-            chai.request(server)
-                .get(`/api/keyword/search?substring=${testSubstr}&keyword_scope=${testKeywordScope}`)
-                .end((err, res) => {
-                    chai.expect(res.status).to.equal(200);
-                    chai.expect(res.body).to.have.length(expectedKeywords.length);
-                    chai.expect(res.body).to.containSubset(expectedKeywords);
-                    done();
-                });
-        });*/
-
     });
 
 });
