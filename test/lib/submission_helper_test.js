@@ -603,7 +603,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return createGeneGeneRecords(false, partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
+            return createGeneGeneRecords(partialGGAnnotation, this.test.locusMap, unusedKeywordScope).then(ggAnn => {
                 return ggAnn.fetch({
                     withRelated: ['method', 'locus2', 'locus2Symbol']
                 });
@@ -627,7 +627,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return createCommentRecords(false, partialCAnnotation, this.test.locusMap, unusedKeywordScope).then(cAnn => {
+            return createCommentRecords(partialCAnnotation, this.test.locusMap, unusedKeywordScope).then(cAnn => {
                 chai.expect(cAnn.attributes.id).to.exist;
                 chai.expect(cAnn.attributes.text).to.be.a('string');
             });
