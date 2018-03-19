@@ -23,15 +23,14 @@ describe('Keyword Controller', function() {
 
     describe('GET /api/keyword/search', function() {
 
-        it('Search is not performed with too few characters', function(done) {
+        it('Search is performed with any characters', function(done) {
             const testKeywordScope = testdata.keyword_types[0].name;
             const shortSubstr = 'ab';
 
             chai.request(server)
                 .get(`/api/keyword/search?substring=${shortSubstr}&keyword_scope=${testKeywordScope}`)
                 .end((err, res) => {
-                    chai.expect(res.status).to.equal(400);
-                    chai.expect(res.text).to.equal('Keyword search string too short');
+                    chai.expect(res.status).to.equal(200);
                     done();
                 });
         });
@@ -175,18 +174,6 @@ describe('Keyword Controller', function() {
                     chai.expect(res.status).to.equal(200);
                     chai.expect(res.body).to.have.lengthOf(1);
                     chai.expect(res.body[0]).to.contain(expectedKeyword);
-                    done();
-                });
-        });
-
-        it('Search throws an error when substring is not provided', function(done) {
-            const testKeywordScope = testdata.keyword_types[0].name;
-
-            chai.request(server)
-                .get(`/api/keyword/search?keyword_scope=${testKeywordScope}`)
-                .end((err, res) => {
-                    chai.expect(res.status).to.equal(400);
-                    chai.expect(res.text).to.equal(`'substring' is a required field`);
                     done();
                 });
         });

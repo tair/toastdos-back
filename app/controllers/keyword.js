@@ -1,11 +1,12 @@
 'use strict';
 
 const KeywordType = require('../models/keyword_type');
+const { AnnotationTypeData } = require('../lib/annotation_submission_helper');
 
 const response = require('../lib/responses');
 const knex = require('../lib/bookshelf').knex;
+const { insensitiveLikeOperator: ILIKE_OPERATOR } = require('../../config');
 
-const KEYWORD_SUBSTRING_MIN_LENGTH = 3;
 const KEYWORD_SEARCH_LIMIT = 20;
 
 /**
@@ -20,13 +21,6 @@ const KEYWORD_SEARCH_LIMIT = 20;
  * 400 for invalid substring or keyword_scope
  */
 function partialKeywordMatch(req, res) {
-    if (!req.query.substring) {
-        return response.badRequest(res, `'substring' is a required field`);
-    }
-
-    if (req.query.substring.length < KEYWORD_SUBSTRING_MIN_LENGTH) {
-        return response.badRequest(res, 'Keyword search string too short');
-    }
 
     // Verify / retrieve the provided KeywordType
     let keywordTypePromise;
@@ -38,6 +32,16 @@ function partialKeywordMatch(req, res) {
         });
     } else {
         keywordTypePromise = Promise.resolve(null);
+    }
+
+    let allowedEvidenceCodes = null;
+
+    if (req.query.annotation_type) {
+        if (!AnnotationTypeData.hasOwnProperty(req.query.annotation_type)) {
+            return response.badRequest(res, `Invalid 'annotation_type'`);
+        }
+
+        allowedEvidenceCodes = AnnotationTypeData[req.query.annotation_type].allowedEvidenceCodes;
     }
 
     keywordTypePromise
@@ -77,13 +81,13 @@ function partialKeywordMatch(req, res) {
             // Create the subquerys for searching cannonical names and synonym names.
             const keywordQuery = knex.select(keywordFields)
                 .from('keyword')
-                .where('keyword.name', 'LIKE', `%${req.query.substring}%`)
-                .orWhere('external_id', 'LIKE', `%${req.query.substring}%`);
+                .where('keyword.name', ILIKE_OPERATOR, `%${req.query.substring}%`)
+                .orWhere('external_id', ILIKE_OPERATOR, `%${req.query.substring}%`);
 
             const synonymQuery = knex.select(synonymFields)
                 .from('synonym')
                 .leftJoin('keyword', 'keyword.id', 'synonym.keyword_id')
-                .where('synonym.name', 'LIKE', `%${req.query.substring}%`);
+                .where('synonym.name', ILIKE_OPERATOR, `%${req.query.substring}%`);
 
             // Union the results of the two query
             const unionQuery = keywordQuery.union(synonymQuery).as('unionQuery');
@@ -96,16 +100,28 @@ function partialKeywordMatch(req, res) {
 
             // If it's an eco, we need to add the eco_id.
             if (needsEcoId) {
-                finalQuery.rightJoin('keyword_mapping', 'unionQuery.external_id', 'keyword_mapping.eco_id');
+                finalQuery.leftJoin('keyword_mapping', 'unionQuery.external_id', 'keyword_mapping.eco_id');
+                finalQuery.whereNotNull('keyword_mapping.evidence_code');
+                if (allowedEvidenceCodes != null) {
+                    finalQuery.where(function() {
+                        allowedEvidenceCodes.forEach(item => {
+                            this.orWhere('keyword_mapping.evidence_code', '=', item);
+                        });
+                    });
+                }
             }
 
             // Make sure the keyword is not obsolete and that it has an external id.
             finalQuery.whereNot('is_obsolete', 1);
             finalQuery.whereNotNull('external_id');
 
-            // Order the canonical results first and only show 20.
-            finalQuery.orderBy('synonym', 'desc');
-            finalQuery.offset(0).limit(KEYWORD_SEARCH_LIMIT);
+            // Order by match length first if there is a substring, else alphabetically.
+            if (req.query.substring) {
+                finalQuery.orderByRaw('?? IS NOT NULL, LENGTH(??) ASC, LENGTH(??) ASC', ['syn', 'syn', 'name']);
+                finalQuery.offset(0).limit(KEYWORD_SEARCH_LIMIT);
+            } else {
+                finalQuery.orderByRaw('?? IS NOT NULL, ?? ASC, ?? ASC', ['syn', 'syn', 'name']);
+            }
             return finalQuery;
         })
         .then(results => response.ok(res, results))
