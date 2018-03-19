@@ -371,7 +371,10 @@ function createGeneTermRecords(annotation, locusMap, transaction) {
 
 function cleanupGeneTermRecords(id, transaction) {
     return GeneTermAnnotation.forge({id: id})
-        .fetch({withRelated: ['evidenceWith']})
+        .fetch({
+            withRelated: ['evidenceWith'],
+            transacting: transaction
+        })
         .then(geneTermAnnotation => {
             // Delete all related evidenceWith and then delete itself.
             return geneTermAnnotation.related('evidenceWith')
