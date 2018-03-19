@@ -23,19 +23,22 @@ const AnnotationFormats = {
         fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidenceWith', 'isEvidenceWithOr']),
         optionalFields: ['evidenceWith'],
         verifyReferences: verifyGeneTermFields,
-        createRecords: createGeneTermRecords
+        createRecords: createGeneTermRecords,
+        cleanupRecords: cleanupGeneTermRecords,
     },
     GENE_GENE: {
         name: 'gene_gene_annotation',
         fields: BASE_ALLOWED_FIELDS.concat(['locusName2', 'method']),
         verifyReferences: verifyGeneGeneFields,
-        createRecords: createGeneGeneRecords
+        createRecords: createGeneGeneRecords,
+        cleanupRecords: cleanupGeneGeneRecords,
     },
     COMMENT: {
         name: 'comment_annotation',
         fields: BASE_ALLOWED_FIELDS.concat(['text']),
         verifyReferences: verifyCommentFields,
-        createRecords: createCommentRecords
+        createRecords: createCommentRecords,
+        cleanupRecords: cleanupCommentRecords,
     }
 };
 
@@ -103,11 +106,20 @@ function addAnnotationRecords(isCuration, annotation, locusMap, submission, tran
         return Promise.reject(err);
     }
 
-    // Step 2: Verify the data
-    return strategy.format.verifyReferences(annotation, locusMap, transaction)
-        // Step 3: Create sub-annotation
-        .then(() => strategy.format.createRecords(isCuration, annotation, locusMap, transaction))
-        // Step 4: With dependencies created, now add the Annotation itself
+    // Step 2: Cleanup old sub annotation if it exists.
+    let cleanupPromise;
+    if (isCuration && annotation.cleanupRecords) {
+        cleanupPromise = annotation.cleanupRecords.format.cleanupRecords(annotation.cleanupRecords.id, transaction);
+    } else {
+        // Nothing to cleanup.
+        cleanupPromise = Promise.resolve();
+    }
+
+    // Step 3: Verify the data
+    return cleanupPromise.then(() => strategy.format.verifyReferences(annotation, locusMap, transaction))
+        // Step 4: Create sub-annotation
+        .then(() => strategy.format.createRecords(annotation, locusMap, transaction))
+        // Step 5: With dependencies created, now add the Annotation itself
         .then(subAnnotation => {
 
             let statusName = NEW_ANNOTATION_STATUS;
@@ -321,16 +333,12 @@ function verifyCommentFields(annotation, locusMap) {
  *
  * Returns a Promise that resolves to new sub-annotation.
  */
-function createGeneTermRecords(isCuration, annotation, locusMap, transaction) {
+function createGeneTermRecords(annotation, locusMap, transaction) {
     let subAnnotation = {
         method_id: annotation.data.method.id,
         keyword_id: annotation.data.keyword.id,
         is_evidence_with_or: !!annotation.data.isEvidenceWithOr
     };
-
-    if (isCuration) {
-        subAnnotation.id = annotation.data.id;
-    }
 
     return GeneTermAnnotation.forge(subAnnotation).save(null, {
         transacting: transaction
@@ -355,15 +363,24 @@ function createGeneTermRecords(isCuration, annotation, locusMap, transaction) {
         });
 }
 
-function createGeneGeneRecords(isCuration, annotation, locusMap, transaction) {
+function cleanupGeneTermRecords(id, transaction) {
+    return GeneTermAnnotation.forge({id: id})
+        .fetch({withRelated: ['evidenceWith']})
+        .then(geneTermAnnotation => {
+            // Delete all related evidenceWith and then delete itself.
+            return geneTermAnnotation.related('evidenceWith')
+                .invokeThen('destroy', {transacting: transaction})
+                .then(() => {
+                    return geneTermAnnotation.destroy({transacting: transaction});
+                });
+        });
+}
+
+function createGeneGeneRecords(annotation, locusMap, transaction) {
     let newGGAnn = {
         method_id: annotation.data.method.id,
         locus2_id: locusMap[annotation.data.locusName2].locus.get('locus_id')
     };
-
-    if (isCuration) {
-        newGGAnn.id = annotation.data.id;
-    }
 
     // GeneSymbols are optional
     if (locusMap[annotation.data.locusName2].symbol) {
@@ -375,19 +392,23 @@ function createGeneGeneRecords(isCuration, annotation, locusMap, transaction) {
     });
 }
 
-function createCommentRecords(isCuration, annotation, locusMap, transaction) {
+function cleanupGeneGeneRecords(id, transaction) {
+    return GeneGeneAnnotation.forge({id: id}).destroy({transacting: transaction});
+}
+
+function createCommentRecords(annotation, locusMap, transaction) {
     // locusMap unused, but needed to keep function signature consistent
     let commentAnnotation = {
         text: annotation.data.text
     };
 
-    if (isCuration) {
-        commentAnnotation.id = annotation.data.id;
-    }
-
     return CommentAnnotation.forge(commentAnnotation).save(null, {
         transacting: transaction
     });
+}
+
+function cleanupCommentRecords(id, transaction) {
+    return CommentAnnotation.forge({id: id}).destroy({transacting: transaction});
 }
 
 /**

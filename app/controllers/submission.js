@@ -372,11 +372,11 @@ function curateGenesAndAnnotations(req, res) {
 
             req.body.annotations.forEach(newAnnotation => {
                 const curAnnotation = curAnnotationMap[newAnnotation.id];
-                if (annotationHelper.AnnotationTypeData[newAnnotation.type] ==
-                    annotationHelper.AnnotationTypeData[curAnnotation.get('type')]) {
-                    newAnnotation.data.id = curAnnotation.related('childData').get('id');
-                }
-                // TODO handle deleting the other format?
+                // Cleanup the old sub-annotation when curating
+                newAnnotation.cleanupRecords = {
+                    id: curAnnotation.related('childData').get('id'),
+                    format: annotationHelper.AnnotationTypeData[curAnnotation.related('type').get('name')].format
+                };
             });
 
             // Now that the request is valid, start the update.
