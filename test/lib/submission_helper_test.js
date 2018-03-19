@@ -570,7 +570,7 @@ describe('Submission helper', function() {
                 }
             };
 
-            return createGeneTermRecords(false, partialGTAnnotation, this.test.locusMap).then(gtAnn => {
+            return createGeneTermRecords(partialGTAnnotation, this.test.locusMap).then(gtAnn => {
                 return gtAnn.fetch({
                     withRelated: ['method', 'keyword', 'evidenceWith']
                 });
