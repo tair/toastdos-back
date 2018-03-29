@@ -52,7 +52,7 @@ function pad(n) {
  */
 function exportAnnotations() {
     // TODO Better date generation
-    const filePath = EXPORTS_ROOT + '/reviewedGOPOAnnoations.gaf';
+    const filePath = EXPORTS_ROOT + '/reviewedGOPOAnnotations.gaf';
     console.log(`Starting export file at ${filePath}`);
 
     // Delete the file if it ran on the same day
@@ -498,7 +498,7 @@ function exportAnnotations() {
 }
 
 function exportSupplementalData() {
-    const filePath = EXPORTS_ROOT + '/otherAnnoations.json';
+    const filePath = EXPORTS_ROOT + '/otherAnnotations.json';
 
     // Delete the file if it ran on the same day
     if (fs.existsSync(filePath)) {
