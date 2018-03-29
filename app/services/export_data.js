@@ -10,10 +10,12 @@ const PENDING_STATUS = 'pending';
 const ACCEPTED_STATUS = 'accepted';
 
 const EXPORTS_ROOT = path.join(config.resourceRoot, 'exports');
+const date = new Date().toISOString().split("T")[0];
 const HEADER = `!gaf-version: 2.0
 !Project_name: The Arabidopsis Information Resource (TAIR)
 !URL: http://www.arabidopsis.org
 !Contact Email: curator@arabidopsis.org
+!Last Updated: ` + date + `
 `;
 
 /**
@@ -50,8 +52,7 @@ function pad(n) {
  */
 function exportAnnotations() {
     // TODO Better date generation
-    const date = new Date().toISOString().split("T")[0];
-    const filePath = EXPORTS_ROOT + '/' + date + '.gaf';
+    const filePath = EXPORTS_ROOT + '/reviewedGOPOAnnotations.gaf';
     console.log(`Starting export file at ${filePath}`);
 
     // Delete the file if it ran on the same day
@@ -497,8 +498,13 @@ function exportAnnotations() {
 }
 
 function exportSupplementalData() {
-    const date = new Date().toISOString().split("T")[0];
-    const filePath = EXPORTS_ROOT + '/' + date + '.json';
+    const filePath = EXPORTS_ROOT + '/otherAnnotations.json';
+
+    // Delete the file if it ran on the same day
+    if (fs.existsSync(filePath)) {
+        console.log(`File already exists, clearing...`);
+        fs.unlinkSync(filePath);
+    }
 
     // TODO reduce duplication of initial d
     return Submission
