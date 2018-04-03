@@ -11,6 +11,7 @@ const publicationValidator = require('../lib/publication_id_validator');
 const Publication = require('../models/publication');
 const Keyword = require('../models/keyword');
 const Submission = require('../models/submission');
+const Draft = require('../models/draft');
 
 const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 200;
@@ -110,7 +111,14 @@ function submitGenesAndAnnotations(req, res) {
             return Promise.reject('Annotations cannot have a status or an id');
         }
 
-        return performSubmissionOrCuration(req, validationResult, null);
+        return performSubmissionOrCuration(req, validationResult, null).then(isCuration => {
+            // Delete any drafts this user had.
+            return Draft.where({
+                submitter_id: req.user.get('id')
+            }).destroy().then(() => {
+                return isCuration;
+            });
+        });
     }));
 
 }

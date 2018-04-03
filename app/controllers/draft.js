@@ -18,8 +18,7 @@ function getDraftsForUser(req, res) {
             require: true
         })
         .then(draft => {
-            draft.set('wip_state', JSON.parse(draft.get('wip_state')));
-            return response.ok(res, draft);
+            return response.ok(res, draft.get('wip_state'));
         })
         .catch(err => {
             if (err.message === 'EmptyResponse') {
@@ -43,13 +42,18 @@ function createDraft(req, res) {
         return response.badRequest(res, `Draft (wip state) is missing or invalid`);
     }
 
-    Draft.forge({
-        submitter_id: req.user.get('id'),
-        wip_state: JSON.stringify(req.body.wip_state)
-    })
+    Draft.where({
+        submitter_id: req.user.get('id')
+    }).destroy().then(() => {
+
+        Draft.forge({
+            submitter_id: req.user.get('id'),
+            wip_state: JSON.stringify(req.body.wip_state)
+        })
         .save()
         .then(draft => response.created(res, draft))
         .catch(err => response.defaultServerError(res, err));
+    });
 }
 
 /**
