@@ -38,7 +38,7 @@ describe('Draft Controller', function() {
     describe('GET /api/draft/:id', function() {
 
         it('Properly gets drafts for authenticated user', function(done) {
-            let testDraft = testdata.draft[0];
+            let testDraft = testdata.draft[0].wip_state;
             chai.request(server)
                 .get('/api/draft/')
                 .set({
@@ -46,7 +46,7 @@ describe('Draft Controller', function() {
                 })
                 .end((err, res) => {
                     chai.expect(res.status).to.equal(200);
-                    chai.expect(res.body).to.containSubset(testDraft);
+                    chai.expect(JSON.parse(res.body)).to.containSubset(testDraft);
                     done();
                 });
         });
