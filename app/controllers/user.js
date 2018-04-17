@@ -22,7 +22,9 @@ const TERRIFYING_EMAIL_VALIDATING_REGEX = /(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.
  * 500 on internal server error
  */
 function getUsers(req, res) {
-    return User.fetchAll()
+    return User.fetchAll({
+        withRelated: ['roles']
+    })
         .then(collection => response.ok(res, collection.serialize()))
         .catch(err => response.defaultServerError(res, err));
 }

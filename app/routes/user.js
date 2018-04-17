@@ -10,6 +10,7 @@ let router = express.Router();
 router.get(
     '/',
     authenticationMiddleware.validateAuthentication,
+    authenticationMiddleware.requireAdmin,
     userController.getUsers
 );
 
@@ -33,6 +34,7 @@ router.put(
 router.delete(
     '/:id',
     authenticationMiddleware.validateAuthentication,
+    authenticationMiddleware.requireAdmin,
     userController.deleteUserById
 );
 
@@ -40,6 +42,7 @@ router.delete(
 router.patch(
     '/:id/roles',
     authenticationMiddleware.validateAuthentication,
+    authenticationMiddleware.requireAdmin,
     userController.setRoles
 );
 
