@@ -2,45 +2,85 @@
 var AWS = require('aws-sdk');
 // Set the region
 var configFile = process.env.RESOURCEROOT + "/aws_ses_config.json";
+var params;
 
 AWS.config.loadFromPath(configFile);
 
-// Create sendEmail params
-var params = {
-    Destination: { /* required */
-        CcAddresses: [],
-        ToAddresses: [
-            'ajr1644@rit.edu'
-        ]
-    },
-    Message: { /* required */
-        Body: { /* required */
-            Html: {
-                Charset: "UTF-8",
-                Data: "HTML_FORMAT_BODY"
+function createMessage(toEmail, subOrCur) {
+
+    // Create sendEmail params
+    if (subOrCur == "Sub") {
+        params = {
+            Destination: { /* required */
+                CcAddresses: [],
+                ToAddresses: [
+                    toEmail
+                ]
             },
-            Text: {
-                Charset: "UTF-8",
-                Data: "TEXT_FORMAT_BODY"
-            }
-        },
-        Subject: {
-            Charset: 'UTF-8',
-            Data: 'Test email'
-        }
-    },
-    Source: 'arron.reed47@gmail.com', /* required */
-    ReplyToAddresses: [],
+            Message: { /* required */
+                Body: { /* required */
+                    Html: {
+                        Charset: "UTF-8",
+                        Data: "<p>Thank you for submitting data to GOAT! Your submission has been received, and our curators will process it and get back to you.</p>"
+                    },
+                    Text: {
+                        Charset: "UTF-8",
+                        Data: "Thank you for submitting data to GOAT! Your submission has been received, and our curators will process it and get back to you."
+                    }
+                },
+                Subject: {
+                    Charset: 'UTF-8',
+                    Data: 'Successful Submission on GOAT'
+                }
+            },
+            Source: 'arron.reed47@gmail.com', /* required */
+            ReplyToAddresses: [],
+        };
+    } else if (subOrCur == "Cur") {
+        params = {
+            Destination: { /* required */
+                CcAddresses: [],
+                ToAddresses: [
+                    toEmail
+                ]
+            },
+            Message: { /* required */
+                Body: { /* required */
+                    Html: {
+                        Charset: "UTF-8",
+                        Data: "<p>Your submission has been curated! Thank you again for submitting data to GOAT.</p>"
+                    },
+                    Text: {
+                        Charset: "UTF-8",
+                        Data: "Your submission has been curated! Thank you again for submitting data to GOAT."
+                    }
+                },
+                Subject: {
+                    Charset: 'UTF-8',
+                    Data: 'Successful Submission on GOAT'
+                }
+            },
+            Source: 'arron.reed47@gmail.com', /* required */
+            ReplyToAddresses: [],
+        };
+    }
+
+    // Create the promise and SES service object
+    var sendPromise = new AWS.SES({ apiVersion: '2010-12-01' }).sendEmail(params).promise();
+
+    // Handle promise's fulfilled/rejected states
+    sendPromise.then(
+        function (data) {
+            console.log(data.MessageId);
+        }).catch(
+            function (err) {
+                console.error(err, err.stack);
+            });
+
+    console.log("Confirmation email sent");
+
+}
+
+module.exports = {
+    createMessage
 };
-
-// Create the promise and SES service object
-var sendPromise = new AWS.SES({ apiVersion: '2010-12-01' }).sendEmail(params).promise();
-
-// Handle promise's fulfilled/rejected states
-sendPromise.then(
-    function (data) {
-        console.log(data.MessageId);
-    }).catch(
-        function (err) {
-            console.error(err, err.stack);
-        });
