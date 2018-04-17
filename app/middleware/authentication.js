@@ -8,6 +8,7 @@ const User = require('../models/user');
 const TOKEN_MATCHER = /Bearer (.*)$/;
 const RESEARCHER_ROLE = 'Researcher';
 const CURATOR_ROLE = 'Curator';
+const ADMIN_ROLE = 'Admin';
 
 /**
  * Verify that a token is valid, thus proving that this user
@@ -97,9 +98,23 @@ function requireCurator(req, res, next) {
 }
 
 
+/**
+ * Middleware that ensures the requesting user is a curator
+ */
+function requireAdmin(req, res, next) {
+    let roleNames = req.user.related('roles').pluck('name');
+    if (roleNames.includes(ADMIN_ROLE)) {
+        next();
+    } else {
+        response.unauthorized(res, 'Only Admins may access this resource');
+    }
+}
+
+
 module.exports = {
     validateAuthentication,
     validateUser,
+    requireAdmin,
     requireResearcher,
     requireCurator
 };
