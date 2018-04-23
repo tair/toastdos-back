@@ -2,8 +2,8 @@
 'use strict';
 
 if(!process.env.RESOURCEROOT) {
-	console.error('No environment variable RESOURCEROOT found.');
-	process.exit(1);
+    console.error('No environment variable RESOURCEROOT found.');
+    process.exit(1);
 }
 
 const DESTINATION_DIR = process.env.RESOURCEROOT;

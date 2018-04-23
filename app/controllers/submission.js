@@ -8,7 +8,7 @@ const locusHelper = require('../lib/locus_submission_helper');
 const annotationHelper = require('../lib/annotation_submission_helper');
 const publicationValidator = require('../lib/publication_id_validator');
 
-const sendEmail = require('../../scripts/send_email');
+const sendEmail = require('../lib/send_email');
 
 const Publication = require('../models/publication');
 const Keyword = require('../models/keyword');
@@ -123,9 +123,7 @@ function submitGenesAndAnnotations(req, res) {
             });
         })
         .then(() => {
-            // Uncomment below line once we actually have emails.
-            //sendEmail.createMessage(req.user.get('email_address'), "Sub");
-            sendEmail.createMessage("ajr1644@rit.edu", "Sub");
+            sendEmail.createSubMessage(req.user.get('email_address'), req.body.publicationId);
         });
     }));
 
@@ -396,15 +394,14 @@ function curateGenesAndAnnotations(req, res) {
             });
 
             // Now that the request is valid, start the update.
-            return performSubmissionOrCuration(req, validationResult, curSubmission).then(() => {
+            return performSubmissionOrCuration(req, validationResult, curSubmission).then(isCuration => {
 
                 if (req.body.annotations.every(newAnnotation => {
                     return newAnnotation.status != 'pending';
                 })) {
-                    //When we get emails, replace hard coded email with submitter email
-                    sendEmail.createMessage("ajr1644@rit.edu", "Cur");
+                    sendEmail.createCurMessage(curSubmission.related('submitter').get('email_address'), req.body.publicationId);
                 }
-
+                return isCuration;
             });
         }));
 }
