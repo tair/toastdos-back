@@ -19,7 +19,7 @@ module.exports = {
     database: require('../knexfile').development,
     jwt: {
         algorithm: 'RS256',
-        expiresIn: '1800000', // expire after 1 hour
+        expiresIn: '504000000', // expire after 140 hours
     },
     resourceRoot: process.env.RESOURCEROOT,
     insensitiveLikeOperator: 'LIKE'
