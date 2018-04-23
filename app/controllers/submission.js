@@ -122,8 +122,9 @@ function submitGenesAndAnnotations(req, res) {
                 return isCuration;
             });
         })
-        .then(() => {
+        .then(isCuration => {
             sendEmail.createSubMessage(req.user.get('email_address'), req.body.publicationId);
+            return isCuration;
         });
     }));
 
