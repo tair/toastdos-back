@@ -8,6 +8,7 @@ env:
 script:
   - mkdir -p $RESOURCEROOT
   - node ./scripts/generate_orcid_file.js
+  - node ./scripts/generate_aws_config.js
   - npm run eslint
   - if [ "$TRAVIS_BRANCH" = "development" ]; then npm run test; fi
 before_deploy:
