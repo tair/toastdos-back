@@ -6,8 +6,11 @@ var configFile = process.env.RESOURCEROOT + "/aws_ses_config.json";
 AWS.config.loadFromPath(configFile);
 
 function createSubMessage(toEmail, paper) {
-    if (toEmail != "" && toEmail != null) {
-        let params = {
+    if (!toEmail || process.env.NODE_ENV == "test") {
+        return;
+    }
+    sendWithParams(
+        {
             Destination: { /* required */
                 CcAddresses: [],
                 ToAddresses: [
@@ -32,14 +35,16 @@ function createSubMessage(toEmail, paper) {
             },
             Source: 'curator@phoenixbioinformatics.org', /* required */
             ReplyToAddresses: [],
-        };
-        sendWithParams(params);
-    }
+        }
+    );
 }
 
 function createCurMessage(toEmail, paper) {
-    if (toEmail != "" && toEmail != null) {
-        let params = {
+    if (!toEmail || process.env.NODE_ENV == "test") {
+        return;
+    }
+    sendWithParams(
+        {
             Destination: { /* required */
                 CcAddresses: [],
                 ToAddresses: [
@@ -64,9 +69,8 @@ function createCurMessage(toEmail, paper) {
             },
             Source: 'curator@phoenixbioinformatics.org', /* required */
             ReplyToAddresses: [],
-        };
-        sendWithParams(params);
-    }
+        }
+    );
 }
 
 function sendWithParams(params) {
