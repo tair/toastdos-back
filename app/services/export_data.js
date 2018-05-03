@@ -477,14 +477,16 @@ function exportAnnotations() {
             });
 
             // Close the file and wait for it to be finished before resolving this promise.
-            fileStream.end();
-            return new Promise((resolve) => {
+
+            let p = new Promise((resolve) => {
                 fileStream
                     .on('finish', () => {
                         console.log('Sucessfully finished writing the GAF export file');
                         resolve();
                     });
             });
+            fileStream.end();
+            return p;
         })
         .catch((error) => {
             // If there was an error, delete the file to avoid incomplete exported files.
