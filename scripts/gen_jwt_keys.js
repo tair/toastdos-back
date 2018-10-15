@@ -4,6 +4,7 @@
 const config = require('../config');
 const PUBLIC_KEY      = 'pubkey.pem';
 const PRIVATE_KEY     = 'privkey.pem';
+const DESTINATION_DIR = process.env.RESOURCEROOT;
 
 const child_process = require('child_process');
 const path = require('path');
