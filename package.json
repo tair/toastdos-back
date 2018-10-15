@@ -25,7 +25,7 @@
     "byline": "^5.0.0",
     "cookie-parser": "~1.4.3",
     "cron": "^1.2.1",
-    "debug": "~2.2.0",
+    "debug": "~2.6.9",
     "ejs": "~2.5.5",
     "express": "~4.13.4",
     "js-beautify": "^1.7.5",
