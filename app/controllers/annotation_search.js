@@ -15,7 +15,7 @@ const Annotation = require('../models/annotation');
 function getAnnotations(req, res) {
     Annotation.fetchAll({withRelated:
             ['submitter', 'publication', 'locus.taxon', 'locusSymbol', 'childData.keyword',
-                'childData.method', 'childData.evidence']})
+                'childData.method', 'childData.evidence', 'childData.locus2Symbol']})
         .then(function(annotations) {
             let paramList = [];
             let resultList = new Map();
@@ -61,6 +61,8 @@ function getAnnotations(req, res) {
                 let methodName;
                 let keywordName;
                 let evidenceName;
+                let locusTwoName;
+                let locusTwoSymbol;
                 if (annotation.publication) {
                     pubmed = annotation.publication.pubmed_id;
                 }
@@ -82,6 +84,10 @@ function getAnnotations(req, res) {
                 }
                 if (annotation.childData.evidence) {
                     evidenceName = annotation.childData.evidence.name.toLowerCase();
+                }
+                if (annotation.childData.locus2Symbol) {
+                    locusTwoSymbol = annotation.childData.locus2Symbol.symbol.toLowerCase();
+                    locusTwoName = annotation.childData.locus2Symbol.full_name.toLowerCase();
                 }
 
                 paramList.forEach( function(searchElement) {
@@ -116,6 +122,14 @@ function getAnnotations(req, res) {
                             resultList.set(annotation.id, annotation);
                         }
                     } else if (locusName && searchElement && locusName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (locusTwoSymbol && searchElement && locusTwoSymbol.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (locusTwoName && searchElement && locusTwoName.includes(searchElement)) {
                         if (!resultList.has(annotation.id)) {
                             resultList.set(annotation.id, annotation);
                         }
