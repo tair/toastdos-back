@@ -14,8 +14,8 @@ const Annotation = require('../models/annotation');
  */
 function getAnnotations(req, res) {
     Annotation.fetchAll({withRelated:
-            ['submitter', 'status', 'publication', 'locus.taxon', 'locusSymbol', 'childData.keyword',
-                'childData.method', 'childData.evidence', 'childData.locus2Symbol']})
+            ['submitter', 'publication', 'locus.taxon', 'locusSymbol', 'childData.keyword',
+                'childData.method', 'childData.evidence', 'childData.locus2Symbol', "childData.locus2", "childData.locus2.taxon"]})
         .then(function(annotations) {
             let paramList = [];
             let resultList = new Map();
