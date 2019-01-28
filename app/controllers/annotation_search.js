@@ -4,7 +4,14 @@ const response = require('../lib/responses');
 
 const Annotation = require('../models/annotation');
 
-
+/**
+ * Gets the list of all annotation statuses in our system then searches through it for specific annoations.
+ * It does this based on a string entered by the user.
+ * It can search for publication id, submitter, taxonomy, method, keyword, evidence, or locus.
+ * Responses:
+ * 200 with list of matching annotations
+ * 500 on internal error
+ */
 function getAnnotations(req, res) {
     Annotation.fetchAll({withRelated:
             ['submitter', 'publication', 'locus.taxon', 'locusSymbol', 'childData.keyword',
@@ -12,7 +19,6 @@ function getAnnotations(req, res) {
         .then(function(annotations) {
             let paramList = [];
             let resultList = new Map();
-            let scoreList = new Map();
 
             /*
             * This block of code parses the search sent from the front end.
