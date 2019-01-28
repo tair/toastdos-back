@@ -6,17 +6,121 @@ const Annotation = require('../models/annotation');
 
 
 function getAnnotations(req, res) {
-    // let returnStatement = Annotation;
-    // let paramList = req.params.searchParamaters.split("%20");
-    // paramList.forEach( (element) => {
-    //     returnStatement.where('status_id', element).orWhere();
-    // });
-    return Annotation.where('status_id', 2).where('annotation_id', req.params.searchParameters).fetch({withRelated: ['submitter', 'publication', 'locusSymbol', 'childData']})
-    //return returnStatement.where('status_id', 2).fetch()
-        .then(annotations => response.ok(res, annotations))
+    Annotation.fetchAll({withRelated:
+            ['submitter', 'publication', 'locus.taxon', 'locusSymbol', 'childData.keyword',
+                'childData.method', 'childData.evidence']})
+        .then(function(annotations) {
+            let paramList = [];
+            let resultList = new Map();
+            let scoreList = new Map();
+
+            /*
+            * This block of code parses the search sent from the front end.
+            * It steps through the search line one index at a time.
+            * Whenever it encounters a space, it takes the segment of the search from that
+            *   space before and adds it to a search list.
+            *   Whenever it encounters a quote, single or double, it waits until the next quote to add to the list.
+             */
+            let searchParameters = req.params.searchParameters;
+            let index = 0;
+            let isQuoted = false;
+            for (let x = 0; x <= searchParameters.length; x++) {
+                if (searchParameters.charAt(x) === " " && !isQuoted) {
+                    paramList.push(searchParameters.substring(index, x));
+                    index = x+1;
+                }
+                else if (searchParameters.charAt(x) === '"' || searchParameters.charAt(x) === "'") {
+                    if (isQuoted) {
+                        isQuoted = false;
+                        paramList.push(searchParameters.substring(index+1, x));
+                        index = x+2;
+                        x+=1;
+                    }
+                    else if (!isQuoted) {
+                        isQuoted = true;
+                    }
+                }
+                else if (x === searchParameters.length) {
+                    paramList.push(searchParameters.substring(index, x));
+                }
+            }
+
+            annotations.forEach( function(annotation) {
+                annotation = JSON.parse(JSON.stringify(annotation));
+                let pubmed;
+                let submitter;
+                let taxon;
+                let locusSymbol;
+                let locusName;
+                let methodName;
+                let keywordName;
+                let evidenceName;
+                if (annotation.publication) {
+                    pubmed = annotation.publication.pubmed_id;
+                }
+                if (annotation.submitter) {
+                    submitter = annotation.submitter.name.toLowerCase();
+                }
+                if (annotation.locus.taxon) {
+                    taxon = annotation.locus.taxon.name.toLowerCase();
+                }
+                if (annotation.locusSymbol) {
+                    locusSymbol = annotation.locusSymbol.symbol.toLowerCase();
+                    locusName = annotation.locusSymbol.full_name.toLowerCase();
+                }
+                if (annotation.childData.method) {
+                    methodName = annotation.childData.method.name.toLowerCase();
+                }
+                if (annotation.childData.keyword) {
+                    keywordName = annotation.childData.keyword.name.toLowerCase();
+                }
+                if (annotation.childData.evidence) {
+                    evidenceName = annotation.childData.evidence.name.toLowerCase();
+                }
+
+                paramList.forEach( function(searchElement) {
+                    searchElement = searchElement.toString().replace(/['"]+/g, '').toLowerCase();
+
+                    if (pubmed && searchElement && pubmed.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (submitter && searchElement && submitter.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (taxon && searchElement && taxon.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (methodName && searchElement && methodName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (keywordName && searchElement && keywordName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (evidenceName && searchElement && evidenceName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (locusSymbol && searchElement && locusSymbol.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (locusName && searchElement && locusName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    }
+                })
+            });
+
+            return response.ok(res, Array.from(resultList.values()));
+        })
         .catch(err => response.defaultServerError(res, err));
 }
-
 
 module.exports = {
     getAnnotations
