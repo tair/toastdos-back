@@ -14,8 +14,9 @@ const Annotation = require('../models/annotation');
  */
 function getAnnotations(req, res) {
     Annotation.fetchAll({withRelated:
-            ['submitter', 'status', 'publication', 'locus.taxon', 'locusSymbol', 'childData.keyword',
-                'childData.method', 'childData.evidence', 'childData.locus2Symbol', "childData.locus2", "childData.locus2.taxon"]})
+            ['submitter', 'publication', 'locus.taxon', 'locus.names', 'locusSymbol', 'childData.keyword',
+                'childData.method', 'childData.evidence', 'childData.locus2Symbol', 'childData.locus2',
+                'childData.locus2.taxon', 'childData.keyword.keywordType', 'childData.method.keywordMapping']})
         .then(function(annotations) {
             let paramList = [];
             let resultList = new Map();
@@ -63,80 +64,78 @@ function getAnnotations(req, res) {
                 let evidenceName;
                 let locusTwoName;
                 let locusTwoSymbol;
-                if (annotation.status.name === "accepted") {
-                    if (annotation.publication) {
-                        pubmed = annotation.publication.pubmed_id;
-                    }
-                    if (annotation.submitter) {
-                        submitter = annotation.submitter.name.toLowerCase();
-                    }
-                    if (annotation.locus.taxon) {
-                        taxon = annotation.locus.taxon.name.toLowerCase();
-                    }
-                    if (annotation.locusSymbol) {
-                        locusSymbol = annotation.locusSymbol.symbol.toLowerCase();
-                        locusName = annotation.locusSymbol.full_name.toLowerCase();
-                    }
-                    if (annotation.childData.method) {
-                        methodName = annotation.childData.method.name.toLowerCase();
-                    }
-                    if (annotation.childData.keyword) {
-                        keywordName = annotation.childData.keyword.name.toLowerCase();
-                    }
-                    if (annotation.childData.evidence) {
-                        evidenceName = annotation.childData.evidence.name.toLowerCase();
-                    }
-                    if (annotation.childData.locus2Symbol) {
-                        locusTwoSymbol = annotation.childData.locus2Symbol.symbol.toLowerCase();
-                        locusTwoName = annotation.childData.locus2Symbol.full_name.toLowerCase();
-                    }
-
-                    paramList.forEach( function(searchElement) {
-                        searchElement = searchElement.toString().replace(/['"]+/g, '').toLowerCase();
-
-                        if (pubmed && searchElement && pubmed.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (submitter && searchElement && submitter.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (taxon && searchElement && taxon.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (methodName && searchElement && methodName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (keywordName && searchElement && keywordName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (evidenceName && searchElement && evidenceName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (locusSymbol && searchElement && locusSymbol.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (locusName && searchElement && locusName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (locusTwoSymbol && searchElement && locusTwoSymbol.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (locusTwoName && searchElement && locusTwoName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        }
-                    })
+                if (annotation.publication) {
+                    pubmed = annotation.publication.pubmed_id;
                 }
+                if (annotation.submitter) {
+                    submitter = annotation.submitter.name.toLowerCase();
+                }
+                if (annotation.locus.taxon) {
+                    taxon = annotation.locus.taxon.name.toLowerCase();
+                }
+                if (annotation.locusSymbol) {
+                    locusSymbol = annotation.locusSymbol.symbol.toLowerCase();
+                    locusName = annotation.locusSymbol.full_name.toLowerCase();
+                }
+                if (annotation.childData.method) {
+                    methodName = annotation.childData.method.name.toLowerCase();
+                }
+                if (annotation.childData.keyword) {
+                    keywordName = annotation.childData.keyword.name.toLowerCase();
+                }
+                if (annotation.childData.evidence) {
+                    evidenceName = annotation.childData.evidence.name.toLowerCase();
+                }
+                if (annotation.childData.locus2Symbol) {
+                    locusTwoSymbol = annotation.childData.locus2Symbol.symbol.toLowerCase();
+                    locusTwoName = annotation.childData.locus2Symbol.full_name.toLowerCase();
+                }
+
+                paramList.forEach( function(searchElement) {
+                    searchElement = searchElement.toString().replace(/['"]+/g, '').toLowerCase();
+
+                    if (pubmed && searchElement && pubmed.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (submitter && searchElement && submitter.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (taxon && searchElement && taxon.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (methodName && searchElement && methodName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (keywordName && searchElement && keywordName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (evidenceName && searchElement && evidenceName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (locusSymbol && searchElement && locusSymbol.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (locusName && searchElement && locusName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (locusTwoSymbol && searchElement && locusTwoSymbol.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    } else if (locusTwoName && searchElement && locusTwoName.includes(searchElement)) {
+                        if (!resultList.has(annotation.id)) {
+                            resultList.set(annotation.id, annotation);
+                        }
+                    }
+                })
             });
 
             return response.ok(res, Array.from(resultList.values()));
