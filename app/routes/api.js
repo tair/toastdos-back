@@ -24,6 +24,7 @@ router.use('/submission', require('./submission'));
 router.use('/draft', require('./draft'));
 router.use('/exports', require('./exports'));
 router.use('/search',require('./annotation_search'));
+router.use('/searchexport',require('./search_export'));
 
 /**
  * Development endpoints.
