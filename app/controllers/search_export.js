@@ -1,13 +1,14 @@
-const Submission = require('../models/submission');
-const {
-    AnnotationTypeData
-} = require('../lib/annotation_submission_helper');
+'use strict';
+
+const response = require('../lib/responses');
 const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
 
-const PENDING_STATUS = 'pending';
-const ACCEPTED_STATUS = 'accepted';
+const Annotation = require('../models/annotation');
+const {
+    AnnotationTypeData
+} = require('../lib/annotation_submission_helper');
 
 const EXPORTS_ROOT = path.join(config.resourceRoot, 'exports');
 const date = new Date().toISOString().split("T")[0];
@@ -15,8 +16,8 @@ const HEADER = `!gaf-version: 2.0
 !Project_name: The Arabidopsis Information Resource (TAIR)
 !URL: http://www.arabidopsis.org
 !Contact Email: curator@arabidopsis.org
-!Last Updated: ` + date + `
-`;
+!Last Updated: ` + date + `\n`;
+
 
 /**
  * Maps external source data name to helpful data for the export file.
@@ -47,112 +48,123 @@ function pad(n) {
     return n < 10 ? '0' + n : '' + n;
 }
 
-/**
- * Exports all the data in a GAF file format
- */
-function exportAnnotations() {
-    // TODO Better date generation
-    const filePath = EXPORTS_ROOT + '/reviewedGOPOAnnotations.gaf';
-    console.log(`Starting export file at ${filePath}`);
 
-    //Delete any extra files in the directory
-    fs.readdir(EXPORTS_ROOT, (err, files) => {
-       for (const file of files) {
-           if (file !== 'reviewedGOPOAnnotations.gaf' && file !== 'otherAnnotations.json')
-           fs.unlinkSync(path.join(EXPORTS_ROOT, file));
-       }
-    });
+function getFile(req, res) {
+    /**
+     * TODO: Figure a way to dynamically create a file and have the client download it so no saving
+     * TODO: of the temporary search export file needs to be done on the server
+     */
 
-    // Delete the file if it ran on the same day
-    if (fs.existsSync(filePath)) {
-        console.log(`File already exists, clearing...`);
-        fs.unlinkSync(filePath);
+    /**
+     * A helper function that will generate a random name for the file to be saved
+     */
+    function makeID() {
+        let text = "";
+        let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+        for (let i = 0; i < 10; i++)
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+        return text;
     }
+
+    const fileName = makeID()+'.gaf';
+    const filePath = EXPORTS_ROOT + '/' + fileName;
 
     // Create the file and write the header
     let fileStream = fs.createWriteStream(filePath);
     fileStream.write(HEADER);
 
-    return Submission
-        .query(() => {})
-        .fetchAll({
-            withRelated: ['publication', 'submitter', 'annotations.status']
-        })
-        .then(submissions => {
-            console.log(`Got ${submissions.length} total submissions`);
+    let paramList = [];
+    let queryParameters = req.params.annotationParameters;
 
-            let sortedSubCollection = submissions.sortBy(elem => {
-                // Sort each submission by the date it was created
+    let index = 0;
+    for (let x = 0; x <= queryParameters.length; x++) {
+        if (queryParameters.charAt(x) === "," || x === queryParameters.length) {
+            paramList.push(queryParameters.substring(index, x));
+            index = x+1;
+        }
+    }
+
+    Annotation.query(qb => {
+        qb.whereIn('id', paramList);
+    }).fetchAll({withRelated:
+        ['submitter',
+            'publication',
+            'type',
+            'locusSymbol',
+            'locus',
+            'locus.taxon',
+            'locus.names',
+            'locus.names.source',
+            'childData.method',
+            'childData.method.keywordMapping',
+            'childData.keyword',
+            'childData.evidence.names',
+            'childData.evidenceSymbol',
+            'childData.evidenceWith',
+            'childData.evidenceWith.subject.names',
+            'childData.evidenceWith.subject.names.source',
+            'childData.locus2.names',
+            'childData.locus2Symbol',
+            'childData.locus2.names.source',
+            'childData.locus2.taxon',
+            'childData.locus2']})
+        .then(annotations => {
+            let sortedAnnotations = annotations.sortBy(elem => {
                 let milliseconds = Date.parse(elem.get('created_at'));
                 return -milliseconds;
-            }).filter(sub => {
-                // Only include submission's who's annotations are all not pending.
-                let annotations = sub.related('annotations');
-                let pending = annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length;
-                return (pending == 0);
             });
 
-            console.log(`Got ${sortedSubCollection.length} completed submissions`);
-
-            // Make a flat array for each annotation
             const annotationsToExport = [];
-            sortedSubCollection.map(submission => {
-                submission
-                    .related('annotations')
-                    .filter(ann => ann.related('status').get('name') === ACCEPTED_STATUS)
-                    .map(annotation => {
-                        if (annotation.get('annotation_format') === 'gene_term_annotation') {
-                            // Load all information we'll need about this annotation
-                            annotationsToExport.push(annotation.load([
-                                'submitter',
-                                'publication',
-                                'type',
-                                'locusSymbol',
-                                'locus',
-                                'locus.taxon',
-                                'locus.names',
-                                'locus.names.source',
-                                'childData.method',
-                                'childData.method.keywordMapping',
-                                'childData.keyword',
-                                'childData.evidence.names',
-                                'childData.evidenceSymbol',
-                                'childData.evidenceWith',
-                                'childData.evidenceWith.subject.names',
-                                'childData.evidenceWith.subject.names.source'
-                            ]));
-                        }
-                        // TODO comment annotation
-                        else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
-                            annotationsToExport.push(annotation.load([
-                                'submitter',
-                                'publication',
-                                'type',
-                                'locusSymbol',
-                                'locus',
-                                'locus.taxon',
-                                'locus.names',
-                                'locus.names.source',
-                                'childData.method',
-                                'childData.locus2.names',
-                                'childData.locus2Symbol',
-                                'childData.locus2.names.source',
-                                'childData.locus2.taxon',
-                                'childData.locus2'
-                            ]));
-                        }
-                    });
+            sortedAnnotations.map(annotation => {
+                if (annotation.get('annotation_format') === 'gene_term_annotation') {
+                    annotationsToExport.push(annotation.load([
+                        'submitter',
+                        'publication',
+                        'type',
+                        'locusSymbol',
+                        'locus',
+                        'locus.taxon',
+                        'locus.names',
+                        'locus.names.source',
+                        'childData.method',
+                        'childData.method.keywordMapping',
+                        'childData.keyword',
+                        'childData.evidence.names',
+                        'childData.evidenceSymbol',
+                        'childData.evidenceWith',
+                        'childData.evidenceWith.subject.names',
+                        'childData.evidenceWith.subject.names.source'
+                    ]));
+                }
+                else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
+                    annotationsToExport.push(annotation.load([
+                        'submitter',
+                        'publication',
+                        'type',
+                        'locusSymbol',
+                        'locus',
+                        'locus.taxon',
+                        'locus.names',
+                        'locus.names.source',
+                        'childData.method',
+                        'childData.locus2.names',
+                        'childData.locus2Symbol',
+                        'childData.locus2.names.source',
+                        'childData.locus2.taxon',
+                        'childData.locus2'
+                    ]));
+                }
             });
             return Promise.all(annotationsToExport);
         }).then(annotationsToExport => {
-
-            console.log(`Got ${annotationsToExport.length} accepted annotations to export`);
-
             /**
              * A helper function that will null check writing a field to the fileStream
              * @param {String|null|undefined} field
              */
             function writeField(field) {
+                console.log(field);
                 if (typeof field !== 'undefined' && field !== null && field !== '') {
                     fileStream.write(field);
                 }
@@ -170,10 +182,8 @@ function exportAnnotations() {
                 return externalSourceData[sourceName].prefix + ":" + locusNameText;
             }
 
-            // Loop over each annotation and start writing the entry
             annotationsToExport.map(annotation => {
                 if (annotation.get('annotation_format') === 'gene_term_annotation') {
-
                     // Reused related data
                     const childData = annotation.related('childData');
                     const locusName = annotation.related('locus').related('names').shift();
@@ -276,8 +286,6 @@ function exportAnnotations() {
                     let GeneProductFormID = null;
                     writeField(GeneProductFormID);
                 }
-
-                // TODO comment annotation
                 else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
 
                     // Reused related data
@@ -480,7 +488,6 @@ function exportAnnotations() {
                     writeField(GeneProductFormID);
                 }
 
-
                 fileStream.write('\n');
             });
 
@@ -489,159 +496,22 @@ function exportAnnotations() {
             let p = new Promise((resolve) => {
                 fileStream
                     .on('finish', () => {
-                        console.log('Sucessfully finished writing the GAF export file');
                         resolve();
                     });
             });
             fileStream.end();
-            return p;
+            return response.ok(res, fileName);
         })
         .catch((error) => {
             // If there was an error, delete the file to avoid incomplete exported files.
             fileStream.end();
-            console.log(`Error while GAF creating export, deleting GAF export file...`);
             fs.unlinkSync(filePath);
 
             // Re-throw the promise so we exit with a status of 1.
-            return Promise.reject(error);
+            return response.defaultServerError(res, error)
         });
-}
-
-function exportSupplementalData() {
-    const filePath = EXPORTS_ROOT + '/otherAnnotations.json';
-
-    // Delete the file if it ran on the same day
-    if (fs.existsSync(filePath)) {
-        console.log(`File already exists, clearing...`);
-        fs.unlinkSync(filePath);
-    }
-
-    // TODO reduce duplication of initial d
-    return Submission
-        .query(() => {})
-        .fetchAll({
-            withRelated: [
-                'publication',
-                'submitter',
-                'annotations.childData',
-                'annotations.status',
-                'annotations.locus.names',
-                'annotations.locus.names.source',
-                'annotations.locusSymbol',
-            ]
-        })
-        .then(submissions => {
-            console.log(`Got ${submissions.length} total submissions`);
-
-            let sortedSubCollection = submissions.sortBy(elem => {
-                // Sort each submission by the date it was created
-                let milliseconds = Date.parse(elem.get('created_at'));
-                return -milliseconds;
-            }).filter(sub => {
-                // Only include submission's who's annotations are all not pending.
-                let annotations = sub.related('annotations');
-                let pending = annotations.filter(ann => ann.related('status').get('name') === PENDING_STATUS).length;
-                return (pending == 0);
-            });
-
-            console.log(`Got ${sortedSubCollection.length} completed submissions`);
-
-            // Make a flat array for each annotation
-            const annotationsToExport = [];
-            sortedSubCollection.map(submission => {
-                submission
-                    .related('annotations')
-                    .filter(ann => ann.related('status').get('name') === ACCEPTED_STATUS)
-                    .map(annotation => {
-                        annotationsToExport.push(annotation.load([
-                            'publication',
-                            'locus.names',
-                            'locus.names.source',
-                            'childData',
-                        ]));
-                    });
-            });
-            return Promise.all(annotationsToExport);
-        }).then(annotations => {
-
-            const lociMap = {};
-            annotations.map(annotation => {
-                // TODO remove duplicated code
-                let DBReference;
-                let publication = annotation.related('publication');
-                if (publication.get('pubmed_id')) {
-                    DBReference = 'PMID:' + publication.get('pubmed_id');
-                } else if (publication.get('doi')) {
-                    DBReference = 'DOI:' + publication.get('doi');
-                } else {
-                    throw new Error("No publication reference id set");
-                }
-
-                const locusName = annotation.related('locus').related('names').shift();
-                const locusKey = annotation.related('locus').get('id') + ':' + DBReference;
-
-                if (!lociMap.hasOwnProperty(locusKey)) {
-                    const locusSymbol = annotation.related('locusSymbol');
-                    const externalSourceName = locusName.related('source').get('name');
-                    const sourceData = externalSourceData[externalSourceName];
-
-                    let DBObjectName = null;
-                    if (locusSymbol && locusSymbol.get('full_name')) {
-                        DBObjectName = locusSymbol.get('full_name');
-                    }
-                    let DBObjectSymbol = null;
-                    if (locusSymbol && locusSymbol.get('symbol')) {
-                        DBObjectSymbol = locusSymbol.get('symbol');
-                    }
-
-                    lociMap[locusKey] = {
-                        publication: DBReference,
-                        locus: locusName.get('locus_name'),
-                        source: sourceData.db,
-                        symbolicName: DBObjectSymbol,
-                        fullName: DBObjectName,
-                        comments: [],
-                    };
-                }
-
-                if (annotation.get('annotation_format') === 'comment_annotation') {
-                    lociMap[locusKey].comments.push(annotation.related('childData').get('text'));
-                }
-            });
-            const additionalData = [];
-            for (let locusKey in lociMap) {
-                additionalData.push(lociMap[locusKey]);
-            }
-
-            return new Promise((resolve, reject) => {
-
-                fs.writeFile(filePath, JSON.stringify(additionalData), 'utf8', (err) => {
-                    if (!err) {
-                        console.log('Sucessfully finished writing the json export file');
-                        resolve();
-                    } else {
-                        reject(err);
-                    }
-                });
-            });
-        })
-        .catch((error) => {
-            // If there was an error, delete the file to avoid incomplete exported files.
-            console.log(`Error while creating json export, deleting json export file...`);
-            fs.unlinkSync(filePath);
-
-            // Re-throw the promise so we exit with a status of 1.
-            return Promise.reject(error);
-        });
-
-}
-
-function exportAllData() {
-    return exportAnnotations().then(exportSupplementalData);
 }
 
 module.exports = {
-    exportAllData,
-    exportAnnotations,
-    exportSupplementalData
+    getFile
 };
