@@ -500,7 +500,13 @@ function getFile(req, res) {
                     });
             });
             fileStream.end();
-            return response.ok(res, fileName);
+
+            p.then(function(value) {
+                return response.ok(res, fileName);
+            }).catch((reason) => {
+                return response.defaultServerError();
+            });
+
         })
         .catch((error) => {
             // If there was an error, delete the file to avoid incomplete exported files.
