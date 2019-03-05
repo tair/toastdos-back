@@ -62,7 +62,9 @@ function getAnnotations(req, res) {
                     let locusSymbol;
                     let locusName;
                     let methodName;
+                    let methodID;
                     let keywordName;
+                    let keywordID;
                     let evidenceName;
                     let locusTwoName;
                     let locusTwoSymbol;
@@ -81,9 +83,11 @@ function getAnnotations(req, res) {
                     }
                     if (annotation.childData.method) {
                         methodName = annotation.childData.method.name.toLowerCase();
+                        methodID = annotation.childData.method.external_id.toLowerCase();
                     }
                     if (annotation.childData.keyword) {
                         keywordName = annotation.childData.keyword.name.toLowerCase();
+                        keywordID = annotation.childData.keyword.external_id.toLowerCase();
                     }
                     if (annotation.childData.evidence) {
                         evidenceName = annotation.childData.evidence.name.toLowerCase();
@@ -96,45 +100,55 @@ function getAnnotations(req, res) {
                     paramList.forEach(function (searchElement) {
                         searchElement = searchElement.toString().replace(/['"]+/g, '').toLowerCase();
 
-                        if (pubmed && searchElement && pubmed.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (submitter && searchElement && submitter.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (taxon && searchElement && taxon.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (methodName && searchElement && methodName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (keywordName && searchElement && keywordName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (evidenceName && searchElement && evidenceName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (locusSymbol && searchElement && locusSymbol.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (locusName && searchElement && locusName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (locusTwoSymbol && searchElement && locusTwoSymbol.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
-                            }
-                        } else if (locusTwoName && searchElement && locusTwoName.includes(searchElement)) {
-                            if (!resultList.has(annotation.id)) {
-                                resultList.set(annotation.id, annotation);
+                        if (searchElement) {
+                            if (pubmed && pubmed.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (submitter && submitter.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (taxon && taxon.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (methodName && methodName.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (methodID && methodID.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (keywordName && keywordName.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (keywordID && keywordID.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (evidenceName && evidenceName.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (locusSymbol && locusSymbol.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (locusName && locusName.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (locusTwoSymbol && locusTwoSymbol.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
+                            } else if (locusTwoName && locusTwoName.includes(searchElement)) {
+                                if (!resultList.has(annotation.id)) {
+                                    resultList.set(annotation.id, annotation);
+                                }
                             }
                         }
                     })
