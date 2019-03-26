@@ -50,7 +50,7 @@ module.exports = {
         connection: {
             host: process.env.DBHOST,
             port: process.env.DBPORT,
-            database: "toastdos_prod",
+            database: process.env.DBNAME,
             user: process.env.DBUSER,
             password: process.env.DBPASSWORD
         },
