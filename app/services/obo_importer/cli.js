@@ -3,7 +3,7 @@
 /**
  * This is a small command line utility to manually trigger an obo update.
  * Target options include:
- *     eco, po, go - download / run update with pre-defined obo resource
+ *     eco, po, go, ecomap - download / run update with pre-defined obo resource
  *     filepath    - run import on specified file, if exists
  *     url         - download / run update with obo at URL
  */

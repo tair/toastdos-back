@@ -140,6 +140,7 @@ function performSubmissionOrCuration(req, validationResult, existingSubmissionMo
     // Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
     return bookshelf.transaction(transaction => {
         const isCuration = !!existingSubmissionModel;
+        let originalSubmitterID;
 
         return Publication.addOrGet({
             [validationResult.publicationType]: req.body.publicationId
@@ -147,6 +148,7 @@ function performSubmissionOrCuration(req, validationResult, existingSubmissionMo
             .then(publication => {
                 let submissionPromise;
                 if (isCuration) {
+                    originalSubmitterID = existingSubmissionModel.get('submitter_id');
                     // If there is already an existing submission, update the publication id if it is different.
                     if (existingSubmissionModel.get('publication_id') != publication.get('id')) {
                         submissionPromise = existingSubmissionModel
@@ -244,7 +246,12 @@ function performSubmissionOrCuration(req, validationResult, existingSubmissionMo
 
                     // These fields exist on all Annotations
                     annotation.data.internalPublicationId = publication.attributes.id;
-                    annotation.data.submitterId = req.user.attributes.id;
+                    if (!isCuration) {
+                        annotation.data.submitterId = req.user.attributes.id;
+                    }
+                    else {
+                        annotation.data.submitterId = originalSubmitterID;
+                    }
 
                     return annotationHelper.addAnnotationRecords(isCuration, annotation, locusMap, submission, transaction);
                 });
