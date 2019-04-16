@@ -27,11 +27,11 @@ module.exports = {
     staging: {
         client: 'postgresql',
         connection: {
-            host: '52.14.163.196',
+            host: 'toastdos-db.cwqmlkzjiad7.us-east-2.rds.amazonaws.com',
             port: 5432,
-            database: 'toastdos_staging',
+            database: 'toastdos',
             user: 'toastdos',
-            password: 'vulpes'
+            password: 'toastdos-vulpes'
         },
         pool: {
             min: 2,
