@@ -16,7 +16,7 @@ function getAnnotations(req, res) {
     Annotation.fetchAll({withRelated:
             ['submitter', 'status', 'publication', 'locus.taxon', 'locus.names', 'locusSymbol', 'childData.keyword',
                 'childData.method', 'childData.evidence', 'childData.locus2Symbol', 'childData.locus2',
-                'childData.locus2.taxon', 'childData.keyword.keywordType', 'childData.method.keywordMapping']})
+                'childData.locus2.taxon','childData.locus2.names', 'childData.keyword.keywordType', 'childData.method.keywordMapping']})
         .then(function(annotations) {
             let paramList = [];
             let resultList = new Map();
