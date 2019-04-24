@@ -58,7 +58,7 @@ function exportAnnotations() {
     //Delete any extra files in the directory
     fs.readdir(EXPORTS_ROOT, (err, files) => {
        for (const file of files) {
-           if (file !== 'reviewedGOPOAnnotations.gaf' && file !== 'otherAnnotations.json')
+           if (file !== 'reviewedGOPOAnnotations.gaf' && file !== 'otherAnnotations.json' && file !== 'README.txt')
            fs.unlinkSync(path.join(EXPORTS_ROOT, file));
        }
     });
