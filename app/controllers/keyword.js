@@ -84,10 +84,16 @@ function partialKeywordMatch(req, res) {
                 .where('keyword.name', ILIKE_OPERATOR, `%${req.query.substring}%`)
                 .orWhere('external_id', ILIKE_OPERATOR, `%${req.query.substring}%`);
 
+            const keywordQueryByExternalId = knex.select('external_id')
+                .from('keyword')
+                .where('keyword.name', ILIKE_OPERATOR, `%${req.query.substring}%`)
+                .orWhere('external_id', ILIKE_OPERATOR, `%${req.query.substring}%`);
+
             const synonymQuery = knex.select(synonymFields)
                 .from('synonym')
                 .leftJoin('keyword', 'keyword.id', 'synonym.keyword_id')
-                .where('synonym.name', ILIKE_OPERATOR, `%${req.query.substring}%`);
+                .where('synonym.name', ILIKE_OPERATOR, `%${req.query.substring}%`)
+                .whereNotIn('external_id', keywordQueryByExternalId);
 
             // Union the results of the two query
             const unionQuery = keywordQuery.union(synonymQuery).as('unionQuery');

@@ -9,22 +9,17 @@ const response = require('../lib/responses');
  *
  * Responses:
  * 200 on successful retrieval.
- * 404 if user has no drafts.
+ * empty draft instead of 404 if not found.
  * 500 on internal error.
  */
 function getDraftsForUser(req, res) {
     return Draft.where('submitter_id', req.user.get('id'))
-        .fetch({
-            require: true
-        })
+        .fetch()
         .then(draft => {
-            return response.ok(res, draft.get('wip_state'));
+            const emptyDraft = "{\"publicationId\":\"\",\"genes\":[{\"locusName\":\"\",\"geneSymbol\":\"\",\"fullName\":\"\"}],\"annotations\":[]}";
+            return response.ok(res, draft ? draft.get('wip_state') : emptyDraft);
         })
         .catch(err => {
-            if (err.message === 'EmptyResponse') {
-                return response.notFound(res, 'No drafts found for user');
-            }
-
             return response.defaultServerError(res, err);
         });
 }

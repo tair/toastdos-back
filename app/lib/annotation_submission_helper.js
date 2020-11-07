@@ -158,7 +158,9 @@ function addAnnotationRecords(isCuration, annotation, locusMap, submission, tran
                     status_id: status.attributes.id,
                     type_id: type.attributes.id,
                     submitter_id: annotation.data.submitterId,
-                    locus_id: locusMap[annotation.data.locusName].locus.get('locus_id'),
+                    locus_id: locusMap[
+                        annotation.data.locusName.locusName || annotation.data.locusName
+                        ].locus.get('locus_id'),
                     annotation_id: subAnnotation.attributes.id,
                     annotation_format: strategy.format.name
                 };
@@ -168,8 +170,14 @@ function addAnnotationRecords(isCuration, annotation, locusMap, submission, tran
                 }
 
                 // GeneSymbols are optional
-                if (locusMap[annotation.data.locusName].symbol) {
-                    newAnn.locus_symbol_id = locusMap[annotation.data.locusName].symbol.get('id');
+          if (
+                locusMap[
+                annotation.data.locusName.locusName || annotation.data.locusName
+                ].symbol
+            ) {
+                newAnn.locus_symbol_id = locusMap[
+                annotation.data.locusName.locusName || annotation.data.locusName
+                ].symbol.get('id');
                 }
 
                 return Annotation.forge(newAnn).save(null, {
@@ -243,9 +251,10 @@ function verifyGenericFields(annotation, locusMap) {
     let verificationPromises = [];
 
     // Any locus present in our map has already been validated / added to our system
-    if (!locusMap[annotation.data.locusName]) {
+  let locusName = annotation.data.locusName.locusName || annotation.data.locusName;
+  if (!locusMap[locusName]) {
         verificationPromises.push(
-            Promise.reject(new Error(`Locus ${annotation.data.locusName} not present in submission`))
+            Promise.reject(new Error(`Locus ${locusName} not present in submission`))
         );
     }
 
@@ -317,9 +326,10 @@ function verifyGeneGeneFields(annotation, locusMap, transaction) {
     );
 
     // Verify locus2 Locus
-    if (!locusMap[annotation.data.locusName2]) {
+  let locusName2 = annotation.data.locusName2.locusName || annotation.data.locusName2;
+  if (!locusMap[locusName2]) {
         verificationPromises.push(
-            Promise.reject(new Error(`Locus ${annotation.data.locusName2} not present in submission`))
+            Promise.reject(new Error(`Locus ${locusName2} not present in submission`))
         );
     }
 
@@ -388,12 +398,19 @@ function cleanupGeneTermRecords(id, transaction) {
 function createGeneGeneRecords(annotation, locusMap, transaction) {
     let newGGAnn = {
         method_id: annotation.data.method.id,
-        locus2_id: locusMap[annotation.data.locusName2].locus.get('locus_id')
+        locus2_id: locusMap[
+            annotation.data.locusName2.locusName || annotation.data.locusName2
+        ].locus.get('locus_id'),
     };
 
     // GeneSymbols are optional
-    if (locusMap[annotation.data.locusName2].symbol) {
-        newGGAnn.locus2_symbol_id = locusMap[annotation.data.locusName2].symbol.get('id');
+    if (
+        locusMap[annotation.data.locusName2.locusName || annotation.data.locusName2]
+        .symbol
+    ) {
+        newGGAnn.locus2_symbol_id = locusMap[
+        annotation.data.locusName2.locusName || annotation.data.locusName2
+        ].symbol.get('id');
     }
 
     return GeneGeneAnnotation.forge(newGGAnn).save(null, {

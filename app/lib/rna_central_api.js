@@ -21,8 +21,15 @@ function getLocusByName(name) {
             else if (response.statusCode === 404) reject(new Error(`No Locus found for name ${name.toUpperCase()}`));
             else {
                 let body = JSON.parse(bodyJson);
-                let taxonId = body.xrefs[0].taxid;
-
+                let taxonId;
+                if ('taxid' in body) {
+                    taxonId = body.taxid;
+                } else if ('xrefs' in body) {
+                    taxonId = body.xrefs[0].taxid;
+                }
+                if (!taxonId) {
+                    reject(new Error('Cannot find taxon id.'));
+                }
                 NCBI.getTaxonById(taxonId).then(taxonInfo => {
                     resolve({
                         source: 'RNA Central',

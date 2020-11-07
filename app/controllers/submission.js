@@ -15,6 +15,7 @@ const Keyword = require('../models/keyword');
 const Submission = require('../models/submission');
 const Draft = require('../models/draft');
 
+const logger = require('../services/logger');
 const PENDING_STATUS = 'pending';
 const PAGE_LIMIT = 200;
 const METHOD_KEYWORD_TYPE_NAME = 'eco';
@@ -140,6 +141,7 @@ function performSubmissionOrCuration(req, validationResult, existingSubmissionMo
     // Perform the whole addition in a transaction so we can rollback if something goes horribly wrong.
     return bookshelf.transaction(transaction => {
         const isCuration = !!existingSubmissionModel;
+        // logger.info('existingSubmissionModel ', existingSubmissionModel);
         let originalSubmitterID;
 
         return Publication.addOrGet({
@@ -190,7 +192,7 @@ function performSubmissionOrCuration(req, validationResult, existingSubmissionMo
                             submitter_id: req.user.attributes.id
                         };
                     });
-
+                // logger.info(JSON.stringify(locusMap));
                 ewLociNames.map(locusName => {
                     if (!(locusName in locusMap)) {
                         locusMap[locusName] = {
@@ -714,8 +716,16 @@ function generateAnnotationSubmissionList(annotationList) {
             type: annotation.related('type').get('name'),
             status: annotation.related('status').get('name'),
             data: {
-                locusName: annotation.related('locus').related('names').first().get('locus_name'),
-            }
+                locusName: {
+                    locusName: annotation
+                        .related('locus')
+                        .related('names')
+                        .first()
+                        .get('locus_name'),
+                    geneSymbol: null,
+                    fullName: null,
+                },
+            },
         };
 
         // Data changes based on annotation type
@@ -741,7 +751,16 @@ function generateAnnotationSubmissionList(annotationList) {
                 });
             }
         } else if (annotation.get('annotation_format') === 'gene_gene_annotation') {
-            refinedAnn.data.locusName2 = annotation.related('childData').related('locus2').related('names').first().get('locus_name');
+            refinedAnn.data.locusName2 = {
+                locusName: annotation
+                .related('childData')
+                .related('locus2')
+                .related('names')
+                .first()
+                .get('locus_name'),
+                geneSymbol: null,
+                fullName: null,
+            };
             refinedAnn.data.method = {
                 id: annotation.related('childData').related('method').get('id'),
                 name: annotation.related('childData').related('method').get('name'),

@@ -96,7 +96,29 @@ class DataImporter extends stream.Writable {
 
         return keywordTypePromise
             .then(keywordType => this._addKeyword(term.name, term.id, keywordType.get('id'), term.is_obsolete))
-            .then(keyword => this._addSynonyms(term.synonym, keyword.get('id')))
+            .then(keyword => {
+                let synonymArray = [];
+                let altIdArray = [];
+                if (term.synonym) {
+                if (!(term.synonym instanceof Array)) {
+                    synonymArray = [term.synonym];
+                } else {
+                    synonymArray = term.synonym;
+                }
+                }
+                if (term.alt_id) {
+                if (!(term.alt_id instanceof Array)) {
+                    altIdArray = [term.alt_id];
+                } else {
+                    altIdArray = term.alt_id;
+                }
+                }
+                // add quotes to convert alt_id to synonym format as in obo file
+                const altAsSynonymArray = altIdArray.map((altId) => {
+                return '"' + altId + '"';
+                });
+                this._addSynonyms(synonymArray.concat(altAsSynonymArray), keyword.get("id"));
+            })
             .then(() => next())
             .catch(err => {
                 logger.error(err);
@@ -134,14 +156,14 @@ class DataImporter extends stream.Writable {
      * ID of the OBO term will be added to the existing Keyword.
      *
      * @param name - Plain text name
-     * @param externalId - ID from external DB
+     * @param external_id - ID from external DB
      * @param keywordTypeId - Foreign key ID for KeywordType
      * @param isObsolete - Whether or not this keyword is obsolete
      * @returns {Promise.<Keyword>} Created or existing keyword
      */
-    _addKeyword(name, externalId, keywordTypeId, isObsolete) {
+    _addKeyword(name, external_id, keywordTypeId, isObsolete) {
         // If this Keyword was already added from an OBO file, just update it
-        return Keyword.where('external_id', externalId).fetch().then(keyword => {
+        return Keyword.where('external_id', external_id).fetch().then(keyword => {
             if (keyword) {
                 return keyword.set({
                     name: name,
@@ -152,14 +174,14 @@ class DataImporter extends stream.Writable {
                 return Keyword.where('name', name).fetch().then(keyword => {
                     if (keyword) {
                         return keyword.set({
-                            external_id: externalId,
+                            external_id: external_id,
                             is_obsolete: isObsolete
                         }).save();
                     } else {
                         // If none of the above, add the whole new keyword
                         return Keyword.forge({
                             name: name,
-                            external_id: externalId,
+                            external_id: external_id,
                             keyword_type_id: keywordTypeId,
                             is_obsolete: isObsolete
                         }).save();
@@ -194,7 +216,13 @@ class DataImporter extends stream.Writable {
             // Process incoming synonym name strings
             let provided = oboNameLines.map(oboLine => {
                 // Pull 'synonym name' out of 'synonym: "synonym name" RELATED [GOC:mah]'
-                let name = oboLine.split('"')[1];
+            let name = '';
+            try {
+                name = oboLine.split('"')[1];
+            } catch (e) {
+                logger.info('oboline error: ' + oboNameLines);
+                logger.error(e);
+            }
 
                 // PostgreSQL has an issue with names longer than 255 characters
                 if (name.length > 255) {

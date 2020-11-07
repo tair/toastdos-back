@@ -26,8 +26,17 @@ function getLocusByName(name) {
                 reject(new Error(notFoundErrorMessage));
             } else {
                 let body = JSON.parse(bodyJson);
+                let taxonId = null;
                 let taxonName = null;
-                let names = body && body.organism && body.organism.names ? body.organism.names : null;
+                let names = null;
+                if (body && body.organism) {
+                    if (body.organism.names) {
+                        names = body.organism.names;
+                    }
+                    if (body.organism.taxonomy) {
+                        taxonId = body.organism.taxonomy;
+                    }
+                }
 
                 if (names != null) {
                     for (let item of names) {
@@ -37,18 +46,12 @@ function getLocusByName(name) {
                     }
                 }
 
-                if (taxonName == null) {
-                    reject(new Error(notFoundErrorMessage));
-                } else {
-                    NCBI.getTaxonByScientificName(taxonName).then(taxonInfo => {
-                        resolve({
-                            source: 'Uniprot',
-                            locus_name: body.accession,
-                            taxon_name: taxonName,
-                            taxon_id: taxonInfo.taxId
-                        });
-                    });
-                }
+                resolve({
+                    source: 'Uniprot',
+                    locus_name: body.accession,
+                    taxon_name: taxonName,
+                    taxon_id: taxonId
+                });
             }
         });
     });
