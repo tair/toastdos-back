@@ -329,6 +329,7 @@ function getSubmissionWithData(id) {
                 if (annotation.get('annotation_format') === 'gene_gene_annotation') {
                     return annotation.load([
                         'childData.method',
+                        'childData.method.keywordMapping',
                         'childData.locus2.names',
                         'childData.locus2Symbol'
                     ]);
@@ -733,8 +734,8 @@ function generateAnnotationSubmissionList(annotationList) {
             refinedAnn.data.method = {
                 id: annotation.related('childData').related('method').get('id'),
                 name: annotation.related('childData').related('method').get('name'),
-                externalId: annotation.related('childData').related('method').get('external_id'),
-                evidenceCode: annotation.related('childData').related('method').related('keywordMapping').get('evidence_code')
+                external_id: annotation.related('childData').related('method').get('external_id'),
+                evidence_code: annotation.related('childData').related('method').related('keywordMapping').get('evidence_code')
             };
 
             refinedAnn.data.isEvidenceWithOr = annotation.related('childData').get('is_evidence_with_or');
@@ -742,7 +743,7 @@ function generateAnnotationSubmissionList(annotationList) {
             refinedAnn.data.keyword = {
                 id: annotation.related('childData').related('keyword').get('id'),
                 name: annotation.related('childData').related('keyword').get('name'),
-                externalId: annotation.related('childData').related('keyword').get('external_id')
+                external_id: annotation.related('childData').related('keyword').get('external_id')
             };
 
             if (annotation.related('childData').related('evidenceWith').length > 0) {
@@ -764,7 +765,8 @@ function generateAnnotationSubmissionList(annotationList) {
             refinedAnn.data.method = {
                 id: annotation.related('childData').related('method').get('id'),
                 name: annotation.related('childData').related('method').get('name'),
-                externalId: annotation.related('childData').related('method').get('external_id'),
+                external_id: annotation.related('childData').related('method').get('external_id'),
+                evidence_code: annotation.related('childData').related('method').related('keywordMapping').get('evidence_code')
             };
         } else { //if (annotation.get('annotation_format') === 'comment_annotation')
             refinedAnn.data.text = annotation.related('childData').get('text');
