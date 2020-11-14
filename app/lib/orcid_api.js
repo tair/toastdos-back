@@ -8,6 +8,7 @@ const orcidInfo = require(
 );
 
 const ORCID_BASE_URL = 'https://orcid.org';
+const ORCID_API_URL = 'https://pub.orcid.org';
 
 /**
  * Completes the backend portion of the ORCID user login
@@ -32,6 +33,28 @@ function getUserToken(authCode) {
     });
 }
 
+/**
+ * Get user's email information from orcid api( documentatoin: https://members.orcid.org/api)
+ * @param access_token
+ * @param orcid_id
+ * @returns {Promise}
+ */
+function getUserEmail(access_token,orcid_id) {
+    return new Promise((resolve, reject) => {
+        request.get({
+            url: `${ORCID_API_URL}/v3.0/${orcid_id}/email`,
+            headers: {
+                Authorization: `Bearer ${access_token}`,
+                Accept: 'application/json'
+            }
+        },
+            (error, response, body) => {
+                error ? reject(error) : resolve(JSON.parse(body));
+            });
+    });
+}
+
 module.exports = {
-    getUserToken
+    getUserToken,
+    getUserEmail
 };

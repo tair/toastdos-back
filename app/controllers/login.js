@@ -5,6 +5,7 @@ const Role = require('../models/role');
 const auth = require('../lib/authentication');
 const Orcid = require('../lib/orcid_api');
 const response = require('../lib/responses');
+const logger = require('../services/logger');
 
 /**
  * Controller for logging in with an ORCID auth code.
@@ -27,7 +28,7 @@ function login(req, res) {
         if (!userTokenRes.orcid) {
             return response.serverError(res, `Orcid error: "${userTokenRes.error_description}"`);
         }
-
+        // logger.info('userTokenRes',userTokenRes);
         let orcidId = userTokenRes.orcid;
         let userName = userTokenRes.name;
 
@@ -55,10 +56,28 @@ function login(req, res) {
                     });
                 });
             } else {
+                // get user email to store in db
+                let access_token = userTokenRes.access_token;
+                let email = '';
+                Orcid.getUserEmail(access_token, orcidId).then(emailJson =>{
+                    // logger.info('emailJson',emailJson);
+                    for (let item of emailJson.email){
+                        if(item.primary){
+                            email = item.email;
+                        }
+                    }
+                    // no public primary email but has other emails
+                    if (!email && emailJson.email.length>0){
+                        email = emailJson.email[0].email;
+                    }
+                }).catch(err=>{
+                    logger.info('Error getting user email: ',err);
+                }).finally(
                 // Make the user if they don't exist
-                return User.forge({
+                ()=>{return User.forge({
                     name: userName,
-                    orcid_id: orcidId
+                    orcid_id: orcidId,
+                    email_address: email
                 }).save().then(newUser => {
                     Role.forge({
                         name: 'Researcher'
@@ -74,7 +93,8 @@ function login(req, res) {
                             });
                         })
                     );
-                });
+                });}
+                );
             }
         });
     }).catch(err => {
