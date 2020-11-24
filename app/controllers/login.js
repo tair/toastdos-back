@@ -58,7 +58,7 @@ function login(req, res) {
             } else {
                 // get user email to store in db
                 let access_token = userTokenRes.access_token;
-                let email = '';
+                let email = null;
                 Orcid.getUserEmail(access_token, orcidId).then(emailJson =>{
                     // logger.info('emailJson',emailJson);
                     for (let item of emailJson.email){
@@ -70,6 +70,7 @@ function login(req, res) {
                     if (!email && emailJson.email.length>0){
                         email = emailJson.email[0].email;
                     }
+                    // logger.info('email got',email);
                 }).catch(err=>{
                     logger.info('Error getting user email: ',err);
                 }).finally(
@@ -79,6 +80,7 @@ function login(req, res) {
                     orcid_id: orcidId,
                     email_address: email
                 }).save().then(newUser => {
+                    // logger.info('creating user:',newUser);
                     Role.forge({
                         name: 'Researcher'
                     }).fetch().then(
