@@ -1,3 +1,4 @@
+const validator = require('../lib/publication_id_validator');
 // Load the AWS SDK for Node.js
 var AWS = require('aws-sdk');
 // Set the region
@@ -5,10 +6,23 @@ var configFile = process.env.RESOURCEROOT + "/aws_ses_config.json";
 
 AWS.config.loadFromPath(configFile);
 
+function getPaperDesc(paper) {
+    let paperDesc = "";
+    if ( validator.isDOI(paper) ){
+        paperDesc = "DOI:" + paper;
+    } else if ( validator.isPubmedId(paper) ){
+        paperDesc = "PMID:" + paper;
+    } else {
+        paperDesc = paper;
+    }
+    return paperDesc;
+}
+
 function createSubMessage(toEmail, paper) {
     if (!toEmail || process.env.NODE_ENV == "test") {
         return;
     }
+    let paperDesc = getPaperDesc(paper);
     sendWithParams(
         {
             Destination: { /* required */
@@ -21,11 +35,11 @@ function createSubMessage(toEmail, paper) {
                 Body: { /* required */
                     Html: {
                         Charset: "UTF-8",
-                        Data: "<p>Success! Your annotations for " + paper + " have been submitted for review. Once they are approved, you will be notified. If we have any questions, we will contact you.</p><p>Sincerely,</p><p>Phoenix Bioinformatics</p>"
+                        Data: "<p>Success! Your annotations for " + paperDesc + " have been submitted for review. Once they are approved, you will be notified. If we have any questions, we will contact you.</p><p>Sincerely,</p><p>Phoenix Bioinformatics</p>"
                     },
                     Text: {
                         Charset: "UTF-8",
-                        Data: "Success! Your annotations for " + paper + " have been submitted for review. Once they are approved, you will be notified. If we have any questions, we will contact you. Sincerely, Phoenix Bioinformatics"
+                        Data: "Success! Your annotations for " + paperDesc + " have been submitted for review. Once they are approved, you will be notified. If we have any questions, we will contact you. Sincerely, Phoenix Bioinformatics"
                     }
                 },
                 Subject: {
@@ -43,6 +57,7 @@ function createCurMessage(toEmail, paper) {
     if (!toEmail || process.env.NODE_ENV == "test") {
         return;
     }
+    let paperDesc = getPaperDesc(paper);
     sendWithParams(
         {
             Destination: { /* required */
@@ -55,11 +70,11 @@ function createCurMessage(toEmail, paper) {
                 Body: { /* required */
                     Html: {
                         Charset: "UTF-8",
-                        Data: "<p>Congratulations, your annotations for " + paper + " have been approved! They are now included in the data download files which are accessible to users via the 'Download Data' section of our website. </p><p>Thank you for your contributions. </p><p>Sincerely, </p><p>Phoenix Bioinformatics.</p>"
+                        Data: "<p>Congratulations, your annotations for " + paperDesc + " have been reviewed! The approved annotations will be included in the data download files which are accessible to users via the 'Download Data' section of our website. </p><p>Thank you for your contributions. </p><p>Sincerely, </p><p>Phoenix Bioinformatics.</p>"
                     },
                     Text: {
                         Charset: "UTF-8",
-                        Data: "Congratulations, your annotations for " + paper + " have been approved! They are now included in the data download files which are accessible to users via the 'Download Data' section of our website. Thank you for your contributions. Sincerely, Phoenix Bioinformatics"
+                        Data: "Congratulations, your annotations for " + paperDesc + " have been reviewed! The approved annotations will be included in the data download files which are accessible to users via the 'Download Data' section of our website. Thank you for your contributions. Sincerely, Phoenix Bioinformatics"
                     }
                 },
                 Subject: {
