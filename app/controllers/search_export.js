@@ -12,6 +12,7 @@ const {
 
 const EXPORTS_ROOT = path.join(config.resourceRoot, 'exports');
 const date = new Date().toISOString().split("T")[0];
+// currently there is no use case of direct retrieve, will update the gaf format when we need to
 const HEADER = `!gaf-version: 2.0
 !Project_name: The Arabidopsis Information Resource (TAIR)
 !URL: http://www.arabidopsis.org

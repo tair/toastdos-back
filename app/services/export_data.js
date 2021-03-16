@@ -11,11 +11,11 @@ const ACCEPTED_STATUS = 'accepted';
 
 const EXPORTS_ROOT = path.join(config.resourceRoot, 'exports');
 const date = new Date().toISOString().split("T")[0];
-const HEADER = `!gaf-version: 2.0
-!Project_name: The Arabidopsis Information Resource (TAIR)
+const HEADER = `!gaf-version: 2.2
+!generated-by: The Arabidopsis Information Resource (TAIR)
+!date-generated: ` + date + `
 !URL: http://www.arabidopsis.org
 !Contact Email: curator@arabidopsis.org
-!Last Updated: ` + date + `
 `;
 
 /**
@@ -172,6 +172,7 @@ function exportAnnotations() {
 
             // Loop over each annotation and start writing the entry
             annotationsToExport.map(annotation => {
+                const annotationType = annotation.related('type').get('name');
                 if (annotation.get('annotation_format') === 'gene_term_annotation') {
 
                     // Reused related data
@@ -201,8 +202,15 @@ function exportAnnotations() {
                     }
                     writeField(DBObjectSymbol);
 
-                    // 4. Qualifier (skip)
-                    let Qualifier = null;
+                    // 4. Qualifier (updated in gaf 2.2 PHX-619)
+                    let Qualifier;
+                    // subcellular has 2 cases based on keyword name, others has only 1
+                    if (annotationType == 'SUBCELLULAR_LOCATION') {
+                        let keywordName = childData.related('keyword').get('name');
+                        Qualifier = AnnotationTypeData[annotationType].qualifier(keywordName);
+                    } else {
+                        Qualifier = AnnotationTypeData[annotationType].qualifier;
+                    }
                     writeField(Qualifier);
 
                     // 5. GO ID (Keyword external id)
@@ -316,8 +324,8 @@ function exportAnnotations() {
                     }
                     writeField(DBObjectSymbol);
 
-                    // 4. Qualifier (skip)
-                    let Qualifier = null;
+                    // 4. Qualifier (updated in gaf 2.2 PHX-619)
+                    let Qualifier = AnnotationTypeData[annotationType].qualifier;
                     writeField(Qualifier);
 
                     // 5. GO ID (Keyword external id)
@@ -408,8 +416,8 @@ function exportAnnotations() {
                     }
                     writeField(DBObjectSymbol);
 
-                    // 4. Qualifier (skip)
-                    Qualifier = null;
+                    // 4. Qualifier (updated in gaf 2.2 PHX-619)
+                    Qualifier = AnnotationTypeData[annotationType].qualifier;
                     writeField(Qualifier);
 
                     // 5. GO ID (Keyword external id)

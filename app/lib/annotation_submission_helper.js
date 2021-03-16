@@ -48,40 +48,46 @@ const AnnotationTypeData = {
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'molecular_function',
         aspect: 'F',
-        allowedEvidenceCodes: ['IDA', 'IPI', 'IGI', 'IMP', 'EXP']
+        allowedEvidenceCodes: ['IDA', 'IPI', 'IGI', 'IMP', 'EXP'],
+        qualifier: 'enables'
     },
     BIOLOGICAL_PROCESS: {
         name: 'Biological Process',
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'biological_process',
         aspect: 'P',
-        allowedEvidenceCodes: ['IDA', 'IPI', 'IGI', 'IMP', 'EXP', 'IEP']
+        allowedEvidenceCodes: ['IDA', 'IPI', 'IGI', 'IMP', 'EXP', 'IEP'],
+        qualifier: 'acts upstream of or within'
     },
     SUBCELLULAR_LOCATION: {
         name: 'Subcellular Location',
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'cellular_component',
         aspect: 'C',
-        allowedEvidenceCodes: ['IDA', 'IEP', 'EXP']
+        allowedEvidenceCodes: ['IDA', 'IEP', 'EXP'],
+        qualifier: getQualifier
     },
     ANATOMICAL_LOCATION: {
         name: 'Anatomical Location',
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'plant_anatomy',
         aspect: 'S',
-        allowedEvidenceCodes: ['IDA', 'IEP', 'EXP']
+        allowedEvidenceCodes: ['IDA', 'IEP', 'EXP'],
+        qualifier: 'expressed in'
     },
     TEMPORAL_EXPRESSION: {
         name: 'Temporal Expression',
         format: AnnotationFormats.GENE_TERM,
         keywordScope: 'plant_structure_development_stage',
         aspect: 'G',
-        allowedEvidenceCodes: ['IDA', 'IEP', 'EXP']
+        allowedEvidenceCodes: ['IDA', 'IEP', 'EXP'],
+        qualifier: 'expressed during'
     },
     PROTEIN_INTERACTION: {
         name: 'Protein Interaction',
         format: AnnotationFormats.GENE_GENE,
-        allowedEvidenceCodes: ['IPI']
+        allowedEvidenceCodes: ['IPI'],
+        qualifier: 'enables'
     },
     COMMENT: {
         name: 'Comment',
@@ -460,6 +466,14 @@ function redefinePromiseError(params) {
                 }
             });
     });
+}
+
+function getQualifier(keywordName) {
+    if ( keywordName.includes('complex')) {                           
+        return 'part of';
+    } else {
+        return 'located in';
+    }
 }
 
 module.exports = {
