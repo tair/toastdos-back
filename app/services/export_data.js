@@ -187,6 +187,9 @@ function exportAnnotations() {
 
                     // 1. The DB field
                     let DB = sourceData.db;
+                    if (DB == 'TAIR'){
+                        DB = 'AGI_LocusCode';
+                    }
                     writeField(DB);
 
                     // 2. DB Object ID
@@ -309,6 +312,9 @@ function exportAnnotations() {
                     //Data for first locus with second locus as evidence
                     // 1. The DB field
                     let DB = sourceData.db;
+                    if (DB == 'TAIR'){
+                        DB = 'AGI_LocusCode';
+                    }
                     writeField(DB);
 
                     // 2. DB Object ID
@@ -401,6 +407,9 @@ function exportAnnotations() {
 
                     // 1. The DB field
                     DB = source2Data.db;
+                    if (DB == 'TAIR'){
+                        DB = 'AGI_LocusCode';
+                    }
                     writeField(DB);
 
                     // 2. DB Object ID
