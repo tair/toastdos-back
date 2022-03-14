@@ -237,12 +237,13 @@ function performSubmissionOrCuration(req, validationResult, existingSubmissionMo
                     // Add created keyword IDs into annotation data
                     let keyword = annotation.data.keyword;
                     let method = annotation.data.method;
+                    let isTempMethod = annotation.data.is_temp_method;
 
                     // Methods and keywords are not present in all Annotations
                     if (keyword && keyword.name && newKeywordMap[keyword.name]) {
                         annotation.data.keyword.id = newKeywordMap[keyword.name];
                     }
-                    if (method && method.name && newKeywordMap[method.name]) {
+                    if (method && method.name && newKeywordMap[method.name] && !isTempMethod) {
                         annotation.data.method.id = newKeywordMap[method.name];
                     }
 
@@ -255,7 +256,7 @@ function performSubmissionOrCuration(req, validationResult, existingSubmissionMo
                         annotation.data.submitterId = originalSubmitterID;
                     }
 
-                    return annotationHelper.addAnnotationRecords(isCuration, annotation, locusMap, submission, transaction);
+                    return annotationHelper.addAnnotationRecords(isCuration, annotation, locusMap, submission, isTempMethod, transaction);
                 });
 
                 return Promise.all(annotationPromises);
@@ -320,6 +321,7 @@ function getSubmissionWithData(id) {
                     return annotation.load([
                         'childData.method',
                         'childData.method.keywordMapping',
+                        'childData.temp_method',
                         'childData.keyword',
                         'childData.evidenceWith',
                         'childData.evidenceWith.subject.names'
@@ -330,6 +332,7 @@ function getSubmissionWithData(id) {
                     return annotation.load([
                         'childData.method',
                         'childData.method.keywordMapping',
+                        'childData.temp_method',
                         'childData.locus2.names',
                         'childData.locus2Symbol'
                     ]);
@@ -386,10 +389,13 @@ function curateGenesAndAnnotations(req, res) {
                 .every(newAnnotation => {
                     let method = newAnnotation.data.method;
                     let keyword = newAnnotation.data.keyword;
+                    let tempMethod = newAnnotation.data.temp_method;
+                    let isTempMethod = newAnnotation.data.is_temp_method;
 
                     return newAnnotation.status != 'accepted' ||
                         (newAnnotation.status == 'accepted' &&
-                            (!method || (!!method.id && !method.name)) &&
+                            (isTempMethod || (!method || (!!method.id && !method.name))) &&
+                            (!isTempMethod || (!tempMethod || (!!tempMethod.id && !!tempMethod.name))) &&
                             (!keyword || (!!keyword.id && !keyword.name)));
                 })) {
                 return Promise.reject(new ValidationError('All keywords have to have valid external ids'));
@@ -418,6 +424,8 @@ function curateGenesAndAnnotations(req, res) {
 }
 
 /**
+ * This function is deprecated since we don't allow annotations with new
+ * keywords. Instead, we add user-created temp keywords before submission.
  * Adds all of the new Keywords specified in the list of Annotations.
  * Returns promise that resolves to the list of the added Keywords.
  */
@@ -711,6 +719,7 @@ function getAllLociFromAnnotations(annotationList) {
  * of annotations formatted as they would appear in a submission.
  */
 function generateAnnotationSubmissionList(annotationList) {
+    // logger.info('annotationList',annotationList);
     let refinedAnnotations = annotationList.map(annotation => {
         let refinedAnn = {
             id: annotation.get('id'),
@@ -731,12 +740,21 @@ function generateAnnotationSubmissionList(annotationList) {
 
         // Data changes based on annotation type
         if (annotation.get('annotation_format') === 'gene_term_annotation') {
+            logger.info('annotation.related method ',annotation.related('childData').related('method').get('id'));
+            logger.info('annotation.related temp_method ', annotation.related('childData').related('temp_method').get('id'));
+            
             refinedAnn.data.method = {
                 id: annotation.related('childData').related('method').get('id'),
                 name: annotation.related('childData').related('method').get('name'),
                 external_id: annotation.related('childData').related('method').get('external_id'),
                 evidence_code: annotation.related('childData').related('method').related('keywordMapping').get('evidence_code')
             };
+
+            refinedAnn.data.temp_method = {
+                id: annotation.related('childData').related('temp_method').get('id'),
+                name: annotation.related('childData').related('temp_method').get('name'),
+            }
+            refinedAnn.data.is_temp_method = annotation.related('childData').get('is_temp_method');
 
             refinedAnn.data.isEvidenceWithOr = annotation.related('childData').get('is_evidence_with_or');
 
@@ -768,6 +786,11 @@ function generateAnnotationSubmissionList(annotationList) {
                 external_id: annotation.related('childData').related('method').get('external_id'),
                 evidence_code: annotation.related('childData').related('method').related('keywordMapping').get('evidence_code')
             };
+            refinedAnn.data.temp_method = {
+                id: annotation.related('childData').related('temp_method').get('id'),
+                name: annotation.related('childData').related('temp_method').get('name'),
+            }
+            refinedAnn.data.is_temp_method = annotation.related('childData').get('is_temp_method');
         } else { //if (annotation.get('annotation_format') === 'comment_annotation')
             refinedAnn.data.text = annotation.related('childData').get('text');
         }

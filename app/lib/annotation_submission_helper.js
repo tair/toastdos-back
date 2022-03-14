@@ -10,9 +10,11 @@ const AnnotationStatus = require('../models/annotation_status');
 const AnnotationType = require('../models/annotation_type');
 const Keyword = require('../models/keyword');
 const EvidenceWith = require('../models/evidence_with');
+const KeywordTemp = require('../models/keyword_temp');
+const KeywordType = require('../models/keyword_type');
 
 const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'];
-
+const logger = require('../services/logger');
 /* This is a bastardized strategy pattern to change
  * how we validate / verify annotation creation requests
  * and add annotation records based on annotation format.
@@ -20,7 +22,7 @@ const BASE_ALLOWED_FIELDS = ['internalPublicationId', 'submitterId', 'locusName'
 const AnnotationFormats = {
     GENE_TERM: {
         name: 'gene_term_annotation',
-        fields: BASE_ALLOWED_FIELDS.concat(['method', 'keyword', 'evidenceWith', 'isEvidenceWithOr']),
+        fields: BASE_ALLOWED_FIELDS.concat(['method', 'temp_method', 'is_temp_method', 'keyword', 'evidenceWith', 'isEvidenceWithOr']),
         optionalFields: ['evidenceWith'],
         verifyReferences: verifyGeneTermFields,
         createRecords: createGeneTermRecords,
@@ -28,7 +30,7 @@ const AnnotationFormats = {
     },
     GENE_GENE: {
         name: 'gene_gene_annotation',
-        fields: BASE_ALLOWED_FIELDS.concat(['locusName2', 'method']),
+        fields: BASE_ALLOWED_FIELDS.concat(['locusName2', 'method', 'temp_method', 'is_temp_method']),
         verifyReferences: verifyGeneGeneFields,
         createRecords: createGeneGeneRecords,
         cleanupRecords: cleanupGeneGeneRecords,
@@ -108,12 +110,12 @@ const NEW_ANNOTATION_STATUS = 'pending';
  * @param transaction - optional transaction for adding these records
  * @return {Promise.<*>}
  */
-function addAnnotationRecords(isCuration, annotation, locusMap, submission, transaction) {
+function addAnnotationRecords(isCuration, annotation, locusMap, submission, isTempMethod, transaction) {
     let strategy = AnnotationTypeData[annotation.type];
 
     // Step 1: Ensure annotation request all required fields and nothing extra
     try {
-        validateFields(isCuration, annotation, strategy.format.fields, strategy.format.optionalFields);
+        validateFields(isCuration, annotation, strategy.format.fields, strategy.format.optionalFields, isTempMethod);
     } catch (err) {
         return Promise.reject(err);
     }
@@ -128,9 +130,9 @@ function addAnnotationRecords(isCuration, annotation, locusMap, submission, tran
     }
 
     // Step 3: Verify the data
-    return cleanupPromise.then(() => strategy.format.verifyReferences(annotation, locusMap, transaction))
+    return cleanupPromise.then(() => strategy.format.verifyReferences(annotation, locusMap, isTempMethod, isCuration, transaction))
         // Step 4: Create sub-annotation
-        .then(() => strategy.format.createRecords(annotation, locusMap, transaction))
+        .then(() => strategy.format.createRecords(annotation, locusMap, isTempMethod, transaction))
         // Step 5: With dependencies created, now add the Annotation itself
         .then(subAnnotation => {
 
@@ -199,7 +201,7 @@ function addAnnotationRecords(isCuration, annotation, locusMap, submission, tran
  *
  * Throws an error for failed validation
  */
-function validateFields(isCuration, annotation, validFields, optionalFields) {
+function validateFields(isCuration, annotation, validFields, optionalFields, isTempMethod) {
 
     if (isCuration) {
         if (!annotation.id) {
@@ -230,8 +232,17 @@ function validateFields(isCuration, annotation, validFields, optionalFields) {
 
     // Make sure keyword fields have an ID (new keywords will have a name field too. This is ok.)
     let method = annotation.data.method;
-    if (method && !method.id) {
+    if (!isTempMethod && method && !method.id) {
         throw new Error('id xor name required for Keywords');
+    }
+
+    let tempMethod = annotation.data.temp_method;
+    if (isTempMethod) {
+        if (!isCuration && !tempMethod.name) {
+            throw new Error('name required for temp method');
+        } else if (isCuration && !(tempMethod.name && tempMethod.id)){
+            throw new Error('id xor name required for temp method');
+        }
     }
 
     let keyword = annotation.data.keyword;
@@ -267,22 +278,40 @@ function verifyGenericFields(annotation, locusMap) {
     return verificationPromises;
 }
 
-function verifyGeneTermFields(annotation, locusMap, transaction) {
+function verifyGeneTermFields(annotation, locusMap, isTempMethod, isCuration, transaction) {
     let verificationPromises = verifyGenericFields(annotation, locusMap);
 
     // Verify method Keywords exist
-    verificationPromises.push(
-        redefinePromiseError({
-            promise: Keyword.where({
-                id: annotation.data.method.id
-            }).fetch({
-                require: true,
-                transacting: transaction
-            }),
-            message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
-            pattern: 'EmptyResponse'
-        })
-    );
+    if (!isTempMethod){
+        verificationPromises.push(
+            redefinePromiseError({
+                promise: Keyword.where({
+                    id: annotation.data.method.id
+                }).fetch({
+                    require: true,
+                    transacting: transaction
+                }),
+                message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
+                pattern: 'EmptyResponse'
+            })
+        );
+    }
+
+    // Verify temp_method Keywords exist
+    if (isTempMethod && isCuration){
+        verificationPromises.push(
+            redefinePromiseError({
+                promise: KeywordTemp.where({
+                    id: annotation.data.temp_method.id
+                }).fetch({
+                    require: true,
+                    transacting: transaction
+                }),
+                message: `Temp method id ${annotation.data.temp_method.id} does not reference an existing KeywordTemp`,
+                pattern: 'EmptyResponse'
+            })
+        );
+    }
 
     // Verify keyword Keywords exist
     verificationPromises.push(
@@ -314,23 +343,40 @@ function verifyGeneTermFields(annotation, locusMap, transaction) {
     return Promise.all(verificationPromises);
 }
 
-function verifyGeneGeneFields(annotation, locusMap, transaction) {
+function verifyGeneGeneFields(annotation, locusMap, isTempMethod, isCuration, transaction) {
     let verificationPromises = verifyGenericFields(annotation, locusMap);
 
     // Verify method Keywords exist
-    verificationPromises.push(
-        redefinePromiseError({
-            promise: Keyword.where({
-                id: annotation.data.method.id
-            }).fetch({
-                require: true,
-                transacting: transaction
-            }),
-            message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
-            pattern: 'EmptyResponse'
-        })
-    );
+    if (!isTempMethod){
+        verificationPromises.push(
+            redefinePromiseError({
+                promise: Keyword.where({
+                    id: annotation.data.method.id
+                }).fetch({
+                    require: true,
+                    transacting: transaction
+                }),
+                message: `Method id ${annotation.data.method.id} does not reference an existing Keyword`,
+                pattern: 'EmptyResponse'
+            })
+        );
+    }
 
+    // Verify temp_method Keywords exist
+    if (isTempMethod && isCuration){
+        verificationPromises.push(
+            redefinePromiseError({
+                promise: KeywordTemp.where({
+                    id: annotation.data.temp_method.id
+                }).fetch({
+                    require: true,
+                    transacting: transaction
+                }),
+                message: `Temp method id ${annotation.data.temp_method.id} does not reference an existing KeywordTemp`,
+                pattern: 'EmptyResponse'
+            })
+        );
+    }
     // Verify locus2 Locus
   let locusName2 = annotation.data.locusName2.locusName || annotation.data.locusName2;
   if (!locusMap[locusName2]) {
@@ -355,11 +401,24 @@ function verifyCommentFields(annotation, locusMap) {
  *
  * Returns a Promise that resolves to new sub-annotation.
  */
-function createGeneTermRecords(annotation, locusMap, transaction) {
+async function createGeneTermRecords(annotation, locusMap, isTempMethod, transaction) {    
+    let keywordTempId;
+    if (isTempMethod){
+        let keywordType = await KeywordType.getByName('eco');
+        let keywordTemp = await KeywordTemp.addOrGet({
+                name: annotation.data.temp_method.name,
+                keyword_type_id: keywordType.get('id'),
+                submitter_id: annotation.data.submitterId
+            });
+        keywordTempId = keywordTemp.id;
+    }
+
     let subAnnotation = {
         method_id: annotation.data.method.id,
+        temp_method_id: keywordTempId,
         keyword_id: annotation.data.keyword.id,
-        is_evidence_with_or: !!annotation.data.isEvidenceWithOr
+        is_evidence_with_or: !!annotation.data.isEvidenceWithOr,
+        is_temp_method: isTempMethod
     };
 
     return GeneTermAnnotation.forge(subAnnotation).save(null, {
@@ -401,12 +460,24 @@ function cleanupGeneTermRecords(id, transaction) {
         });
 }
 
-function createGeneGeneRecords(annotation, locusMap, transaction) {
+async function createGeneGeneRecords(annotation, locusMap, isTempMethod, transaction) {
+    let keywordTempId;
+    if (isTempMethod){
+        let keywordType = await KeywordType.getByName('eco');
+        let keywordTemp = await KeywordTemp.addOrGet({
+                name: annotation.data.temp_method.name,
+                keyword_type_id: keywordType.get('id'),
+                submitter_id: annotation.data.submitterId
+            });
+        keywordTempId = keywordTemp.id;
+    }
     let newGGAnn = {
         method_id: annotation.data.method.id,
+        temp_method_id: keywordTempId,
         locus2_id: locusMap[
             annotation.data.locusName2.locusName || annotation.data.locusName2
         ].locus.get('locus_id'),
+        is_temp_method: isTempMethod
     };
 
     // GeneSymbols are optional

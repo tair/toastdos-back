@@ -3,6 +3,7 @@
 const bookshelf = require('../lib/bookshelf');
 
 require('./keyword');
+require('./keyword_temp');
 require('./annotation');
 require('./locus');
 require('./gene_symbol');
@@ -12,6 +13,9 @@ const GeneTermAnnotation = bookshelf.model('GeneTermAnnotation', {
     tableName: 'gene_term_annotation',
     method: function() {
         return this.belongsTo('Keyword', 'method_id');
+    },
+    temp_method: function() {
+        return this.belongsTo('KeywordTemp', 'temp_method_id');
     },
     keyword: function() {
         return this.belongsTo('Keyword', 'keyword_id');
