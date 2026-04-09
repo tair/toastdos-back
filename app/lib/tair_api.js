@@ -29,8 +29,15 @@ const DEFAULT_TAXON = {
  */
 function getLocusByName(name) {
     let requestUrl = `https://www.arabidopsis.org/api/loci/${name}`;
+    let requestOptions = {
+        url: requestUrl,
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; GOAT/1.0; +https://goat.phoenixbioinfo.org)',
+            'Accept': 'application/json'
+        }
+    };
     return new Promise((resolve, reject) => {
-        request.get(requestUrl, (error, response, bodyJson) => {
+        request.get(requestOptions, (error, response, bodyJson) => {
             if (error) reject(new Error(error));
             else if (response.statusCode === 404) reject(new Error(`No Locus found for name ${name}`));
             else {
