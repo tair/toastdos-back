@@ -2,13 +2,18 @@
 
 /**
  * Wrapper for requests to TAIR webservices
+ *
+ * The TAIR website was overhauled in 2024 and the old REST API at
+ * /loci/{name} no longer returns JSON. The new TAIR3 backend exposes
+ * locus lookups via /api/detail/locus/name?0={name}, which returns
+ * the locus_id if found or null otherwise.
  */
 
 const request = require('request');
 
 const NCBI = require('./ncbi_api');
 
-const BASE_URL = 'https://www.arabidopsis.org';
+const BASE_URL = 'https://www.arabidopsis.org/api';
 
 const DEFAULT_TAXON = {
     taxon_name: 'Arabidopsis thaliana',
@@ -19,46 +24,28 @@ const DEFAULT_TAXON = {
  * Gets a TAIR gene by it's name.
  * These typically look like AT1G10000 for TAIR.
  *
+ * Calls the TAIR3 detail API to verify the locus exists in the
+ * database. Since all AGI locus IDs are Arabidopsis thaliana,
+ * we use the default taxon when a locus is found.
+ *
  * @param name
  * @returns {Promise}
  */
 function getLocusByName(name) {
-    let requestUrl = `${BASE_URL}/loci/${name}`;
+    let requestUrl = `${BASE_URL}/detail/locus/name?0=${encodeURIComponent(name)}`;
     return new Promise((resolve, reject) => {
-        request.get(requestUrl, (error, response, bodyJson) => {
+        request.get({url: requestUrl, json: true}, (error, response, body) => {
             if (error) reject(new Error(error));
-            else if (response.statusCode === 404) reject(new Error(`No Locus found for name ${name}`));
-            else {
-                let body = null;
-                try {
-                    body = JSON.parse(bodyJson);
-                } catch (e) {
-                    return reject(new Error(`No Locus found for name ${name}`));
-                }
-
-                if (!body) {
-                    return reject(new Error(`No Locus found for name ${name}`));
-                }
-
-                let partialTaxon = {
+            else if (response.statusCode >= 400) reject(new Error(`No Locus found for name ${name}`));
+            else if (body === null || body === undefined) {
+                reject(new Error(`No Locus found for name ${name}`));
+            } else {
+                resolve({
                     source: 'TAIR',
-                    locus_name: body.locusName
-                };
-
-                /* Most of the time TAIR will be giving us 'Arabidopsis thaliana' as a
-                 * taxon name, so we can save a request to NCBI by hard-coding the response.
-                 */
-                if (body.taxon === DEFAULT_TAXON.taxon_name) {
-                    resolve(Object.assign(partialTaxon, DEFAULT_TAXON));
-                } else {
-                    // For other taxa we need to get the maching ID from NCBI
-                    NCBI.getTaxonByScientificName(body.taxon).then(taxonInfo => {
-                        resolve(Object.assign(partialTaxon, {
-                            taxon_name: body.taxon,
-                            taxon_id: taxonInfo.taxId
-                        }));
-                    });
-                }
+                    locus_name: name,
+                    taxon_name: DEFAULT_TAXON.taxon_name,
+                    taxon_id: DEFAULT_TAXON.taxon_id
+                });
             }
         });
     });
